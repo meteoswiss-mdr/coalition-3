@@ -1,4 +1,6 @@
-test_file_notadded.txt
+.DS_Store
+/test_data
+
 # THE FOLLOWING ENTRIES WERE COPIED FROM THE .gitignore OF THE pySTEPS repository
 
 # Byte-compiled / optimized / DLL files
