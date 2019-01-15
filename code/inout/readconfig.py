@@ -13,7 +13,7 @@ import pandas as pd
 ## FUNCTIONS:
 
 ## Get settings from config file and some additional static settings:
-def get_config_info(CONFIG_PATH=None): #**kwargs):
+def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     """Get information from configuration file and return in a dictionary
     "cfg_set". Furthermore, get data from variable configuration file
     (cfg_var.csv) and return in a pandas.dataframe "cfg_var"
@@ -21,6 +21,9 @@ def get_config_info(CONFIG_PATH=None): #**kwargs):
     Parameters
     ----------
 
+    coalition3_path : str
+        Root path to the project (default: git repo)
+        
     CONFIG_PATH : str
         Path to config file.
 
@@ -51,8 +54,9 @@ def get_config_info(CONFIG_PATH=None): #**kwargs):
     """
 
     ## ===== Get path to config files: =========================
-    coalition3_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                               '../../'))
+    if coalition3_path is None:
+        coalition3_path = os.path.abspath(os.path.join(
+                                os.path.dirname(__file__),'../../'))
 
     #CONFIG_PATH,CONFIG_FILE_set,CONFIG_PATH_set, \
     #                        CONFIG_FILE_var,CONFIG_FILE_var_combi
@@ -119,6 +123,9 @@ def get_config_info(CONFIG_PATH=None): #**kwargs):
         "output_path":         fig_output_path,
         "tmp_output_path":     tmp_output_path
     })
+    
+    ## Add tmp/ and figure/ paths if not yet existant (not in git repo)
+    check_create_tmpdir(cfg_set)
 
     ## Add additional general settings:
     cfg_set.update({
@@ -342,6 +349,23 @@ def cfg_set_append_t0(cfg_set,t0_str):
     })
     return cfg_set
 
+## Check whether temporary subdirectories are present, otherwise create those:
+def check_create_tmpdir(cfg_set):
+    """Check whether tmp and figure directory exist, if not, create those.
+
+    Parameters
+    ----------
+    
+    cfg_set : dict
+        Basic variables defined in input_NOSTRADAMUS_ANN.py
+    """
+    if not os.path.exists(cfg_set["tmp_output_path"]):
+        os.makedirs(cfg_set["tmp_output_path"])
+        print("  Created tmp/ directory: %s" % cfg_set["tmp_output_path"])
+    if not os.path.exists(cfg_set["fig_output_path"]):
+        os.makedirs(cfg_set["fig_output_path"])
+        print("  Created figure/ directory: %s" % cfg_set["fig_output_path"])
+
 ## Get size of the domain form chosen (from where the stats are read):
 def form_size(stat_sel_form_width,stat_sel_form):
     if stat_sel_form == "square":
@@ -389,3 +413,43 @@ def return_var_combi_information(var_combi,cfg_var_combi,var_dict,type):
         if cfg_var_combi.loc[cfg_var_combi["VARIABLE"]==var_combi,"dt"].values[0]:
             raise ValueError("dt channel combinations not yet implemented")
     return return_val
+
+## Print information before running script:
+def print_config_info(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
+    """Print information before running script"""
+    print("\n-------------------------------------------------------------------------------------------------------\n")
+    print_logo()
+    if cfg_set["verif_param"] == "R_threshold":
+        unit_verifparam = " mm/h" if cfg_set["R_thresh_meth"] == "fix" else "% quantile"
+    else: unit_verifparam = ""
+    print_str = '    Configuration of NOSTRADAMUS input date preparation procedure:'+ \
+    '\n      Date:             '+cfg_set["t0"].strftime("%Y-%m-%d %H:%M")+ \
+    #'\n      Config files:     '+CONFIG_FILE_set+' (Settings) & '+CONFIG_FILE_var+' (Variables)'+ \
+    '\n      Reverse mode:     '+str(cfg_set["future_disp_reverse"])+ \
+    '\n      Variables displ.: '+str(cfg_set["var_list"])+ \
+    '\n      Save file type:   '+'.'+str(cfg_set["save_type"])+' file'+ \
+    '\n      Oflow data:       '+cfg_set["oflow_source"]+ \
+    '\n      Oflow method:     '+cfg_set["oflow_method_name"]+ \
+    '\n      Adv method:       '+cfg_set["adv_method"]+ \
+    '\n      Timestep:         '+str(cfg_set["timestep"])+"min"+ \
+    '\n      Integr. steps:    '+str(cfg_set["n_integ"])+ \
+    '\n      Use precalc. UV:  '+str(cfg_set["precalc_UV_disparr"])+ \
+    '\n      Instant. corr:    '+str(cfg_set["instant_resid_corr"])+ \
+    '\n      Verification:     '+str(cfg_set["verify_disp"])
+    #'\n  Square domain:    '+str(cfg_set["square_domain"])+ \
+    if cfg_set["verify_disp"]:
+        print_str = print_str+'\n      Verif. param:     '+str(cfg_set["verif_param"])+'='+ \
+                              str(cfg_set[cfg_set["verif_param"]])+unit_verifparam
+    #'\n  Verif. param:     '+str(cfg_set["verif_param"])+'='+str(cfg_set[cfg_set["verif_param"]])+unit_verifparam+'\n'      
+    print_str = print_str+'\n'
+    print(print_str)
+    
+    #if cfg_set["future_disp_reverse"]:
+    #    print_str = "    ==============================================================================\n" + \
+    #                "    ==========                                                          ==========\n" + \
+    #                "    ==========  RUN IN REVERSE MODE (for creation of training dataset)  ==========\n" + \
+    #                "    ==========                                                          ==========\n" + \
+    #                "    ==============================================================================\n"
+    #    print(print_str)
+    print("-------------------------------------------------------------------------------------------------------\n")
+    

@@ -2,6 +2,8 @@
 /test_data
 /documents
 /input_data
+/tmp
+/figures
 
 # THE FOLLOWING ENTRIES WERE COPIED FROM THE .gitignore OF THE pySTEPS repository
 
