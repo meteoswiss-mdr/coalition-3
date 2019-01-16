@@ -64,7 +64,7 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     #    CONFIG_PATH = kwargs["CONFIG_PATH"]
     #else:
     if CONFIG_PATH is None:
-        CONFIG_PATH = os.path.join(coalition3_path,'config/')
+        CONFIG_PATH = os.path.join(coalition3_path,u'config/')
     cfg_set = {"CONFIG_PATH": CONFIG_PATH}
 
     ## ===== Import configuration information on variables: =============
@@ -85,10 +85,10 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     #var_list        = config_vr["var_list"].split(',') ## DEPRECATED!
     var_list       = cfg_var["VARIABLE"][cfg_var["READ_IF"]].tolist()
     var_combi_list = cfg_var_combi["VARIABLE"][cfg_var_combi["PREDICTOR"]].tolist()
-    cfg_set = {
+    cfg_set.update({
         "var_list":       var_list,
         "var_combi_list": var_combi_list
-    }
+    })
 
     ## ===== Make static settings: =========================
     cfg_set.update({
@@ -100,7 +100,7 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     
     ## ===== Read the general settings: ============
     config = configparser.RawConfigParser()
-    config.read(os.path.join(CONFIG_PATH,"general_settings.cfg"))
+    config.read(os.path.join(CONFIG_PATH,u"general_settings.cfg"))
 
     ## Add source paths:
     config_sp = config["source_paths"]
@@ -109,11 +109,11 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     else:
         root_path = config_sp["root_path"]
     if config_sp["fig_output_path"]=="":
-        fig_output_path = os.path.join(coalition3_path,"figures/")
+        fig_output_path = os.path.join(coalition3_path,u"figures/")
     else:
         fig_output_path = config_sp["fig_output_path"]
     if config_sp["tmp_output_path"]=="":
-        tmp_output_path = os.path.join(coalition3_path,"tmp/")
+        tmp_output_path = os.path.join(coalition3_path,u"tmp/")
     else:
         tmp_output_path = config_sp["tmp_output_path"]
     UV_precalc_path = config_sp["UV_precalc_path"]
@@ -121,7 +121,8 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     cfg_set.update({
         "root_path":           root_path,
         "output_path":         fig_output_path,
-        "tmp_output_path":     tmp_output_path
+        "tmp_output_path":     tmp_output_path,
+        "fig_output_path":     fig_output_path
     })
     
     ## Add tmp/ and figure/ paths if not yet existant (not in git repo)
@@ -364,7 +365,7 @@ def check_create_tmpdir(cfg_set):
         print("  Created tmp/ directory: %s" % cfg_set["tmp_output_path"])
     if not os.path.exists(cfg_set["fig_output_path"]):
         os.makedirs(cfg_set["fig_output_path"])
-        print("  Created figure/ directory: %s" % cfg_set["fig_output_path"])
+        print("  Created figures/ directory: %s" % cfg_set["fig_output_path"])
 
 ## Get size of the domain form chosen (from where the stats are read):
 def form_size(stat_sel_form_width,stat_sel_form):
@@ -424,7 +425,6 @@ def print_config_info(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
     else: unit_verifparam = ""
     print_str = '    Configuration of NOSTRADAMUS input date preparation procedure:'+ \
     '\n      Date:             '+cfg_set["t0"].strftime("%Y-%m-%d %H:%M")+ \
-    #'\n      Config files:     '+CONFIG_FILE_set+' (Settings) & '+CONFIG_FILE_var+' (Variables)'+ \
     '\n      Reverse mode:     '+str(cfg_set["future_disp_reverse"])+ \
     '\n      Variables displ.: '+str(cfg_set["var_list"])+ \
     '\n      Save file type:   '+'.'+str(cfg_set["save_type"])+' file'+ \
@@ -437,6 +437,7 @@ def print_config_info(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
     '\n      Instant. corr:    '+str(cfg_set["instant_resid_corr"])+ \
     '\n      Verification:     '+str(cfg_set["verify_disp"])
     #'\n  Square domain:    '+str(cfg_set["square_domain"])+ \
+    #'\n      Config files:     '+CONFIG_FILE_set+' (Settings) & '+CONFIG_FILE_var+' (Variables)'+ \
     if cfg_set["verify_disp"]:
         print_str = print_str+'\n      Verif. param:     '+str(cfg_set["verif_param"])+'='+ \
                               str(cfg_set[cfg_set["verif_param"]])+unit_verifparam
@@ -452,4 +453,17 @@ def print_config_info(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
     #                "    ==============================================================================\n"
     #    print(print_str)
     print("-------------------------------------------------------------------------------------------------------\n")
+    
+## Print COALITION3 Logo:
+def print_logo():
+    logo_str = "" + \
+    "     _.-.___ \n"+ \
+    "    ( (  )  )_-_-_- - \n"+ \
+    "     ( (   )- - -       'For forty years the rainbow will not be seen.\n"+ \
+    "      ( ( ) )            For forty years it will be seen every day.\n"+ \
+    "     (_(___)_)           The dry earth will grow more parched,\n"+ \
+    "        _<               and there will be great floods when it is seen.'\n"+ \
+    "       / /\                                    Nostradamus\n"+ \
+    "    _____\__________ \n"
+    print(logo_str)
     

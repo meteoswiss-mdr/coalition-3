@@ -1,4 +1,4 @@
-""" [COALITION3] Writing and reading temporary CCS4 data to disk before calculating statistics"""
+""" [COALITION3] Writing and reading temporary CCS4 and TRT data to disk before calculating statistics"""
 
 from __future__ import division
 from __future__ import print_function
@@ -7,7 +7,9 @@ import numpy as np
 import datetime
 from netCDF4 import Dataset, num2date, date2num
 
-
+## =============================================================================
+## FUNCTIONS:
+    
 ## Save variable array (vararr) or displacement array (disparr) as Numpy or NetCDF file:
 def save_file(output_file_path_str, data_arr,
               var_name=None, t0_datetime=None, filetype=None,

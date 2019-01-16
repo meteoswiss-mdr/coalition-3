@@ -8,6 +8,9 @@ import datetime
 import numpy as np
 import pysteps as st
 
+## =============================================================================
+## FUNCTIONS:
+    
 ## Provide path to variable array:
 def path_creator_vararr(type,var,cfg_set,
                         path=None,t0=None,
@@ -26,7 +29,7 @@ def path_creator_vararr(type,var,cfg_set,
                          '_orig','disp','_disp','disp_resid','disp_resid_combi'")
     
     ## Set string values to be concatenated:    
-    path_str          = path if path is not None else cfg_set["root_path"]+"tmp/"
+    path_str          = path if path is not None else cfg_set["tmp_output_path"]
     t0_str            = t0 if t0 is not None else cfg_set["t0"].strftime("%Y%m%d%H%M")
     save_type_str     = save_type  if save_type is not None else cfg_set["save_type"]
     file_ext_verif    = cfg_set["file_ext_verif"]
@@ -62,7 +65,7 @@ def path_creator_UV_disparr(type,cfg_set,path=None,t0=None,
                          'resid','resid_combi','vec','vec_resid'")
     
     ## Set string values to be concatenated:    
-    path_str          = path if path is not None else cfg_set["root_path"]+"tmp/"
+    path_str          = path if path is not None else cfg_set["tmp_output_path"]
     t0_str            = t0 if t0 is not None else cfg_set["t0"].strftime("%Y%m%d%H%M")
     oflow_source_str  = oflow_source if oflow_source is not None else cfg_set["oflow_source"]
     file_ext_vefif    = cfg_set["file_ext_verif"]

@@ -7,10 +7,10 @@ from __future__ import print_function
 import datetime
 import numpy as np
 
-from code.inout.readccs4 import get_vararr_t
-from code.inout.readTRT import get_vararr_TRT_t0
-from code.inout.paths import path_creator_vararr
-from code.inout.iotmp import save_file
+from coalition3.inout.readccs4 import get_vararr_t
+from coalition3.inout.readTRT import get_vararr_TRT_t0
+from coalition3.inout.paths import path_creator_vararr
+from coalition3.inout.iotmp import save_file
 
 ## =============================================================================
 ## FUNCTIONS:

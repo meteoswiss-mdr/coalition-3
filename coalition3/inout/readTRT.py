@@ -1,4 +1,4 @@
-""" [COALITION3] Reading functions for CCS4 data"""
+""" [COALITION3] Reading functions for TRT data from text files"""
 
 from __future__ import division
 from __future__ import print_function

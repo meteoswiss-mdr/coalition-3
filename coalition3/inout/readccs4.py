@@ -1,4 +1,4 @@
-""" [COALITION3] Reading functions for CCS4 data"""
+""" [COALITION3] Reading functions for CCS4 data (Radar, SEVIR, COSMO, and THX)"""
 
 from __future__ import division
 from __future__ import print_function
@@ -154,8 +154,8 @@ def read_lightning_data(var,filename,cfg_set,t_current):
         Filepath to file to be imported.
     """
     config = configparser.RawConfigParser()
-    config.read("%s/%s" % (cfg_set["CONFIG_PATH"],cfg_set["CONFIG_FILE_set"]))
-    config_ds   = config["light_read"]
+    config.read(os.path.join(CONFIG_PATH,u"input_data.cfg"))
+    config_ds = config["light_read"]
 
     ## Make sure only one lightning dataset is provided:
     if len(filename)>1:
