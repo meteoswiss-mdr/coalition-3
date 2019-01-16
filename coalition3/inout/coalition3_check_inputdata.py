@@ -8,7 +8,6 @@
 from __future__ import division
 from __future__ import print_function
 
-import sys
 import datetime
 
 import NOSTRADAMUS_0_training_ds_fun as Nds
