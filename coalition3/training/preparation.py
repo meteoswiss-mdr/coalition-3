@@ -139,14 +139,14 @@ def get_TRT_cell_info(dt_sampling_list,cfg_set_tds,cfg_set_input=None,len_ini_df
     print("   Number of different TRT cells: %s\n" % len(np.unique(samples_df["traj_ID"])))
     print(samples_df.info(),"\n")
     print(samples_df,"\n")
-    samples_df.to_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset.pkl"))
-    print("   Dataframe saved in: %s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset.pkl"))
+    samples_df.to_pickle(os.path.join(cfg_set_tds["root_path_tds"],u"TRT_sampling_df_testset.pkl"))
+    print("   Dataframe saved in: %s" % os.path.join(cfg_set_tds["root_path_tds"],u"TRT_sampling_df_testset.pkl"))
     return(samples_df)
 
 ## Print some basic information on the TRT cells which will be sampled:
 def print_basic_info(cfg_set_tds):
-    samples_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],
-                                          "TRT_sampling_df_testset_enhanced.pkl"))
+    samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
+                                             u"TRT_sampling_df_testset_enhanced.pkl"))
     print("Basic information on the training dataset:")
     print("   Number of different TRT cells:      %s" % len(np.unique(samples_df["traj_ID"])))
     print("   Number of different time steps:     %s" % len(np.unique(samples_df["date"])))
@@ -157,7 +157,8 @@ def change_append_TRT_cell_info(cfg_set_tds):
     """Correct and append some information to TRT cell info."""
     
     print("Enhance and correct information of TRT cells within time period.")
-    samples_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset.pkl"))
+    samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
+                                u"TRT_sampling_df_testset.pkl"))
         
     ## Change datatypes
     ## Old:
@@ -192,7 +193,8 @@ def exploit_TRT_cell_info(cfg_set_tds):
     """Exploit information of TRT cells within time period."""
         
     print("Exploit information of TRT cells within time period.")
-    samples_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced.pkl"))
+    samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
+                                u"TRT_sampling_df_testset_enhanced.pkl"))
     
     ## Print histograms:
     print_TRT_cell_histograms(samples_df,cfg_set_tds)
