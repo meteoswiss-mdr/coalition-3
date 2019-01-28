@@ -5,10 +5,17 @@
 from __future__ import division
 from __future__ import print_function
 
-import configparser
+import os
 import datetime
 import numpy as np
-import pysteps as st
+import pandas as pd
+
+from pandas.api.types import CategoricalDtype
+from coalition3.inout.paths import path_creator
+from coalition3.inout.readconfig import get_config_info_op
+
+sys.path.insert(0, '/opt/users/jmz/monti-pytroll/packages/mpop')
+from mpop.satin import swisstrt
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -52,10 +59,7 @@ def get_TRT_cell_info(dt_sampling_list,cfg_set_tds,cfg_set_input=None,len_ini_df
     
     ## Get input data config file
     if cfg_set_input is None:
-        cfg_set_input, cfg_var = Nip.get_config_info(cfg_set_tds["CONFIG_PATH_set_input"],
-                                                     cfg_set_tds["input_set_cfg"],
-                                                     cfg_set_tds["input_var_cfg"],
-                                                     dt_sampling_list[0].strftime("%Y%m%d%H%M"))
+        cfg_set_input, cfg_var = get_config_info_op()
                                
     ## Create empty DataFrame
     if len_ini_df is None: len_ini_df = len(dt_sampling_list)*3
@@ -84,14 +88,14 @@ def get_TRT_cell_info(dt_sampling_list,cfg_set_tds,cfg_set_input=None,len_ini_df
         #    doy_temp = cfg_set_input["t0_doy"]
         
         ## Get file path to respective TRT file of time point sampling_time:
-        filepaths, timestamps = Nip.path_creator(sampling_time, "TRT", "TRT", cfg_set_input)
+        filepaths, timestamps = path_creator(sampling_time, "TRT", "TRT", cfg_set_input)
         
         ## In case file is not available, look for files just right before and after this timepoint
         ## (e.g. if no file available at 16:35, look at 16:25/16:30/16:40/16:45), otherwise skip this time point.
         if filepaths[0] is None:
             for dt_daily_shift_fac in [-1,1,-2,2]:
                 sampling_time_temp = sampling_time + dt_daily_shift_fac*datetime.timedelta(minutes=cfg_set_tds["dt_daily_shift"])
-                filepaths_temp, timestamps = Nip.path_creator(sampling_time_temp, "TRT", "TRT", cfg_set_input)
+                filepaths_temp, timestamps = path_creator(sampling_time_temp, "TRT", "TRT", cfg_set_input)
                 if filepaths_temp[0] is not None:
                     filepaths = filepaths_temp
                     print("       Instead using dataset: %s" % filepaths[0])
@@ -151,7 +155,6 @@ def print_basic_info(cfg_set_tds):
 ## Change and append some of the TRT cell values or append additional ones:
 def change_append_TRT_cell_info(cfg_set_tds):    
     """Correct and append some information to TRT cell info."""
-    from pandas.api.types import CategoricalDtype
     
     print("Enhance and correct information of TRT cells within time period.")
     samples_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset.pkl"))

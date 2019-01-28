@@ -59,16 +59,24 @@ def get_config_info_tds(coalition3_path=None, CONFIG_PATH=None):
     ## Add source paths:
     config_ds = config["datasource"]
     if config_ds["root_path"]=="":
-        root_path_tds = coalition3_path
+        root_path = coalition3_path
     else:
         root_path = config_ds["root_path"]
-    
+    if config_ds["root_path_tds"]=="":
+        root_path_tds = os.path.join(coalition3_path,u"training/")
+    else:
+        root_path_tds = config_ds["root_path_tds"]
+        
     cfg_set_tds.update({
+        "root_path":          root_path,
         "root_path_tds":      root_path_tds,
         "PATH_stat_output":   config_ds["PATH_stat_output"],
         "PATH_stdout_output": config_ds["PATH_stdout_output"]
     })
 
+    ## Add training/ path if not yet existent (not in git repo)
+    check_create_tmpdir(cfg_set)
+    
     ## Read further config information on the training dataset
     config_bs = config["basicsetting"]
     cfg_set_tds.update({
@@ -436,7 +444,7 @@ def cfg_set_append_t0(cfg_set,t0_str):
 
 ## Check whether temporary subdirectories are present, otherwise create those:
 def check_create_tmpdir(cfg_set):
-    """Check whether tmp and figure directory exist, if not, create those.
+    """Check whether training, tmp or figure directory exist, if not, create those.
 
     Parameters
     ----------
@@ -444,12 +452,20 @@ def check_create_tmpdir(cfg_set):
     cfg_set : dict
         Basic variables defined in input_NOSTRADAMUS_ANN.py
     """
-    if not os.path.exists(cfg_set["tmp_output_path"]):
-        os.makedirs(cfg_set["tmp_output_path"])
-        print("  Created tmp/ directory: %s" % cfg_set["tmp_output_path"])
-    if not os.path.exists(cfg_set["fig_output_path"]):
-        os.makedirs(cfg_set["fig_output_path"])
-        print("  Created figures/ directory: %s" % cfg_set["fig_output_path"])
+    
+    if "root_path_tds" in cfg_set:
+        if not os.path.exists(cfg_set["root_path_tds"]):
+            os.makedirs(cfg_set["root_path_tds"])
+            print("  Created training/ directory: %s" % cfg_set["root_path_tds"])
+    
+    if "tmp_output_path" in cfg_set:
+        if not os.path.exists(cfg_set["tmp_output_path"]):
+            os.makedirs(cfg_set["tmp_output_path"])
+            print("  Created tmp/ directory: %s" % cfg_set["tmp_output_path"])
+    if "fig_output_path" in cfg_set:
+        if not os.path.exists(cfg_set["fig_output_path"]):
+            os.makedirs(cfg_set["fig_output_path"])
+            print("  Created figures/ directory: %s" % cfg_set["fig_output_path"])
 
 ## Get size of the domain form chosen (from where the stats are read):
 def form_size(stat_sel_form_width,stat_sel_form):
