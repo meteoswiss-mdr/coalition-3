@@ -13,6 +13,90 @@ import pandas as pd
 ## FUNCTIONS:
 
 ## Get settings from config file and some additional static settings:
+def get_config_info_tds(coalition3_path=None, CONFIG_PATH=None):
+    #(CONFIG_PATH_set_train,CONFIG_FILE_set_train):
+    """Get information from configuration file containing config
+    information for the creation of the training dataset and
+    return in a dictionary "cfg_set_tds".
+
+
+    Parameters
+    ----------
+
+    coalition3_path : str
+        Root path to the project (default: git repo)
+        
+    CONFIG_PATH : str
+        Path to config file.
+    
+    ## (DEPRECATED! Names are now hard-coded)
+    #CONFIG_PATH : str
+    #    Path to config file.
+    #    
+    #CONFIG_FILE_set : str
+    #    Name of settings config file.
+        
+    Output
+    ------
+
+    cfg_set_tds : dict
+        Dictionary with the basic variables used throughout the code
+     
+    """
+    
+    ## ===== Get path to config files: =========================
+    if coalition3_path is None:
+        coalition3_path = os.path.abspath(os.path.join(
+                                os.path.dirname(__file__),'../../'))
+    if CONFIG_PATH is None:
+        CONFIG_PATH = os.path.join(coalition3_path,u'config/')
+    cfg_set_tds = {"CONFIG_PATH": CONFIG_PATH}
+                                
+    ## ===== Read the data source/output configuration file: ============
+    config = configparser.RawConfigParser()
+    config.read(os.path.join(CONFIG_PATH,u"training_dataset.cfg"))
+
+    ## Add source paths:
+    config_ds = config["datasource"]
+    if config_ds["root_path"]=="":
+        root_path_tds = coalition3_path
+    else:
+        root_path = config_ds["root_path"]
+    
+    cfg_set_tds.update({
+        "root_path_tds":      root_path_tds,
+        "PATH_stat_output":   config_ds["PATH_stat_output"],
+        "PATH_stdout_output": config_ds["PATH_stdout_output"]
+    })
+
+    ## Read further config information on the training dataset
+    config_bs = config["basicsetting"]
+    cfg_set_tds.update({
+        "tds_period_start":     datetime.datetime.strptime(config_bs["tds_period_start"], "%Y%m%d").date(),
+        "tds_period_end":       datetime.datetime.strptime(config_bs["tds_period_end"], "%Y%m%d").date(),
+        "dt_samples":           int(config_bs["dt_samples"]),
+        "dt_daily_shift":       int(config_bs["dt_daily_shift"]),
+        "tds_period_start_doy": tds_period_start.timetuple().tm_yday,
+        "tds_period_end_doy":   tds_period_end.timetuple().tm_yday,
+    })
+    
+    return(cfg_set_tds)  
+    
+## Print information before running script:
+def print_config_info_tds(cfg_set_tds,CONFIG_FILE_set):
+    """Print information before running script"""
+    print("\n-------------------------------------------------------------------------------------------------------\n")
+    print_str = '    Configuration of COALITION3 training dataset preparation procedure:'+ \
+    '\n      Date range:       '+cfg_set_tds["tds_period_start"].strftime("%Y-%m-%d")+ \
+        ' to '+cfg_set_tds["tds_period_end"].strftime("%Y-%m-%d")+ \
+    '\n      dt of samples:    '+str(cfg_set_tds["dt_samples"])+"min"+ \
+    '\n      dt change:        '+str(cfg_set_tds["dt_daily_shift"])+"min per day \n"
+    #'\n      Config files:     '+CONFIG_FILE_set+' (Settings)'+ \
+    print(print_str)
+    print("-------------------------------------------------------------------------------------------------------\n")
+    
+    
+## Get settings from config file and some additional static settings:
 def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     """Get information from configuration file and return in a dictionary
     "cfg_set". Furthermore, get data from variable configuration file
@@ -27,7 +111,7 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     CONFIG_PATH : str
         Path to config file.
 
-    ## (DEPRECATED! Names are no hard-coded)
+    ## (DEPRECATED! Names are now hard-coded)
     # CONFIG_FILE_set : str
     #     Name of settings config file.
 
@@ -416,7 +500,7 @@ def return_var_combi_information(var_combi,cfg_var_combi,var_dict,type):
     return return_val
 
 ## Print information before running script:
-def print_config_info(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
+def print_config_info_op(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
     """Print information before running script"""
     print("\n-------------------------------------------------------------------------------------------------------\n")
     print_logo()
