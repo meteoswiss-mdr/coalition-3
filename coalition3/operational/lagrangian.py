@@ -571,7 +571,6 @@ def create_new_disparray(cfg_set,extra_verbose=False,resid=False,precalc=False):
         print("  ... new UV vector lists saved in:\n      %s" % filename)
 
         
-
 ## Displace fields with current displacement arrays:
 def displace_fields(cfg_set, resid=False):
     """Displace fields with current displacement arrays.
