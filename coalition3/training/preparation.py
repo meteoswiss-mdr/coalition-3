@@ -13,6 +13,7 @@ import pandas as pd
 from pandas.api.types import CategoricalDtype
 from coalition3.inout.paths import path_creator
 from coalition3.inout.readconfig import get_config_info_op
+from coalition3.visualisation.TRTcells import print_TRT_cell_histograms, print_TRT_cell_map
 
 sys.path.insert(0, '/opt/users/jmz/monti-pytroll/packages/mpop')
 from mpop.satin import swisstrt
