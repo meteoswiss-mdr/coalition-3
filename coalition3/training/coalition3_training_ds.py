@@ -48,7 +48,7 @@ while time_point is None:
 
 ## Write all stdout ouput to file:
 orig_stdout = sys.stdout
-log_file_path = "%s%s.txt" % (cfg_set_tds["PATH_stdout_output"],time_point.strftime("%Y%m%d%H%M"))
+log_file_path = "%s%s.txt" % (cfg_set_tds["stdout_output_path"],time_point.strftime("%Y%m%d%H%M"))
 log_file = open(log_file_path, 'w')
 sys.stdout = log_file
 
