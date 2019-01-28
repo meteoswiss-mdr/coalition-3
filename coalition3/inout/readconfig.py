@@ -66,15 +66,20 @@ def get_config_info_tds(coalition3_path=None, CONFIG_PATH=None):
         root_path_tds = os.path.join(coalition3_path,u"training/")
     else:
         root_path_tds = config_ds["root_path_tds"]
+    if config_ds["fig_output_path"]=="":
+        root_path_tds = os.path.join(coalition3_path,u"figures/")
+    else:
+        root_path_tds = config_ds["fig_output_path"]
         
     cfg_set_tds.update({
         "root_path":          root_path,
         "root_path_tds":      root_path_tds,
-        "PATH_stat_output":   config_ds["PATH_stat_output"],
-        "PATH_stdout_output": config_ds["PATH_stdout_output"]
+        "fig_output_path":    fig_output_path,
+        "stat_output_path":   config_ds["stat_output_path"],
+        "stdout_output_path": config_ds["stdout_output_path"]
     })
 
-    ## Add training/ path if not yet existent (not in git repo)
+    ## Add training/ and figure/ paths if not yet existent (not in git repo)
     check_create_tmpdir(cfg_set)
     
     ## Read further config information on the training dataset
