@@ -187,6 +187,19 @@ def change_append_TRT_cell_info(cfg_set_tds):
     samples_df.to_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced.pkl"))
     print("   Dataframe saved in: %s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced.pkl"))
 
+## Plot some of the TRT data::
+def exploit_TRT_cell_info(cfg_set_tds):
+    """Exploit information of TRT cells within time period."""
+        
+    print("Exploit information of TRT cells within time period.")
+    samples_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced.pkl"))
+    
+    ## Print histograms:
+    print_TRT_cell_histograms(samples_df,cfg_set_tds)
+    
+    ## Print map of cells:
+    print_TRT_cell_map(samples_df,cfg_set_tds)
+    
 ## Set up the trainings datasets (DEPRECATED):
 def get_empty_tds(cfg_set_tds, cfg_set_input):
     """Create empty xarray field in which to store the statistics (DEPRECATED)."""
