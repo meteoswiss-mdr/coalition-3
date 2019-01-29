@@ -3,6 +3,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import os
 import configparser
 import datetime
 import numpy as np
@@ -10,7 +11,7 @@ import pysteps as st
 
 ## =============================================================================
 ## FUNCTIONS:
-    
+
 ## Provide path to variable array:
 def path_creator_vararr(type,var,cfg_set,
                         path=None,t0=None,
@@ -203,4 +204,48 @@ def path_creator(t, var, source, cfg_set):
         
     else:
         raise NotImplementedError("So far path_creator implemented for radar products (RZC, BZC...), SEVIRI, THX, and COSMO Conv")
+      
+## Function returning the path where the stat_pixc pickle files are stored:
+def get_stat_path(user_argv_path):
+    """Function returning the path where the stat_pixc pickle files are stored"""
+    if user_argv_path is not None:
+        print("\nYou provided the following path to the '<Datetime>_stat_pixcount*.pkl' files:\n  %s" % user_argv_path)
+        correct_path = raw_input("  Is this path correct? [y,n] ")
+        while (correct_path!="n" and correct_path!="y"): correct_path = raw_input("  Is this path correct? [y,n] ")
+        if correct_path=="y":
+            if os.path.exists(user_argv_path):
+                #print("It is assumed that in this directory only "+ \
+                #      "'<Datetime>_stat_pixcount*.pkl' files are stored:\n  %s\n" % user_argv_path)
+                return(os.path.normpath(user_argv_path))
+            else: print("This path does not exist!")
+            
+    user_path = raw_input("\nPlease provide the path to the '<Datetime>_stat_pixcount*.pkl' files:\n  ")
+    while not os.path.exists(user_path):
+        print("This path does not exist: %s" % user_path)
+        user_path = raw_input("\nPlease provide the path to the '<Datetime>_stat_pixcount*.pkl' files:\n  ")
+    #print("It is assumed that in this directory only "+ \
+    #      "'<Datetime>_stat_pixcount*.pkl' files are stored:\n  %s\n" % user_path)
+    return(os.path.normpath(user_path))
     
+## Function returning the path where the pickle file with the logging information is stored:
+def get_log_path(user_argv_path):
+    """Function returning the path where the stat_pixc pickle files are stored"""
+    if user_argv_path is not None:
+        print("\nYou provided the following path to the 'Training_Dataset_Processing_Status.pkl' file:\n  %s" % user_argv_path)
+        correct_path = raw_input("  Is this path correct? [y,n] ")
+        while (correct_path!="n" and correct_path!="y"): correct_path = raw_input("  Is this path correct? [y,n] ")
+        if correct_path=="y":
+            if os.path.exists(user_argv_path):
+                #print("It is assumed that in this directory only "+ \
+                #      "'<Datetime>_stat_pixcount*.pkl' files are stored:\n  %s\n" % user_argv_path)
+                return(os.path.normpath(user_argv_path))
+            else: print("This path does not exist!")
+            
+    user_path = raw_input("\nPlease provide the path to the 'Training_Dataset_Processing_Status.pkl' file:\n  ")
+    while not os.path.exists(user_path):
+        print("This path does not exist: %s" % user_path)
+        user_path = raw_input("\nPlease provide the path to the 'Training_Dataset_Processing_Status.pkl' file:\n  ")
+    #print("It is assumed that in this directory only "+ \
+    #      "'<Datetime>_stat_pixcount*.pkl' files are stored:\n  %s\n" % user_path)
+    return(os.path.normpath(user_path))
+      
