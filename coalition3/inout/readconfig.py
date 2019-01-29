@@ -532,7 +532,7 @@ def print_config_info_op(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
     
     list_of_variables1 = ', '.join([variable for variable in cfg_set["var_list"][ :3]])
     list_of_variables2 = ', '.join([variable for variable in cfg_set["var_list"][-3:]])
-    print_str = '    Configuration of NOSTRADAMUS input date preparation procedure:'+ \
+    print_str = '    Configuration of COALITION3 input date preparation procedure:'+ \
     '\n      Date:             '+cfg_set["t0"].strftime("%Y-%m-%d %H:%M")+ \
     '\n      Reverse mode:     '+str(cfg_set["future_disp_reverse"])+ \
     '\n      Variables displ.: '+str(list_of_variables1)+" ... "+str(list_of_variables2)+ \
