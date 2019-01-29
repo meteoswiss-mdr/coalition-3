@@ -12,9 +12,9 @@ import pysteps as st
 from joblib import Parallel, delayed
 import multiprocessing
 
-from coalition3.inout.paths import path_creator_vararr, path_creator_UV_disparr, path_creator
-from coalition3.inout.iotmp import save_file, load_file
-from coalition3.verification.skillscores import calc_skill_scores, calc_statistics
+import coalition3.inout.paths as pth
+import coalition3.inout.iotmp as iotmp
+import coalition3.verification.skillscores as sksc
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -39,7 +39,7 @@ def check_create_precalc_disparray(cfg_set):
         cfg_set_precalc["t0"] = datetime.datetime(cfg_set["t0"].year,cfg_set["t0"].month,cfg_set["t0"].day,0,0)
         
     ## Check path for precalculated displacement array, and its dimensions:
-    path_name = path_creator_UV_disparr("standard",cfg_set,
+    path_name = pth.path_creator_UV_disparr("standard",cfg_set,
                                         path=cfg_set["UV_precalc_path"],
                                         t0=cfg_set["t0"].strftime("%Y%m%d"))
 
@@ -47,7 +47,7 @@ def check_create_precalc_disparray(cfg_set):
     ## if correct, update, else, create new one.
     if os.path.isfile(path_name):
         #disparr = np.load(path_name)
-        disparr = load_file(path_name,"Vx")
+        disparr = iotmp.load_file(path_name,"Vx")
         if disparr.ndim!=3 or disparr.shape[0]!=(cfg_set_precalc["n_integ"]):
             print("   Dimensions of existent precalculated displacement array do not match current settings.\n   Ndim: "+
                   str(disparr.ndim)+"\n   Shape: "+str(disparr.shape[0])+" instead of "+str(cfg_set_precalc["n_integ"])+"\n   A new one is created")
@@ -81,14 +81,14 @@ def check_create_disparray(cfg_set):
     """
     
     ## Check path for displacement array, and its dimensions:
-    path_name = path_creator_UV_disparr("standard",cfg_set)                                     
+    path_name = pth.path_creator_UV_disparr("standard",cfg_set)                                     
 
     ## In case more than one day is within integration period, check whether all precalculated files are available:
     all_precalc_files_existent = True
     t_integ_ls = datetime_integ_steps(cfg_set)
     if len(np.unique([t_integ.day for t_integ in t_integ_ls]))>1:
         for t_integ in t_integ_ls:
-            path_name_precalc = path_creator_UV_disparr("standard",cfg_set,path=cfg_set["UV_precalc_path"],
+            path_name_precalc = pth.path_creator_UV_disparr("standard",cfg_set,path=cfg_set["UV_precalc_path"],
                                                         t0=t_integ.strftime("%Y%m%d"))
             if not os.path.isfile(path_name_precalc): all_precalc_files_existent = False
         
@@ -96,7 +96,7 @@ def check_create_disparray(cfg_set):
     ## if correct, update, else, create new one.
     if os.path.isfile(path_name):
         #disparr = np.load(path_name)
-        disparr = load_file(path_name,"Vx")
+        disparr = iotmp.load_file(path_name,"Vx")
         ## Check that existing dimensions match the required dimensions:
         if disparr.ndim!=3 or disparr.shape[0]!=(cfg_set["n_integ"]):
             print("   Dimensions of existent displacement array do not match current settings.\n   Ndim: "+
@@ -121,7 +121,7 @@ def read_disparray_from_precalc(cfg_set):
     t_integ_ls = datetime_integ_steps(cfg_set)
     ## Case that all integration time steps are within the same day:
     if len(np.unique([t_integ.day for t_integ in t_integ_ls]))<=1:    
-        path_name = path_creator_UV_disparr("standard",cfg_set,path=cfg_set["UV_precalc_path"],
+        path_name = pth.path_creator_UV_disparr("standard",cfg_set,path=cfg_set["UV_precalc_path"],
                                             t0=cfg_set["t0"].strftime("%Y%m%d"))
         #path_name = "%s/%s_%s_disparr_UV%s.%s" % (cfg_set["UV_precalc_path"], cfg_set["t0"].strftime("%Y%m%d"), #(cfg_set["t0"]-datetime.timedelta(days=1)).strftime("%Y%m%d"),
         #                                          cfg_set["oflow_source"],cfg_set["file_ext_verif"],
@@ -138,7 +138,7 @@ def read_disparray_from_precalc(cfg_set):
         t_ind = range(t1_ind,t2_ind)
     
         ## Get subset of precalculated UV displacement array:
-        UVdisparr = load_file(path_name)
+        UVdisparr = iotmp.load_file(path_name)
         Vx = UVdisparr["Vx"][t_ind,:,:]; Vy = UVdisparr["Vy"][t_ind,:,:]
         Dx = UVdisparr["Dx"][t_ind,:,:]; Dy = UVdisparr["Dy"][t_ind,:,:]
     ## Case that integration time steps span over two days (around 00:00):
@@ -147,9 +147,9 @@ def read_disparray_from_precalc(cfg_set):
         Dy = np.zeros((cfg_set["n_integ"],)+cfg_set["xy_ext"])
         Vx = np.zeros((cfg_set["n_integ"],)+cfg_set["xy_ext"])
         Vy = np.zeros((cfg_set["n_integ"],)+cfg_set["xy_ext"])
-        path_name_file_t0 = path_creator_UV_disparr("standard",cfg_set,path=cfg_set["UV_precalc_path"],
+        path_name_file_t0 = pth.path_creator_UV_disparr("standard",cfg_set,path=cfg_set["UV_precalc_path"],
                                                     t0=t_integ_ls[0].strftime("%Y%m%d"))
-        UVdisparr = load_file(path_name_file_t0)
+        UVdisparr = iotmp.load_file(path_name_file_t0)
         print("   Read from precalculated UV-disparray...\n      %s" % path_name_file_t0)
         t_integ_0_day = t_integ_ls[0].day
         DV_index = 0        
@@ -165,9 +165,9 @@ def read_disparray_from_precalc(cfg_set):
             
             ## If day changes, read in new daily array
             if t_integ_corr.day!=t_integ_0_day:
-                path_name_file_tinteg = path_creator_UV_disparr("standard",cfg_set,path=cfg_set["UV_precalc_path"],
+                path_name_file_tinteg = pth.path_creator_UV_disparr("standard",cfg_set,path=cfg_set["UV_precalc_path"],
                                                                 t0=t_integ_corr.strftime("%Y%m%d"))
-                UVdisparr = load_file(path_name_file_tinteg)
+                UVdisparr = iotmp.load_file(path_name_file_tinteg)
                 print("   Read from precalculated UV-disparray...\n      %s" % path_name_file_tinteg)
                 t_integ_0_day = t_integ_corr.day
                 
@@ -182,12 +182,12 @@ def read_disparray_from_precalc(cfg_set):
             Dx[DV_index,:,:] = UVdisparr["Dx"][UVdisparr_index,:,:]; Dy[DV_index,:,:] = UVdisparr["Dy"][UVdisparr_index,:,:] 
             DV_index += 1            
     
-    filename = path_creator_UV_disparr("standard",cfg_set)
+    filename = pth.path_creator_UV_disparr("standard",cfg_set)
     #filename = "%stmp/%s_%s_disparr_UV%s.%s" % (cfg_set["root_path"], cfg_set["t0"].strftime("%Y%m%d%H%M"),
     #                                            cfg_set["oflow_source"],cfg_set["file_ext_verif"],
     #                                            cfg_set["save_type"])
     print("   ... saving UV-disparray subset in\n      %s" % filename)
-    save_file(filename, data_arr=[Dx,Dy,Vx,Vy],var_name=["Dx","Dy","Vx","Vy"],
+    iotmp.save_file(filename, data_arr=[Dx,Dy,Vx,Vy],var_name=["Dx","Dy","Vx","Vy"],
               cfg_set=cfg_set)
 
 ## Read input to calculate optical flow displacement array for specific time-step
@@ -215,14 +215,14 @@ def calc_disparr(t_current, cfg_set, resid=False):
     
     if resid:
         ## Read in current displaced oflow_source file:
-        filename = path_creator_vararr("disp",cfg_set["oflow_source"],cfg_set)
+        filename = pth.path_creator_vararr("disp",cfg_set["oflow_source"],cfg_set)
         #filename = "%stmp/%s_%s_disp%s.%s" % (cfg_set["root_path"], cfg_set["t0"].strftime("%Y%m%d%H%M"),
         #                                       cfg_set["oflow_source"], cfg_set["file_ext_verif"], cfg_set["save_type"])
         t_diff = cfg_set["t0"] - t_current
         t_diff_ind = int((t_diff.seconds/60)/cfg_set["timestep"])
         #oflow_source_data = np.load(filename)[t_diff_ind:t_diff_ind+cfg_set["n_past_frames"]+1,:,:]
         #oflow_source_data = np.load(filename)[t_diff_ind+cfg_set["n_past_frames_resid"]::-1,:,:][:cfg_set["n_past_frames"]+1]
-        oflow_source_data = load_file(filename,cfg_set["oflow_source"])[t_diff_ind+cfg_set["n_past_frames_resid"]::-1,:,:][:cfg_set["n_past_frames"]+1]
+        oflow_source_data = iotmp.load_file(filename,cfg_set["oflow_source"])[t_diff_ind+cfg_set["n_past_frames_resid"]::-1,:,:][:cfg_set["n_past_frames"]+1]
         if oflow_source_data.shape[0]==1:
             UV = R = np.zeros((2,oflow_source_data.shape[1],oflow_source_data.shape[2]))
             if not cfg_set["UV_inter"]: return UV, R
@@ -231,7 +231,7 @@ def calc_disparr(t_current, cfg_set, resid=False):
             raise ValueError("Input data equal")
     else:
         ## Read in current oflow_source file:
-        filenames, timestamps = path_creator(t_current, cfg_set["oflow_source"], cfg_set["source_dict"][cfg_set["oflow_source"]], cfg_set)
+        filenames, timestamps = pth.path_creator(t_current, cfg_set["oflow_source"], cfg_set["source_dict"][cfg_set["oflow_source"]], cfg_set)
         ret = metranet.read_file(filenames[0], physic_value=True)
         oflow_source_data = np.atleast_3d(ret.data)
         for filename in filenames[1:]:
@@ -507,40 +507,40 @@ def create_new_disparray(cfg_set,extra_verbose=False,resid=False,precalc=False):
             t0_str = (cfg_set["t0"]-datetime.timedelta(days=1)).strftime("%Y%m%d")
         else: 
             t0_str = cfg_set["t0"].strftime("%Y%m%d")
-        filename = path_creator_UV_disparr(type,cfg_set,
+        filename = pth.path_creator_UV_disparr(type,cfg_set,
                                            path=cfg_set["UV_precalc_path"],
                                            t0=t0_str)
         #filename1 = "%s/%s_%s_disparr_UV%s%s.%s" % (cfg_set["UV_precalc_path"], (cfg_set["t0"]-datetime.timedelta(days=1)).strftime("%Y%m%d"),
         #                                           cfg_set["oflow_source"],append_str_resid,cfg_set["file_ext_verif"],
         #                                           cfg_set["save_type"])
     else:
-        filename = path_creator_UV_disparr(type,cfg_set)
+        filename = pth.path_creator_UV_disparr(type,cfg_set)
         #filename = "%stmp/%s_%s_disparr_UV%s%s.%s" % (cfg_set["root_path"], cfg_set["t0"].strftime("%Y%m%d%H%M"),
         #                                              cfg_set["oflow_source"],append_str_resid,cfg_set["file_ext_verif"],
         #                                              cfg_set["save_type"])
                                                   
     #np.savez(filename, Dx=Dx, Dy=Dy, Vx=Vx, Vy=Vy)
-    save_file(filename, data_arr=[Dx,Dy,Vx,Vy],var_name=["Dx","Dy","Vx","Vy"],
+    iotmp.save_file(filename, data_arr=[Dx,Dy,Vx,Vy],var_name=["Dx","Dy","Vx","Vy"],
               cfg_set=cfg_set)
     print("  ... new displacement array saved in:\n       %s" % filename)
         
     ## Save combined displacement array (initial displacment + residual displacment):
     if cfg_set["resid_disp_onestep"] and resid:
         ## Load initial displacement field:
-        filename_ini = path_creator_UV_disparr("standard",cfg_set)
+        filename_ini = pth.path_creator_UV_disparr("standard",cfg_set)
         #filename_ini = "%stmp/%s_%s_disparr_UV%s.%s" % (cfg_set["root_path"], cfg_set["t0"].strftime("%Y%m%d%H%M"),
         #                                                    cfg_set["oflow_source"],cfg_set["file_ext_verif"],
         #                                                    cfg_set["save_type"])
-        UVdisparr_ini = load_file(filename_ini)       
+        UVdisparr_ini = iotmp.load_file(filename_ini)       
         
         ## Save summation of initial and residual displacment field
-        filename_combi = path_creator_UV_disparr("resid_combi",cfg_set)
+        filename_combi = pth.path_creator_UV_disparr("resid_combi",cfg_set)
         #filename_combi = "%stmp/%s_%s_disparr_UV_resid_combi%s.%s" % (cfg_set["root_path"], cfg_set["t0"].strftime("%Y%m%d%H%M"),
         #                                                              cfg_set["oflow_source"],cfg_set["file_ext_verif"],
         #                                                              cfg_set["save_type"])
         #np.savez(filename_combi, Dx=Dx+UVdisparr_ini["Dx"], Dy=Dy+UVdisparr_ini["Dy"],
         #                         Vx=Vx+UVdisparr_ini["Vx"], Vy=Vy+UVdisparr_ini["Vy"])
-        save_file(filename_combi, data_arr=[Dx+UVdisparr_ini["Dx"][:,:,:],Dy+UVdisparr_ini["Dy"][:,:,:],
+        iotmp.save_file(filename_combi, data_arr=[Dx+UVdisparr_ini["Dx"][:,:,:],Dy+UVdisparr_ini["Dy"][:,:,:],
                                             Vx+UVdisparr_ini["Vx"][:,:,:],Vy+UVdisparr_ini["Vy"][:,:,:]],
                   var_name=["Dx","Dy","Vx","Vy"],cfg_set=cfg_set)
         print("  ... combined displacement array saved in:\n       %s" % filename_combi)
@@ -548,7 +548,7 @@ def create_new_disparray(cfg_set,extra_verbose=False,resid=False,precalc=False):
     ## Also save intermediate UV motion vectors:
     if cfg_set["UV_inter"]:
         type_vec = "vec_resid" if resid else "vec"
-        filename = path_creator_UV_disparr(type_vec,cfg_set,save_type="npz")
+        filename = pth.path_creator_UV_disparr(type_vec,cfg_set,save_type="npz")
         #filename = "%stmp/%s_%s_disparr_UV_vec%s%s.%s" % (cfg_set["root_path"], cfg_set["t0"].strftime("%Y%m%d%H%M"),
         #                                                   cfg_set["oflow_source"],append_str_resid,cfg_set["file_ext_verif"],
         #                                                   cfg_set["save_type"])
@@ -566,7 +566,7 @@ def create_new_disparray(cfg_set,extra_verbose=False,resid=False,precalc=False):
         
         ## Save intermediate UV motion vectors:
         #np.savez(filename, UV_vec=UV_vec, UV_vec_sp=UV_vec_sp)
-        save_file(filename, data_arr=[UV_vec,UV_vec_sp],
+        iotmp.save_file(filename, data_arr=[UV_vec,UV_vec_sp],
                   var_name=["UV_vec","UV_vec_sp"],cfg_set=cfg_set,filetype="npy")
         print("  ... new UV vector lists saved in:\n      %s" % filename)
 
@@ -603,12 +603,12 @@ def displace_fields(cfg_set, resid=False):
     print_options = [input_suffix,output_suffix,input_UV_suffix,append_str]
     
     ## Get current UV-field
-    filename = path_creator_UV_disparr(input_UV_suffix,cfg_set)
+    filename = pth.path_creator_UV_disparr(input_UV_suffix,cfg_set)
     #filename = "%stmp/%s_%s_disparr_UV%s%s.%s" % (cfg_set["root_path"], cfg_set["t0"].strftime("%Y%m%d%H%M"),
     #                                              cfg_set["oflow_source"], input_UV_suffix, cfg_set["file_ext_verif"],
     #                                              cfg_set["save_type"])
     #UVdisparr = np.load(filename)
-    UVdisparr = load_file(filename)
+    UVdisparr = iotmp.load_file(filename)
     Vx = UVdisparr["Vx"][:,:,:]; Vy = UVdisparr["Vy"][:,:,:]
     #if var=="TRT":
     #    UV_t0 = np.moveaxis(np.dstack((-Vx[-1,:,:],-Vy[-1,:,:])),2,0)
@@ -685,10 +685,10 @@ def displace_specific_variable(var,cfg_set,print_options,UV_t0,Dx_sum,Dy_sum,
     precalc_XYW = False if (XYW_prev_0 is None or XYW_prev_1 is None) else True
     
     if cfg_set["verbose"]: print("  ... "+var+" is displaced%s" % append_str)
-    filename = path_creator_vararr(input_suffix,var,cfg_set)
+    filename = pth.path_creator_vararr(input_suffix,var,cfg_set)
     #filename = "%stmp/%s_%s%s%s.%s" % (cfg_set["root_path"], cfg_set["t0"].strftime("%Y%m%d%H%M"), var,
     #                                   input_suffix, cfg_set["file_ext_verif"], cfg_set["save_type"])
-    vararr = load_file(filename,var_name=var)
+    vararr = iotmp.load_file(filename,var_name=var)
         
     ## Loop over time steps to create displaced array:
     vararr_disp = np.copy(vararr)
@@ -737,11 +737,11 @@ def displace_specific_variable(var,cfg_set,print_options,UV_t0,Dx_sum,Dy_sum,
     #if cfg_set["use_precalc_XYW"]: precalc_XYW = True
                 
     ## Save displaced variable:
-    filename = path_creator_vararr(output_suffix,var,cfg_set)
+    filename = pth.path_creator_vararr(output_suffix,var,cfg_set)
     #filename = "%stmp/%s_%s%s%s.%s" % (cfg_set["root_path"], cfg_set["t0"].strftime("%Y%m%d%H%M"), var,
     #                                    output_suffix, cfg_set["file_ext_verif"], cfg_set["save_type"])
     #np.save(filename, vararr_disp)
-    save_file(filename, data_arr=vararr_disp,var_name=var,cfg_set=cfg_set)
+    iotmp.save_file(filename, data_arr=vararr_disp,var_name=var,cfg_set=cfg_set)
     if cfg_set["verbose"]: print("      "+var+" displaced array is saved")
             
     ## In case verification of displacements should be performed:
@@ -749,8 +749,8 @@ def displace_specific_variable(var,cfg_set,print_options,UV_t0,Dx_sum,Dy_sum,
         ## Do not calculate skill scores if residual movement is corrected
         ## but currently, the initial displacement was just calculated.
         #if not (cfg_set["resid_disp"] and resid): break
-        calc_skill_scores(cfg_set,var,vararr_disp)
-        calc_statistics(cfg_set,var,vararr_disp)
+        sksc.calc_skill_scores(cfg_set,var,vararr_disp)
+        sksc.calc_statistics(cfg_set,var,vararr_disp)
     
     ## Retrun precalculated arrays:
     if not precalc_XYW: return XYW_prev_0, XYW_prev_1
