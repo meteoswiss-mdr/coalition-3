@@ -10,9 +10,9 @@ import numpy as np
 from netCDF4 import Dataset
 
 ## WARNING: These paths are hard-coded (also include in cfg file?)
-sys.path.insert(0, '/data/COALITION2/database/radar/ccs4/python')
+#sys.path.insert(0, '/data/COALITION2/database/radar/ccs4/python')
 import metranet
-sys.path.insert(0, '/opt/users/jmz/monti-pytroll/packages/mpop')
+#sys.path.insert(0, '/opt/users/jmz/monti-pytroll/packages/mpop')
 from mpop.satin import swisslightning_jmz, swisstrt, swissradar
 
 ## =============================================================================

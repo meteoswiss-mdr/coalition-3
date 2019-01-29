@@ -12,6 +12,8 @@ import pysteps as st
 from joblib import Parallel, delayed
 import multiprocessing
 
+import metranet
+
 import coalition3.inout.paths as pth
 import coalition3.inout.iotmp as iotmp
 import coalition3.verification.skillscores as sksc

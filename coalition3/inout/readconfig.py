@@ -529,10 +529,13 @@ def print_config_info_op(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
     if cfg_set["verif_param"] == "R_threshold":
         unit_verifparam = " mm/h" if cfg_set["R_thresh_meth"] == "fix" else "% quantile"
     else: unit_verifparam = ""
+    
+    list_of_variables1 = ', '.join([variable for variable in cfg_set["var_list"][ :3]])
+    list_of_variables2 = ', '.join([variable for variable in cfg_set["var_list"][-3:]])
     print_str = '    Configuration of NOSTRADAMUS input date preparation procedure:'+ \
     '\n      Date:             '+cfg_set["t0"].strftime("%Y-%m-%d %H:%M")+ \
     '\n      Reverse mode:     '+str(cfg_set["future_disp_reverse"])+ \
-    '\n      Variables displ.: '+str(cfg_set["var_list"])+ \
+    '\n      Variables displ.: '+str(list_of_variables1)+" ... "+str(list_of_variables2)+ \
     '\n      Save file type:   '+'.'+str(cfg_set["save_type"])+' file'+ \
     '\n      Oflow data:       '+cfg_set["oflow_source"]+ \
     '\n      Oflow method:     '+cfg_set["oflow_method_name"]+ \
