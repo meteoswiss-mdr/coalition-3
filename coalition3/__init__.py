@@ -4,8 +4,12 @@ import os
 import configparser
 
 ## Read paths from config file:
+file_path = os.path.realpath(__file__)
+cfg_path = os.path.abspath(
+                os.path.join(file_path,
+                             u"../../config/dependency_paths.cfg"))
 config = configparser.RawConfigParser()
-config.read(os.path.abspath(u"../config/dependency_paths.cfg")
+config.read(cfg_path)
 
 ## Adding pySTEPS path:
 sys.path.append(config["dependency_paths"]["pysteps_path"])
