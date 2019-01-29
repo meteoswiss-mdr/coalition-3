@@ -7,7 +7,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import pickle
-import matplotlib.pyplot as plt
+import matplotlib.pylab as plt
 
 from coalition3.inout.paths import path_creator
 

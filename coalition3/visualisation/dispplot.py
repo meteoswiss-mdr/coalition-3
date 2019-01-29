@@ -8,7 +8,7 @@ import os
 import datetime
 import numpy as np
 import pysteps as st
-import matplotlib.pyplot as plt
+import matplotlib.pylab as plt
 from coalition3.inout.paths import path_creator_vararr, path_creator_UV_disparr
 from coalition3.inout.iotmp import load_file
 

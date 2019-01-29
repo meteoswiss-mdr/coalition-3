@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import datetime
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pylab as plt
 import matplotlib.patheffects as pe
 import matplotlib.patches as patches
 from PIL import Image
