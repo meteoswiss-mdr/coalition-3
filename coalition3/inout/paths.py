@@ -93,7 +93,7 @@ def path_creator_UV_disparr(type,cfg_set,path=None,t0=None,
 def path_creator(t, var, source, cfg_set):
     """Provide path to different data sources."""
     config = configparser.RawConfigParser()
-    config.read(os.path.join(CONFIG_PATH,"input_data.cfg"))
+    config.read(os.path.join(cfg_set["CONFIG_PATH"],"input_data.cfg"))
     var_path_str = var+"_path"
     
     if source == "RADAR":
