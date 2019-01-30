@@ -5,6 +5,7 @@
 /tmp
 /figures
 /training
+#*_old/
 
 # THE FOLLOWING ENTRIES WERE COPIED FROM THE .gitignore OF THE pySTEPS repository
 
