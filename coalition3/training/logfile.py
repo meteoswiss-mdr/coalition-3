@@ -5,6 +5,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import os
 import datetime
 import numpy as np
 import pandas as pd
@@ -18,7 +19,7 @@ def setup_log_file(cfg_set_tds,cfg_set_input):
     """Make log file which is containing information on training dataset generation."""
     
     print("Create file containing processing status of training dataset generation.")
-    samples_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced_5min.pkl"))
+    samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced.pkl"))
     samples_df = samples_df.reset_index(drop=True)
         
     ## Only keep RANKs bigger than minimum value:
