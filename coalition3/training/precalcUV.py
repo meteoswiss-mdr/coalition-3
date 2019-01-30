@@ -21,6 +21,7 @@ import coalition3.inout.readconfig as cfg
 
 ## Input basics
 t0_str = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d").strftime("%Y%m%d%H%M")
+type   = sys.argv[2]
 
 ## Generate config dictionary
 cfg_set, cfg_var, cfg_var_combi = cfg.get_config_info_op()
@@ -28,14 +29,28 @@ cfg_set = cfg.cfg_set_append_t0(cfg_set,t0_str)
 cfg.print_config_info_op(cfg_set)
 cfg_set["verbose"] = False
 
+## Set settings such that the UV fields are calculated from past to present:
+cfg_set["future_disp_reverse"] = False
+cfg_set["time_change_factor"]  = 1
+
 ## Check whether Displacement array is already existent, otherwise create it.
 ## If existent, replace with newest displacement
-print("  Precalcualte displacement field for %s" % cfg_set["t0"].strftime("%Y-%m-%d %H:%M"))
+print("  Pre-calculate displacement field for %s" % cfg_set["t0"].strftime("%Y-%m-%d %H:%M"))
 t1 = datetime.datetime.now()
 lag.check_create_precalc_disparray(cfg_set)
 t2 = datetime.datetime.now()
 print("  Elapsed time for creating precalculated displacement array: "+str(t2-t1)+"\n")
 
+## In case the type is set to training, also pre-calculate reversed flow field:
+if type == "training":
+    cfg_set["future_disp_reverse"] = True
+    cfg_set["time_change_factor"]  = -1
+    print("  Pre-calculate reversed displacement field for %s" % cfg_set["t0"].strftime("%Y-%m-%d %H:%M"))
+    t1 = datetime.datetime.now()
+    lag.check_create_precalc_disparray(cfg_set)
+    t2 = datetime.datetime.now()
+    print("  Elapsed time for creating precalculated displacement array: "+str(t2-t1)+"\n")
+    
 """
 ## Update the data for the next 5min step:
 while cfg_set["t0"].month < 10:
