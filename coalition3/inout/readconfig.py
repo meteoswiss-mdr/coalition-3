@@ -67,9 +67,9 @@ def get_config_info_tds(coalition3_path=None, CONFIG_PATH=None):
     else:
         root_path_tds = config_ds["root_path_tds"]
     if config_ds["fig_output_path"]=="":
-        root_path_tds = os.path.join(coalition3_path,u"figures/")
+        fig_output_path = os.path.join(coalition3_path,u"figures/")
     else:
-        root_path_tds = config_ds["fig_output_path"]
+        fig_output_path = config_ds["fig_output_path"]
         
     cfg_set_tds.update({
         "root_path":          root_path,
@@ -80,13 +80,15 @@ def get_config_info_tds(coalition3_path=None, CONFIG_PATH=None):
     })
 
     ## Add training/ and figure/ paths if not yet existent (not in git repo)
-    check_create_tmpdir(cfg_set)
+    check_create_tmpdir(cfg_set_tds)
     
     ## Read further config information on the training dataset
     config_bs = config["basicsetting"]
+    tds_period_start = dt.datetime.strptime(config_bs["tds_period_start"], "%Y%m%d").date()
+    tds_period_end   = dt.datetime.strptime(config_bs["tds_period_end"], "%Y%m%d").date()
     cfg_set_tds.update({
-        "tds_period_start":     datetime.datetime.strptime(config_bs["tds_period_start"], "%Y%m%d").date(),
-        "tds_period_end":       datetime.datetime.strptime(config_bs["tds_period_end"], "%Y%m%d").date(),
+        "tds_period_start":     tds_period_start,
+        "tds_period_end":       tds_period_end,
         "dt_samples":           int(config_bs["dt_samples"]),
         "dt_daily_shift":       int(config_bs["dt_daily_shift"]),
         "tds_period_start_doy": tds_period_start.timetuple().tm_yday,
@@ -96,7 +98,7 @@ def get_config_info_tds(coalition3_path=None, CONFIG_PATH=None):
     return(cfg_set_tds)  
     
 ## Print information before running script:
-def print_config_info_tds(cfg_set_tds,CONFIG_FILE_set):
+def print_config_info_tds(cfg_set_tds):
     """Print information before running script"""
     print("\n-------------------------------------------------------------------------------------------------------\n")
     print_str = '    Configuration of COALITION3 training dataset preparation procedure:'+ \
