@@ -37,6 +37,7 @@ def displace_variables(cfg_set_input,cfg_var,reverse):
     print_reverse = "future" if reverse else "past"
     cfg_set["future_disp_reverse"] = True if reverse else False
     cfg_set["time_change_factor"]  = -1 if reverse else 1
+    
     print("Displace %s observations to time step: %s" % (print_reverse,cfg_set["t0"].strftime("%Y-%m-%d %H:%M")))
     cfg_set["verbose"] = False
     
