@@ -23,7 +23,7 @@ import coalition3.training.missing as miss
 cfg_set_tds = cfg.get_config_info_tds()
 cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
 cfg.print_config_info_tds(cfg_set_tds)
-"""
+
 ## Set up list with sampling datetime objects 
 t1 = datetime.datetime.now()
 dt_sampling_list = prep.create_dt_sampling_list(cfg_set_tds)
@@ -45,7 +45,6 @@ prep.exploit_TRT_cell_info(cfg_set_tds)
 
 ## Print primarily basic information on the training dataset (without reading the data!):
 prep.print_basic_info(cfg_set_tds)
-"""
 
 ## Check for missing input data and save these in pandas dataframe
 ## WARNING: Quite time consuming (loops over 5min time steps to check existence of files)
