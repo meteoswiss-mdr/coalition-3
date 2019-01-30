@@ -92,7 +92,7 @@ def print_TRT_cell_map(samples_df,cfg_set_tds):
     dem = Image.open(dem_path)
     dem = np.array(dem.convert('P'))
 
-    sf = shapefile.Reader(shp_path)
+    sf = shapefile.Reader(shp_path) #, encoding='utf-8')
     # for shape in sf.shapeRecords():
         # x = [i[0] for i in shape.shape.points[:]]
         # y = [i[1] for i in shape.shape.points[:]]
@@ -103,15 +103,20 @@ def print_TRT_cell_map(samples_df,cfg_set_tds):
     axes.imshow(dem, extent=(255000,965000,-160000,480000), cmap='gray')
         
     ## Plot in swiss coordinates (radar CCS4 in LV03 coordinates)
-    for shape in sf.shapeRecords():
-        lon = [i[0] for i in shape.shape.points[:]]
-        lat = [i[1] for i in shape.shape.points[:]]
-        
-        ## Convert to swiss coordinates
-        x,y = lonlat2xy(lon, lat)
-        #x = lon
-        #y = lat
-        axes.plot(x,y,color='b',linewidth=1)
+    try:
+        shp_records = sf.shapeRecords()
+    except UnicodeDecodeError:
+        print("   *** Warning: No country shape plotted (UnicodeDecodeErrror)")
+    else:
+        for shape in sf.shapeRecords():
+            lon = [i[0] for i in shape.shape.points[:]]
+            lat = [i[1] for i in shape.shape.points[:]]
+            
+            ## Convert to swiss coordinates
+            x,y = lonlat2xy(lon, lat)
+            #x = lon
+            #y = lat
+            axes.plot(x,y,color='b',linewidth=1)
         
     ## Convert lat/lon to Swiss coordinates:
     axes.scatter(samples_df["LV03_x"].loc[samples_df["category"] == "DEVELOPING"],
