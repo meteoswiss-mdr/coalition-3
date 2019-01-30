@@ -140,14 +140,14 @@ def get_TRT_cell_info(dt_sampling_list,cfg_set_tds,cfg_set_input=None,len_ini_df
     print("   Number of different TRT cells: %s\n" % len(np.unique(samples_df["traj_ID"])))
     print(samples_df.info(),"\n")
     print(samples_df,"\n")
-    samples_df.to_pickle(os.path.join(cfg_set_tds["root_path_tds"],u"TRT_sampling_df_testset.pkl"))
-    print("   Dataframe saved in: %s" % os.path.join(cfg_set_tds["root_path_tds"],u"TRT_sampling_df_testset.pkl"))
+    samples_df.to_pickle(os.path.join(cfg_set_tds["root_path_tds"],u"Training_Dataset_Sampling.pkl"))
+    print("   Dataframe saved in: %s" % os.path.join(cfg_set_tds["root_path_tds"],u"Training_Dataset_Sampling.pkl"))
     return(samples_df)
 
 ## Print some basic information on the TRT cells which will be sampled:
 def print_basic_info(cfg_set_tds):
     samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
-                                             u"TRT_sampling_df_testset_enhanced.pkl"))
+                                             u"Training_Dataset_Sampling_enhanced.pkl"))
     print("Basic information on the training dataset:")
     print("   Number of different TRT cells:      %s" % len(np.unique(samples_df["traj_ID"])))
     print("   Number of different time steps:     %s" % len(np.unique(samples_df["date"])))
@@ -159,7 +159,7 @@ def change_append_TRT_cell_info(cfg_set_tds):
     
     print("Enhance and correct information of TRT cells within time period.")
     samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
-                                u"TRT_sampling_df_testset.pkl"))
+                                u"Training_Dataset_Sampling.pkl"))
         
     ## Change datatypes
     ## Old:
@@ -186,8 +186,8 @@ def change_append_TRT_cell_info(cfg_set_tds):
                                               ordered=True)
     
     ## Save new dataset
-    samples_df.to_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced.pkl"))
-    print("   Dataframe saved in: %s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced.pkl"))
+    samples_df.to_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"Training_Dataset_Sampling_enhanced.pkl"))
+    print("   Dataframe saved in: %s%s" % (cfg_set_tds["root_path_tds"],"Training_Dataset_Sampling_enhanced.pkl"))
 
 ## Plot some of the TRT data::
 def exploit_TRT_cell_info(cfg_set_tds):
@@ -195,7 +195,7 @@ def exploit_TRT_cell_info(cfg_set_tds):
         
     print("Exploit information of TRT cells within time period.")
     samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
-                                u"TRT_sampling_df_testset_enhanced.pkl"))
+                                u"Training_Dataset_Sampling_enhanced.pkl"))
     
     ## Print histograms:
     TRTvis.print_TRT_cell_histograms(samples_df,cfg_set_tds)
@@ -215,7 +215,7 @@ def get_empty_tds(cfg_set_tds, cfg_set_input):
         print("Create xarray dataset for trainings:")
     
     ## Read in samples dataframe:
-    samples_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced.pkl"))
+    samples_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"Training_Dataset_Sampling_enhanced.pkl"))
     samples_df_subset = samples_df.loc[samples_df["RANKr"] >= cfg_set_input["min_TRT_rank"]]
     
     ## Get values of coordinates:
