@@ -85,10 +85,9 @@ def print_TRT_cell_map(samples_df,cfg_set_tds):
     """Print map of TRT cells."""
     ## Load DEM and Swiss borders
     
-    shp_path = "%s%s" % (os.path.join(cfg_set_tds["root_path"],
-                         u"data/shapefile/Shapefile_and_DTM/CHE_adm0.shp"))
+    shp_path = os.path.join(cfg_set_tds["root_path"],u"data/shapefile/CHE_adm0.shp")
     #shp_path = "%s%s" % (cfg_set_tds["CONFIG_PATH_set_train"],"Shapefile_and_DTM/CCS4_merged_proj_clip_G05_countries.shp")
-    dem_path = "%s%s" % (os.path.join(cfg_set_tds["root_path"],u"data/DEM/ccs4.png"))
+    dem_path = os.path.join(cfg_set_tds["root_path"],u"data/DEM/ccs4.png")
 
     dem = Image.open(dem_path)
     dem = np.array(dem.convert('P'))

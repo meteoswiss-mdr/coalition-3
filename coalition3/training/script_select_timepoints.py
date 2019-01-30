@@ -27,14 +27,14 @@ t1 = datetime.datetime.now()
 dt_sampling_list = prep.create_dt_sampling_list(cfg_set_tds)
 t2 = datetime.datetime.now()
 print("  Elapsed time for creation of sampling timepoint list: "+str(t2-t1)+"\n")
-
+"""
 ## Get information on TRT cells for all  these time steps:
 ## WARNING: Quite time consuming (opens all TRT files within time-frame)
 t1 = datetime.datetime.now()
 samples_df = prep.get_TRT_cell_info(dt_sampling_list,cfg_set_tds,cfg_set_input,len_ini_df=100000)
 t2 = datetime.datetime.now()
 print("  Elapsed time for creation of sample dataframe: "+str(t2-t1)+"\n")
-
+"""
 ## Change and append some of the TRT cell values or append additional columns:
 prep.change_append_TRT_cell_info(cfg_set_tds)
 

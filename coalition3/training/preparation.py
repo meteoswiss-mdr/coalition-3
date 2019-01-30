@@ -16,7 +16,7 @@ from mpop.satin import swisstrt
 
 import coalition3.inout.paths as path
 import coalition3.inout.readconfig as cfg
-import coalition3.visualisation.TRTcells as TRTvis print_TRT_cell_histograms, print_TRT_cell_map, lonlat2xy
+import coalition3.visualisation.TRTcells as TRTvis
 
 ## =============================================================================
 ## FUNCTIONS:
