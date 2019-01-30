@@ -19,7 +19,7 @@ def setup_log_file(cfg_set_tds,cfg_set_input):
     """Make log file which is containing information on training dataset generation."""
     
     print("Create file containing processing status of training dataset generation.")
-    samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],"TRT_sampling_df_testset_enhanced.pkl"))
+    samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],"Training_Dataset_Sampling_enhanced.pkl"))
     samples_df = samples_df.reset_index(drop=True)
         
     ## Only keep RANKs bigger than minimum value:
@@ -47,7 +47,7 @@ def setup_log_file(cfg_set_tds,cfg_set_input):
         #date_i_dt = datetime.datetime.utcfromtimestamp(date_i.astype(int) * 1e-9)
         samples_df, not_avail = check_input_data_availability(samples_df,date_i_dt,cfg_set_input,cfg_set_tds)
         #samples_df, not_avail = check_input_data_availability(samples_df,date_i_dt,None,None,
-        #                                                      "/opt/users/jmz/0_training_NOSTRADAMUS_ANN/Missing_InputData.pkl",
+        #                                                      "/opt/users/jmz/0_training_NOSTRADAMUS_ANN/MissingInputData.pkl",
         #                                                      10,5)
         if not_avail:
             samples_df.loc[samples_df["date"]==date_i, "Processed"] = True
@@ -148,7 +148,7 @@ def check_input_data_availability(samples_df,time_point,cfg_set_input,cfg_set_td
                                   missing_date_df_path=None,n_integ=None,timestep=None):
                                   
     if missing_date_df_path is None:
-        missing_date_df_path = "%s%s" % (cfg_set_tds["root_path_tds"],"Missing_InputData.pkl")
+        missing_date_df_path = "%s%s" % (cfg_set_tds["root_path_tds"],"MissingInputData.pkl")
     if n_integ is None:
         n_integ = cfg_set_input["n_integ"]
     if timestep is None:
@@ -158,7 +158,6 @@ def check_input_data_availability(samples_df,time_point,cfg_set_input,cfg_set_td
                                                time_point+n_integ*datetime.timedelta(minutes=timestep),
                                                freq=str(timestep)+'Min')
     with open(missing_date_df_path, "rb") as path: missing_date_df = pickle.load(path)
-    #missing_date_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"Missing_InputData.pkl"))    
     t_ind = (missing_date_df.index >= dates_of_needed_input_data[0]) & \
             (missing_date_df.index <= dates_of_needed_input_data[-1])
 
