@@ -3,6 +3,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import os
 import datetime
 import numpy as np
 import pandas as pd
@@ -49,8 +50,8 @@ def create_df_missing(cfg_set_tds,cfg_set_input,cfg_var,check_sources):
             df_missing.loc[sampling_time,"THX"] = True
     
     
-    df_missing.to_pickle(os.path.join(cfg_set_tds["root_path_tds"],u"Missing_InputData.pkl"))
-    print("Save dataframe to %s" % (os.path.join(cfg_set_tds["root_path_tds"],u"Missing_InputData.pkl"))
+    df_missing.to_pickle(os.path.join(cfg_set_tds["root_path_tds"],u"MissingInputData.pkl"))
+    print("Save dataframe to %s" % (os.path.join(cfg_set_tds["root_path_tds"],u"MissingInputData.pkl")))
     return df_missing
 
 ## Analyse missing input data datasets:
@@ -65,16 +66,20 @@ def analyse_df_missing(cfg_set_tds,cfg_set_input,cfg_var,check_sources):
     columns_list = np.concatenate([RADAR_vars,check_sources[1:]])  
     
     print("Number off missing input datasets:")
-    df_missing = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],u"Missing_InputData.pkl"))
+    df_missing = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],u"MissingInputData.pkl"))
     for var in columns_list: print("  %s: %s" % (var,np.sum(df_missing[var])))
     
     df_missing_SEVIRI = df_missing.loc[df_missing["SEVIRI"]==True,"SEVIRI"]
     df_missing_COSMO  = df_missing.loc[df_missing["COSMO_CONV"]==True,"SEVIRI"]
 
-    df_missing_SEVIRI.groupby(df_missing_SEVIRI.index.month).count().plot(kind="bar")
-    plt.show()
-    df_missing_COSMO.groupby(df_missing_COSMO.index.month).count().plot(kind="bar")
-    plt.show()
+    if len(df_missing_SEVIRI.index.month)>0:
+        df_missing_SEVIRI.groupby(df_missing_SEVIRI.index.month).count().plot(kind="bar")
+        plt.title("Number of missing\nSEVIRI files per month")
+        plt.show()
+    if len(df_missing_COSMO.index.month)>0:
+        df_missing_COSMO.groupby(df_missing_COSMO.index.month).count().plot(kind="bar")
+        plt.title("Number of missing\nCOSMO files per month")
+        plt.show()
     
     df_missing_SEVIRI["datetime"] = df_missing_SEVIRI.index
     df_missing_COSMO["datetime"]  = df_missing_COSMO.index
@@ -83,9 +88,9 @@ def analyse_df_missing(cfg_set_tds,cfg_set_input,cfg_var,check_sources):
     print("Dates with missing COSMO data:")
     print(np.unique([pd.to_datetime(date).replace(hour=0,minute=0) for date in df_missing_COSMO_dates]))
     
-    df_missing.loc[df_missing["SEVIRI"]==True,"SEVIRI"].to_csv(os.path.join(cfg_set_tds["root_path_tds"],u"Missing_InputData_SEVIRI.csv"),
+    df_missing.loc[df_missing["SEVIRI"]==True,"SEVIRI"].to_csv(os.path.join(cfg_set_tds["root_path_tds"],u"MissingInputData_SEVIRI.csv"),
                                                                index_label=True,index=True,sep=";")
-    df_missing.loc[df_missing["COSMO_CONV"]==True,"COSMO_CONV"].to_csv(os.path.join(cfg_set_tds["root_path_tds"],u"Missing_InputData_COSMO_CONV.csv"),
+    df_missing.loc[df_missing["COSMO_CONV"]==True,"COSMO_CONV"].to_csv(os.path.join(cfg_set_tds["root_path_tds"],u"MissingInputData_COSMO_CONV.csv"),
                                                                index_label=True,index=True,sep=";")
     
 
