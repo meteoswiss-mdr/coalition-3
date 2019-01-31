@@ -75,11 +75,11 @@ def analyse_df_missing(cfg_set_tds,cfg_set_input,cfg_var,check_sources):
     if len(df_missing_SEVIRI.index.month)>0:
         df_missing_SEVIRI.groupby(df_missing_SEVIRI.index.month).count().plot(kind="bar")
         plt.title("Number of missing\nSEVIRI files per month")
-        plt.show()
+        plt.pause(4)
     if len(df_missing_COSMO.index.month)>0:
         df_missing_COSMO.groupby(df_missing_COSMO.index.month).count().plot(kind="bar")
         plt.title("Number of missing\nCOSMO files per month")
-        plt.show()
+        plt.pause(4)
     
     df_missing_SEVIRI["datetime"] = df_missing_SEVIRI.index
     df_missing_COSMO["datetime"]  = df_missing_COSMO.index

@@ -13,6 +13,7 @@ import shutil
 import numpy as np
 import pandas as pd
 
+from coalition3.inout.readconfig import form_size
 import coalition3.operational.lagrangian as lag
 import coalition3.operational.inputdata as ipt
 import coalition3.operational.statistics as sta
