@@ -12,6 +12,8 @@ import pdb
 import numpy as np
 import pandas as pd
 
+import coalition3.training.processing as prc
+
 ## =============================================================================
 ## FUNCTIONS:
 
@@ -134,7 +136,7 @@ def read_edit_log_file(cfg_set_tds,cfg_set_input,process_point,t0_object=None,lo
         dates_old = samples_df.loc[samples_df["Processing_End"]<datetime.datetime.now()-datetime.timedelta(hours=2),["Processing_Start"]]
         if len(dates_old)>0:
             dates_old_unique_str = np.unique(dates_old.iloc[:,0].dt.strftime('%Y%m%d%H%M'))
-            for date_str in dates_old_unique_str[:-1]: clean_disparr_vararr_tmp(cfg_set_input,fix_t0_str=date_str)
+            for date_str in dates_old_unique_str[:-1]: prc.clean_disparr_vararr_tmp(cfg_set_input,fix_t0_str=date_str)
         
         ## Save the log file as pickle and as csv:
         with open(log_file_path, "wb") as output_file: pickle.dump(samples_df, output_file, protocol=-1)
