@@ -6,6 +6,7 @@
 /figures
 /training
 #*_old/
+nohup*
 
 # THE FOLLOWING ENTRIES WERE COPIED FROM THE .gitignore OF THE pySTEPS repository
 
