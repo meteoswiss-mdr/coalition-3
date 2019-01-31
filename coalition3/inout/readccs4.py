@@ -9,11 +9,10 @@ import datetime
 import numpy as np
 from netCDF4 import Dataset
 
-## WARNING: These paths are hard-coded (also include in cfg file?)
-#sys.path.insert(0, '/data/COALITION2/database/radar/ccs4/python')
 import metranet
-#sys.path.insert(0, '/opt/users/jmz/monti-pytroll/packages/mpop')
 from mpop.satin import swisslightning_jmz, swisstrt, swissradar
+
+import coalition3.inout.paths as pth
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -236,19 +235,19 @@ def get_vararr_t(t_current, var, cfg_set):
     source = cfg_set["source_dict"][var]
     ## Implement different reader for different variable:
     if source == "RADAR":
-        filenames, timestamps = path_creator(t_current, var, source, cfg_set)
+        filenames, timestamps = pth.path_creator(t_current, var, source, cfg_set)
         index_timestep = np.where([timestamp==t_current for timestamp in timestamps])[0][0]
         vararr = metranet.read_file(filenames[index_timestep], physic_value=True)
         #print(t_current,np.nanmax(vararr.data))
         vararr = np.moveaxis(np.atleast_3d(vararr.data),2,0)
         return vararr
     elif source == "THX":
-        filenames, timestamps = path_creator(t_current, var, source, cfg_set)
+        filenames, timestamps = pth.path_creator(t_current, var, source, cfg_set)
         vararr = read_lightning_data(var, filenames, cfg_set, t_current)
         vararr = np.moveaxis(np.atleast_3d(vararr),2,0)#np.moveaxis(,2,1)
         return vararr
     elif source == "COSMO_WIND":
-        filename, timestamps = path_creator(t_current, var, source, cfg_set)
+        filename, timestamps = pth.path_creator(t_current, var, source, cfg_set)
         vararr = read_wind_nc(filename)
         plt.imshow(vararr[0,:,:,:])
         plt.show()
@@ -257,7 +256,7 @@ def get_vararr_t(t_current, var, cfg_set):
         return vararr
     elif source == "COSMO_CONV":
         if t_current.minute==0:
-            filename, timestamps = path_creator(t_current, var, source, cfg_set)
+            filename, timestamps = pth.path_creator(t_current, var, source, cfg_set)
             vararr = read_convection_nc(filename,var,cfg_set)
         else:
             filename_h_old, timestamp_h_old = path_creator(t_current, var,
@@ -277,7 +276,7 @@ def get_vararr_t(t_current, var, cfg_set):
         ## COSMO fields are smoothed before reading the statistics
         return vararr
     elif source == "SEVIRI":
-        filenames, timestamps = path_creator(t_current, var, source, cfg_set)
+        filenames, timestamps = pth.path_creator(t_current, var, source, cfg_set)
         if all(filename is None for filename in filenames):
             vararr = np.zeros((1,cfg_set["xy_ext"][0],
                                cfg_set["xy_ext"][1]))*np.nan

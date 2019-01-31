@@ -6,6 +6,10 @@ from __future__ import print_function
 import pandas as pd
 import numpy as np
 
+from mpop.satin import swisstrt
+
+import coalition3.inout.paths as pth
+
 ## =============================================================================
 ## FUNCTIONS:
     
@@ -14,7 +18,7 @@ def get_vararr_TRT_t0(t0, cfg_set):
     """Provide vararr style array filled with centre locations of TRT cells"""
     
     ## Read filepath of respective TRT file:
-    filepaths, timestamps = path_creator(t0, "TRT", "TRT", cfg_set)
+    filepaths, timestamps = pth.path_creator(t0, "TRT", "TRT", cfg_set)
     cell_info_df = df_empty(cfg_set["TRT_cols"],cfg_set["TRT_dtype"])   
     filename = "%stmp/%s%s" % (cfg_set["root_path"],
                                cfg_set["t0"].strftime("%Y%m%d%H%M"),

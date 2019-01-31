@@ -1,7 +1,7 @@
 AddVal=100
 RetVal=201
 while [ $RetVal != 200 ]; do 
-  python /opt/users/jmz/monti-pytroll/scripts/NOSTRADAMUS_0_training_ds.py
+  python script_tds_processing.py
   RetVal=$?
   if [ $RetVal != 0 ]
   then
