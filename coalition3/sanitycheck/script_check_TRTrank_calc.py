@@ -1,34 +1,35 @@
-# coding: utf-8
-""" This code is only written to see whether it makes a difference whether for the calculation of the TRT ranks,
-based on the CCS4 radar fields, the median is taken of all pixels, or only of those with max echo >45dBZ.
-This lead to the additional radar variables with the '_nonmin' ending, e.g. EZC45_stat_nonmin, where the statistics
-are only calculated on the pixels with non-minimum values (which can differ, e.g. for RZC it's 0.05mm/h)."""
+""" [COALITION3] This code is only written to see whether it makes a
+    difference whether for the calculation of the TRT ranks, based on
+    the CCS4 radar fields, the median is taken of all pixels, or only
+    of those with max echo >45dBZ. This lead to the additional radar
+    variables with the '_nonmin' ending, e.g. EZC45_stat_nonmin, where
+    the statistics are only calculated on the pixels with non-minimum
+    values (which can differ, e.g. for RZC it's 0.05mm/h)."""
 
 from __future__ import division
 from __future__ import print_function
 
-import NOSTRADAMUS_1_input_prep_fun as Nip
-import NOSTRADAMUS_0_training_ds_fun as Nds
-import numpy as np
-import xarray as xr
-import datetime as datetime
-import matplotlib.pyplot as plt
 import sys
 import pdb
 import glob
+import numpy as np
+import xarray as xr
+import datetime as datetime
+import matplotlib.pylab as plt
 from shapely.geometry import Point
 from shapely.geometry import Polygon
 
-## Hard coded!!
-CONFIG_PATH_set_tds   = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/training_dataset_5min_16km_23km_20181211/"
-CONFIG_FILE_set_tds   = "NOSTRADAMUS_0_training_ds_20181211.cfg"
+import coalition3.inout.readccs4 as rccs
+import coalition3.inout.readconfig as cfg
+import coalition3.inout.paths as pth
+import coalition3.visualisation.TRTcells as TRTvis
 
 
 def calc_TRT_rank(lon_coord,lat_coord,ET45,CZC,LZC,RZC=None,plot_cells=False):
     """Calculate the TRT Rank based on the coordinates of the TRT cell shape and the fields ET45, CZC, LZC, RZC"""
 
     ## Convert lat/lon coordinates in Swiss coordinates (list of tuples):
-    x_CH, y_CH = Nds.lonlat2xy(lon_coord,lat_coord)
+    x_CH, y_CH = TRTvis.lonlat2xy(lon_coord,lat_coord)
     coord_tuples = [(x_CH_i,y_CH_i) for x_CH_i,y_CH_i in zip(x_CH,y_CH)]
     
     ## Get polygon:
@@ -105,25 +106,18 @@ COAL3_rank_median_sel_ls = []
 COAL3_rank_median_all_ls = []
 
 ## Get config info
-#random_date = datetime.datetime.strptime("201805301805","%Y%m%d%H%M")
-cfg_set_tds   = Nds.get_config_info(CONFIG_PATH_set_tds,CONFIG_FILE_set_tds)
-cfg_set_input, cfg_var, cfg_var_combi = Nip.get_config_info(
-                                            cfg_set_tds["CONFIG_PATH_set_input"],
-                                            cfg_set_tds["CONFIG_FILE_set_input"],
-                                            cfg_set_tds["CONFIG_PATH_var_input"],
-                                            cfg_set_tds["CONFIG_FILE_var_input"],
-                                            cfg_set_tds["CONFIG_FILE_var_combi_input"],
-                                            user_time_point.strftime("%Y%m%d%H%M"))
+cfg_set_tds   = cfg.get_config_info_tds()
+cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
 
 ## Initialise fields (CCS4 meshgrid and VIL, EchoTop and MaxEcho observations):
 ccs4_CH = np.meshgrid(np.arange(255000,965000,1000)+500,np.arange(-160000,480000,1000)+500)
-ET45 = Nip.get_vararr_t(user_time_point, "EZC45", cfg_set_input)
-CZC  = Nip.get_vararr_t(user_time_point, "CZC",  cfg_set_input)
-LZC  = Nip.get_vararr_t(user_time_point, "LZC",  cfg_set_input)
-RZC  = Nip.get_vararr_t(user_time_point, "RZC",  cfg_set_input)
+ET45 = rccs.get_vararr_t(user_time_point, "EZC45", cfg_set_input)
+CZC  = rccs.get_vararr_t(user_time_point, "CZC",  cfg_set_input)
+LZC  = rccs.get_vararr_t(user_time_point, "LZC",  cfg_set_input)
+RZC  = rccs.get_vararr_t(user_time_point, "RZC",  cfg_set_input)
 
 ## Get TRT file:
-filename = Nip.path_creator(user_time_point,"TRT","TRT",cfg_set_input)[0]
+filename = pth.path_creator(user_time_point,"TRT","TRT",cfg_set_input)[0]
 if len(filename) == 0:  raise IOError("No TRT file found")
 elif len(filename) > 1: raise IOError("More than one TRT file found")
 file = open(filename[0],"r")
