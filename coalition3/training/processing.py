@@ -114,8 +114,8 @@ def change_form_width_statistics(factor,cfg_set_input,cfg_var,cfg_var_combi):
     print("Change form width from %02dkm to %02dkm and repeat reading in statistics:" %
           (cfg_set_input["stat_sel_form_width"],new_form_width))
     cfg_set_input["stat_sel_form_width"] = new_form_width
-    cfg_set_input["stat_sel_form_size"]  = sta.form_size(cfg_set_input["stat_sel_form_width"],
-                                                         cfg_set_input["stat_sel_form"])
+    cfg_set_input["stat_sel_form_size"]  = form_size(cfg_set_input["stat_sel_form_width"],
+                                                     cfg_set_input["stat_sel_form"])
     
     ## Get new indices from which to read the statistics:
     t1 = datetime.datetime.now()
