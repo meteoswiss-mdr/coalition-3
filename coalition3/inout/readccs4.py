@@ -3,6 +3,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import os
 import sys
 import configparser
 import datetime
@@ -153,7 +154,7 @@ def read_lightning_data(var,filename,cfg_set,t_current):
         Filepath to file to be imported.
     """
     config = configparser.RawConfigParser()
-    config.read(os.path.join(CONFIG_PATH,u"input_data.cfg"))
+    config.read(os.path.join(cfg_set["CONFIG_PATH"],u"input_data.cfg"))
     config_ds = config["light_read"]
 
     ## Make sure only one lightning dataset is provided:
@@ -259,14 +260,14 @@ def get_vararr_t(t_current, var, cfg_set):
             filename, timestamps = pth.path_creator(t_current, var, source, cfg_set)
             vararr = read_convection_nc(filename,var,cfg_set)
         else:
-            filename_h_old, timestamp_h_old = path_creator(t_current, var,
-                                                           source, cfg_set)
+            filename_h_old, timestamp_h_old = pth.path_creator(t_current, var,
+                                                               source, cfg_set)
             vararr_old = read_convection_nc(filename_h_old,var,cfg_set)
             weight_old = 1-t_current.minute/60.
 
             t_current_plus1h = t_current + datetime.timedelta(hours=1)
-            filename_h_new, timestamp_h_new = path_creator(t_current_plus1h,
-                                                           var, source, cfg_set)
+            filename_h_new, timestamp_h_new = pth.path_creator(t_current_plus1h,
+                                                               var, source, cfg_set)
             vararr_new = read_convection_nc(filename_h_new,var,cfg_set)
             weight_new = 1-weight_old
 

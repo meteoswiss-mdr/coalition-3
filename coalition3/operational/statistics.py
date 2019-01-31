@@ -12,10 +12,11 @@ import ephem
 import numpy as np
 import pandas as pd
 import xarray as xr
+import matplotlib.pylab as plt
 from scipy import ndimage, signal, interpolate, spatial
 
-from coalition3.inout.paths import path_creator_vararr
-from coalition3.inout.iotmp import save_nc
+from coalition3.inout.paths import path_creator_vararr, path_creator_UV_disparr
+from coalition3.inout.iotmp import save_nc, load_file
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -114,18 +115,16 @@ def read_TRT_area_indices(cfg_set_input,reverse):
     
     ## Save xarray object to temporary location:
     disp_reverse_str = "" if not cfg_set["future_disp_reverse"] else "_rev"
-    filename = "%stmp/%s%s%s%s" % (cfg_set["root_path"],
-                                   cfg_set["t0"].strftime("%Y%m%d%H%M"),
-                                   "_stat_pixcount",disp_reverse_str,".pkl")
+    filename = os.path.join(cfg_set["tmp_output_path"],"%s%s%s%s" % \
+                            (cfg_set["t0_str"],"_stat_pixcount",disp_reverse_str,".pkl"))
     with open(filename, "wb") as output_file: pickle.dump(xr_ind_ds, output_file, protocol=-1)
     
     ## Save nc file with TRT domains to disk:
     if cfg_set["save_TRT_domain_map"]: 
         TRTarr_plot += 1
         TRTarr_plot = np.array(TRTarr_plot,dtype=np.float32)
-        filename = "%stmp/%s%s%s%s" % (cfg_set["root_path"],
-                                       cfg_set["t0"].strftime("%Y%m%d%H%M"),
-                                       "_TRT_disp_domain",disp_reverse_str,".nc")
+        filename = os.path.join(cfg_set["tmp_output_path"],"%s%s%s%s" % \
+                                (cfg_set["t0_str"],"_TRT_disp_domain",disp_reverse_str,".nc"))
         save_nc(filename,TRTarr_plot,"TRT",np.float32,"-","Domain around TRT cells",cfg_set["t0"],"",dt=5)
 
 ## Get indices based on i,j coordinate:
@@ -161,9 +160,8 @@ def append_statistics_pixcount(cfg_set_input,cfg_var,cfg_var_combi,reverse=False
     
     ## Read file with TRT domain indices:
     disp_reverse_str = "" if not cfg_set["future_disp_reverse"] else "_rev"
-    filename = "%stmp/%s%s%s%s" % (cfg_set["root_path"],
-                                   cfg_set["t0"].strftime("%Y%m%d%H%M"),
-                                   "_stat_pixcount",disp_reverse_str,".pkl")
+    filename = os.path.join(cfg_set["tmp_output_path"],"%s%s%s%s" % \
+                            (cfg_set["t0_str"],"_stat_pixcount",disp_reverse_str,".pkl"))
     with open(filename, "rb") as output_file: xr_stat_pixcount = pickle.load(output_file)
 
     ## Check list of statistics (hard-coded):
@@ -205,8 +203,8 @@ def append_statistics_pixcount(cfg_set_input,cfg_var,cfg_var_combi,reverse=False
     
     ## Save control-image if necessary:
     if cfg_set["save_stat_ctrl_imag"]:
-        filename_fig = "%stmp/%s%s%s%s" % (cfg_set["root_path"],cfg_set["t0"].strftime("%Y%m%d%H%M"),
-                                           "_RZC_stat",disp_reverse_str,".pdf")
+        filename_fig = os.path.join(cfg_set["tmp_output_path"],"%s%s%s%s" % \
+                                    (cfg_set["t0_str"],"_RZC_stat",disp_reverse_str,".pdf"))
         plot_var = cfg_set["var_list"][0]+"_stat" if "RZC" not in cfg_set["var_list"] else "RZC_stat"
         #""" DELETE +"_nonmin" in row below """
         #xr_stat_pixcount[plot_var+"_nonmin"][:,:,1].plot.line(x="time_delta",add_legend=False)
@@ -313,7 +311,7 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
         
         
         ## Add specific statistics for Radar variables, only analysing values above minimum value:
-        if cfg_set["source_dict"][var]=="RADAR":
+        if var not in cfg_set["var_combi_list"] and cfg_set["source_dict"][var]=="RADAR":
             vararr_sel[vararr_sel<=min_val] = np.nan
             array_stat_nonmin = np.array([np.nansum(vararr_sel,axis=2),
                                           np.nanmean(vararr_sel,axis=2),
