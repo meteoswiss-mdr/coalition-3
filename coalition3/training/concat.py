@@ -7,6 +7,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import os
 import psutil
 import datetime
 import numpy as np
@@ -17,6 +18,7 @@ import matplotlib.pylab as plt
 from glob import glob
 
 import coalition3.inout.readconfig as cfg
+import coalition3.operational.statistics as stat
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -186,30 +188,18 @@ def concat_future_past_concat_stat_files(pkl_path):
     del(xr_new)
 
 ## Wrapper function for adding additional auxiliary static variables to dataset (in training dataset creation environment):    
-def wrapper_fun_add_aux_static_variables(CONFIG_PATH_set_tds,CONFIG_FILE_set_tds,pkl_path):
-    bool_continue = raw_input(" WARNING: The config path might be hard coded, is the following path correct:\n   %s\n If yes, continue [y,n] " %
-                              (CONFIG_PATH_set_tds+CONFIG_FILE_set_tds)) == "y"
-    if bool_continue:
-        #cfg_set_tds   = get_config_info(CONFIG_PATH_set_tds,CONFIG_FILE_set_tds)
-        #cfg_set_input, cfg_var, cfg_var_combi = Nip.get_config_info(
-        #                                            cfg_set_tds["CONFIG_PATH_set_input"],
-        #                                            cfg_set_tds["CONFIG_FILE_set_input"],
-        #                                            cfg_set_tds["CONFIG_PATH_var_input"],
-        #                                            cfg_set_tds["CONFIG_FILE_var_input"],
-        #                                            cfg_set_tds["CONFIG_FILE_var_combi_input"],
-        #                                            "200001010001")
-        cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
-        file_path = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
-        print(" Adding auxiliary variables to xarray object in file:\n   %s" % file_path)
-        
-        with open(file_path, "rb") as path: ds = pickle.load(path)
-        ds = Nip.add_aux_static_variables(ds, cfg_set_input)
-        with open(file_path, "wb") as output_file: pickle.dump(ds, output_file, protocol=-1)
-        print(" Saved pickle file with added auxiliary variables")
-        file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
-        ds.to_netcdf(file_new)
-        print(" Saved NetCDF file with added auxiliary variables")
-    else: raise IOError(" Skip adding auxiliary variables, change directory in script 'NOSTRADAMUS_0_training_ds_concatenation.py'")
+def wrapper_fun_add_aux_static_variables(pkl_path):
+    cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
+    file_path = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
+    print(" Adding auxiliary variables to xarray object in file:\n   %s" % file_path)
+    
+    with open(file_path, "rb") as path: ds = pickle.load(path)
+    ds = stat.add_aux_static_variables(ds, cfg_set_input)
+    with open(file_path, "wb") as output_file: pickle.dump(ds, output_file, protocol=-1)
+    print(" Saved pickle file with added auxiliary variables")
+    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
+    ds.to_netcdf(file_new)
+    print(" Saved NetCDF file with added auxiliary variables")
     
 def pickle2nc(pkl_pathfile,nc_path):
     nc_filename = os.path.join(nc_path,os.path.basename(pkl_pathfile)[:-3]+"nc")
