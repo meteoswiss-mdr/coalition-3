@@ -1,6 +1,5 @@
-#!/opt/users/common/packages/anaconda2//bin
-
-""" Analyse the log file 'Training_Dataset_Processing_Status.pkl' and print some diagnostics."""
+""" [COALITION3] Analyse the log file 'Training_Dataset_Processing_Status.pkl'
+    and print some diagnostics."""
 
 # ===============================================================================
 # Import packages and functions
@@ -15,9 +14,9 @@ import numpy as np
 
 print("\nPrint diagnostics on the progress of the stats/pixel count dataset generation:")
 user_argv_path = sys.argv[1] if len(sys.argv)==2 else None
+log_path       = pth.get_log_path(user_argv_path)
 
-with open(user_argv_path, "rb") as path: df = pickle.load(path)
-#df = pd.read_pickle(log_path)
+with open(log_path, "rb") as path: df = pickle.load(path)
 
 print("\n---------------------------------------------------------------------------------------------------")
 print("Current time: %s" % dt.datetime.now())
