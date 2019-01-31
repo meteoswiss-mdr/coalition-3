@@ -4,7 +4,7 @@
 # ===============================================================================
 # Import packages and functions
 
-from __future__ import division
+#from __future__ import division
 from __future__ import print_function
 
 import sys
@@ -45,13 +45,22 @@ print("  Percentage of processing time points: ............................ %02d
       
 dates_recent = np.unique(df["Processing_End"].values[np.where(np.logical_and(df["Processing_End"]>dt.datetime.now()-dt.timedelta(hours=2),
                                                                              df["Processing_End"].notnull()))])
-dates_recent_dt = dt.datetime.utcfromtimestamp(max(dates_recent).astype(int) * 1e-9)
-if len(dates_recent)>0:
+if len(dates_recent) > 0:
+    try:
+        dates_recent_dt = dt.datetime.utcfromtimestamp(max(dates_recent).astype(int) * 1e-9)
+    except AttributeError:
+        dates_recent_dt = max(dates_recent)
     print("  Newest xarray object created on: ................................. %s" % dates_recent_dt)
+
 print("  Number of xarray objects created in the past 2h: ................. %s" % len(dates_recent))
 if len(dates_recent)>5:
     timedeltas = [dates_recent[i-1]-dates_recent[i] for i in range(1, len(dates_recent))]
-    average_timedelta = dt.timedelta(seconds=np.abs((sum(timedeltas) / len(dates_recent)).item()/10**9))
+    try:
+        average_timedelta = dt.timedelta(seconds=np.abs((sum(timedeltas) / len(dates_recent)).item()/10**9))
+    except TypeError:
+        timedeltas = [dates_recent[i]-dates_recent[i-1] for i in range(1, len(dates_recent))]
+        average_timedelta = sum(timedeltas, dt.timedelta(0)) / len(timedeltas)
+    
     print("  Average time delta between xarray object generated in the past 2h: %s" % average_timedelta)
     time_remaining = average_timedelta*(tot_dt-n_processed_dt)
     time_finishing = dt.datetime.now()+time_remaining

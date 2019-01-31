@@ -41,9 +41,8 @@ if time_point==200:
 ## In case not all input data is available at time point chosen (returns None)
 ## try another time point:
 while time_point is None:
-    time_point, samples_df = Nds.read_edit_log_file(cfg_set_tds,cfg_set_input,
+    time_point, samples_df = log.read_edit_log_file(cfg_set_tds,cfg_set_input,
                                                     "start",samples_df=samples_df)
-time_point = datetime.datetime(2018,7,4,7,15)
 ## Write all stdout ouput to file:
 if len(sys.argv)>1 and sys.argv[1]=="std2file":
     orig_stdout = sys.stdout
