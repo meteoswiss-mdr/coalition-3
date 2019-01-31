@@ -6,6 +6,7 @@
 from __future__ import division
 from __future__ import print_function
 
+import os
 import datetime
 import pickle
 import shutil
@@ -82,9 +83,14 @@ def displace_variables(cfg_set_input,cfg_var,reverse):
 
 ## Move statistics to collection directory (on non-temporary disk):
 def move_statistics(cfg_set_input,cfg_set_tds,path_addon=""):
-    path_in  = "%stmp/" % (cfg_set_input["root_path"])
-    path_out = "%s%s" % (cfg_set_tds["stat_output_path"],path_addon)
+    path_in  = cfg_set_input["tmp_output_path"]
+    path_out = os.path.join(cfg_set_tds["stat_output_path"],path_addon)
+    
     print("Move file with statistics to directory %s" % path_out)
+    if not os.path.exists(path_out):
+        print("   *** Warning: Output path\n          %s\n       created" % path_out)
+        os.makedirs(path_out)
+    
     for file in os.listdir(path_in):
         if file.startswith(cfg_set_input["t0_str"]+"_stat_pixcount") and file.endswith(".pkl"):
             shutil.move(os.path.join(path_in, file),os.path.join(path_out, file))
