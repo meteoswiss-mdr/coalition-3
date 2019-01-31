@@ -19,6 +19,9 @@ import coalition3.training.preparation as prep
 import coalition3.training.logfile as log
 import coalition3.training.missing as miss
 
+# ===============================================================================
+# Execute functions:
+
 ## Get config settings (training and operational):
 cfg_set_tds = cfg.get_config_info_tds()
 cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
