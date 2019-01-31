@@ -8,7 +8,7 @@ from __future__ import print_function
 import os
 import datetime
 import pickle
-import pdb
+import shutil
 import numpy as np
 import pandas as pd
 
@@ -141,7 +141,7 @@ def read_edit_log_file(cfg_set_tds,cfg_set_input,process_point,t0_object=None,lo
         
         ## Save the log file as pickle and as csv:
         with open(log_file_path, "wb") as output_file: pickle.dump(samples_df, output_file, protocol=-1)
-        #samples_df.to_pickle(log_file_path)
+        shutil.copy2(log_file_path,log_file_path[:-3]+"_backup.pkl")
         samples_df.to_csv(log_file_path[:-3]+"csv")
 
         ## Return percentage of processed files plus 100:
