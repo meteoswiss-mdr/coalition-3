@@ -1,7 +1,7 @@
 AddVal=100
 RetVal=201
 while [ $RetVal != 200 ]; do 
-  python script_tds_processing.py
+  python script_tds_processing.py std2file
   RetVal=$?
   if [ $RetVal != 0 ]
   then
