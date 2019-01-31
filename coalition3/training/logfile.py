@@ -122,7 +122,8 @@ def read_edit_log_file(cfg_set_tds,cfg_set_input,process_point,t0_object=None,lo
             samples_df.loc[samples_df["date"]==chosen_date, "Processing"] = True
             #samples_df.to_pickle(log_file_path)
             with open(log_file_path, "wb") as output_file: pickle.dump(samples_df, output_file, protocol=-1)
-            print("   Determine statistics for timepoint %s\n" % chosen_date.strftime("%d.%m.%Y %H:%M")) 
+            print("   Determine statistics for timepoint %s\n" % chosen_date.strftime("%d.%m.%Y %H:%M"))
+            print("     (current time: %s)" % datetime.datetime.now().strftime("%d.%m.%Y %H:%M"))
             return(chosen_date, None)
     
     elif process_point=="end":
