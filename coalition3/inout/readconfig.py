@@ -59,7 +59,7 @@ def get_config_info_tds(coalition3_path=None, CONFIG_PATH=None):
     ## Add source paths:
     config_ds = config["datasource"]
     if config_ds["root_path"]=="":
-        root_path = coalition3_path
+        root_path = os.path.join(coalition3_path,"")
     else:
         root_path = config_ds["root_path"]
     if config_ds["root_path_tds"]=="":
@@ -204,7 +204,7 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     ## Add source paths:
     config_sp = config["source_paths"]
     if config_sp["root_path"]=="":
-        root_path = coalition3_path
+        root_path = os.path.join(coalition3_path,"")
     else:
         root_path = config_sp["root_path"]
     if config_sp["fig_output_path"]=="":
