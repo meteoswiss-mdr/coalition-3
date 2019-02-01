@@ -169,7 +169,7 @@ def plot_oflow_derivation(cfg_set,t0,dt):
     ## Read in current oflow_source file:
     t_current = t0
     cfg_set["timestep"] = dt
-    filenames, timestamps = pth.path_creator(t_current, cfg_set["oflow_source"], cfg_set)
+    filenames, timestamps = pth.path_creator(t_current, cfg_set["oflow_source"], "RADAR", cfg_set)
     ret = metranet.read_file(filenames[0], physic_value=True)
     oflow_source_data = np.atleast_3d(ret.data)
     
@@ -206,11 +206,13 @@ def plot_oflow_derivation(cfg_set,t0,dt):
         
     ## Calculate UV field
     oflow_method = st.optflow.get_method(cfg_set["oflow_method_name"])
-    UV = oflow_method(dBR,return_single_vec=True)
-    UV_decl  = oflow_method(dBR,return_declust_vec=True)
+    UV = oflow_method(dBR,return_single_vec=True)[1]
+    UV_decl  = oflow_method(dBR,return_declust_vec=True)[0]
     UV_final = oflow_method(dBR)
     #plt.imshow(oflow_source_data[0,:,:])
     UV_final = np.stack([-UV_final[0,:,:],UV_final[1,:,:]])
+    print(UV.shape)
+    print(UV_decl.shape)
     
     #fig, axs = plt.subplots(1,2, figsize=(10,6.5))
     fig = plt.figure(figsize=(14,9.5)) 
@@ -247,7 +249,10 @@ def plot_oflow_derivation(cfg_set,t0,dt):
     #plt.tight_layout()
     #plt.show()
     #fig.patch.set_visible(False)
-    filename = "/data/COALITION2/PicturesSatellite/results_JMZ/2_input_NOSTRADAMUS_ANN/casestudy/oflow_process/%s" % t0.strftime('oflow_%y%m%d%H%M.pdf')
+    path_to_figures = os.path.join(cfg_set["fig_output_path"],"poster_plots/")
+    if not os.path.exists(path_to_figures):
+        os.makedirs(path_to_figures)
+    filename = os.path.join(path_to_figures,t0.strftime('oflow_%y%m%d%H%M.pdf'))
     fig.savefig(filename, transparent=True, bbox_inches='tight')
     
 
