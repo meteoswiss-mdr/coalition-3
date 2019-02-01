@@ -7,6 +7,7 @@
 /training
 #*_old/
 nohup*
+/output_data
 
 # THE FOLLOWING ENTRIES WERE COPIED FROM THE .gitignore OF THE pySTEPS repository
 
