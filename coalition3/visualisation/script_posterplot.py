@@ -1,16 +1,17 @@
 from __future__ import division
 from __future__ import print_function
 
-import sys
-import configparser
-import datetime
 import os
-import pdb #pdb.set_trace()
+import sys
+import datetime
+import configparser
 import numpy as np
 
 import pysteps as st
-import NOSTRADAMUS_1_input_prep_fun as Nip
-import NOSTRADAMUS_1_casestudy_fun as Ncs
+
+import coalition3.casestudy.casestudy as ccs
+import coalition3.inout.readconfig as cfg
+import coalition3.inout.paths as pth
 
 sys.path.insert(0, '/data/COALITION2/database/radar/ccs4/python')
 import metranet
@@ -22,10 +23,6 @@ import subprocess
 ## Make static setting
 
 ## Define path to config file
-CONFIG_PATH = "/data/COALITION2/PicturesSatellite/results_JMZ/2_input_NOSTRADAMUS_ANN"
-CONFIG_FILE_set = "NOSTRADAMUS_1_input_prep_longrun.cfg" # "NOSTRADAMUS_1_input_prep_shorttest.cfg"
-CONFIG_FILE_var = "cfg_var.csv"
-
 ## Input basics
 t0_str = "201805272300"
 n_updates = 0
@@ -41,8 +38,9 @@ y_range   = (200,300)#(160,230)
 
 t_end_str = datetime.datetime.strftime(t_end, "%Y%m%d%H%M")
 
-cfg_set, cfg_var = Nip.get_config_info(CONFIG_PATH,CONFIG_FILE_set,CONFIG_FILE_var,t0_str)
-cfg_set = Ncs.update_cfg_set(cfg_set,t_start,t_end,x_range,y_range,t_end_alt)
+cfg_set, cfg_var, cfg_var_combi = cfg.get_config_info_op()
+cfg_set = cfg.cfg_set_append_t0(cfg_set,t_end_str)
+cfg_set = ccs.update_cfg_set(cfg_set,t_start,t_end,x_range,y_range,t_end_alt)
 
 #============================================================================================
 #============================================================================================
@@ -171,7 +169,7 @@ def plot_oflow_derivation(cfg_set,t0,dt):
     ## Read in current oflow_source file:
     t_current = t0
     cfg_set["timestep"] = dt
-    filenames, timestamps = Nip.path_creator(t_current, cfg_set["oflow_source"], cfg_set)
+    filenames, timestamps = pth.path_creator(t_current, cfg_set["oflow_source"], cfg_set)
     ret = metranet.read_file(filenames[0], physic_value=True)
     oflow_source_data = np.atleast_3d(ret.data)
     
