@@ -1,9 +1,19 @@
 # coding: utf-8
-import matplotlib.pyplot as plt
+import matplotlib.pylab as plt
 import matplotlib.colors as mcolors
 import numpy as np
 import xarray as xr
+import os
 from scipy import ndimage
+
+import coalition3.operational.statistics as stat
+
+def file_path_reader(path_name):
+    path_str = "this_is_an_unrealistic_path_name"
+    while not os.path.exists(path_str):
+        path_str = raw_input("  Please provide path to file %s: " % path_name)
+        if not os.path.exists(path_str): print("  No such path found!")
+    return path_str
 
 def contour_of_2dHist(hist2d_1_data,percentiles=[0,40,60,80,95,100],smooth=True):
     if True:
@@ -31,6 +41,7 @@ def contour_of_2dHist(hist2d_1_data,percentiles=[0,40,60,80,95,100],smooth=True)
 
     return hist_2d_perc.T, levels
 
+#path_to_xarray = file_path_reader("Combined_stat_pixcount.nc")
 xr_new_TRT = xr.open_mfdataset("Combined_stat_pixcount.nc")
 #xr_old_TRT = xr.open_mfdataset("Combined_stat_pixcount_oldTRTRank.nc")
 
@@ -38,8 +49,8 @@ Rank_TRT = xr_new_TRT["RANKr"]/10.
 Rank_TRT_rand = Rank_TRT+np.random.uniform(-0.1,0.1,len(Rank_TRT))
 
 Rank_COAL3_new    = xr_new_TRT["TRT_Rank"]
-Rank_COAL3_allmed = calc_TRT_Rank(xr_new_TRT,ET_option="all_median")["TRT_Rank"]
-Rank_COAL3_allmax = calc_TRT_Rank(xr_new_TRT,ET_option="all_max")["TRT_Rank"]
+Rank_COAL3_allmed = stat.calc_TRT_Rank(xr_new_TRT,ET_option="all_median")["TRT_Rank"]
+Rank_COAL3_allmax = stat.calc_TRT_Rank(xr_new_TRT,ET_option="all_max")["TRT_Rank"]
 
 fig, axes = plt.subplots(nrows=1, ncols=3, figsize=[15,4.2])
 axes[0].set_ylabel('TRT Rank (COAL3 - Cond. Median ET45)')
@@ -77,13 +88,9 @@ axes.plot([0,4],[0,4],'w--',linewidth=2) #,facecolor="w",linewidth=2,linestyle='
 CS = axes.contour(cont2d_1,levels=lvl,extent=[xbins.min(),xbins.max(),ybins.min(),ybins.max()],linewidths=2,cmap="YlGn_r")
 CS_lab = axes.clabel(CS, inline=1, fontsize=10, fmt='%i%%', colors="black")
 #[txt.set_backgroundcolor('white') for txt in CS_lab]
-[txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.7)) for txt in CS_lab] #pad=0, 
+[txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.7)) for txt in CS_lab] #pad=0,
 axes.set_xlabel('TRT Rank (TRT)'); axes.set_title('TRT Ranks (16km diameter)')
 axes.set_aspect('equal'); axes.patch.set_facecolor('0.7')
 str_n_cells = "Total number of cells = %i" % np.sum(counts)
 axes.text(0.4,3.6,str_n_cells)
 plt.show()
-
-
-
-
