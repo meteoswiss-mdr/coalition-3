@@ -3,7 +3,7 @@
     products etc.), whereas the latter refers to adding for example new
     observations, but of the same variables. Several safety checks are per-
     formed as well"""
-    
+
 from __future__ import division
 from __future__ import print_function
 
@@ -24,7 +24,7 @@ def file_path_reader(path_number):
         path_str = raw_input("  Please provide path to file %i: " % path_number)
         if not os.path.exists(path_str): print("  No such path found!")
     return path_str
-    
+
 def xarray_file_loader(path_str,path_number):
     if path_str[-3:]==".nc":
         expected_memory_need = float(os.path.getsize(path_str))/psutil.virtual_memory().available*100
@@ -59,15 +59,15 @@ def dropping_indices(xr_pre_drop, xr_file_2, DTI_common, concat_dim):
     elif n_matches==0:
         print("   *** Dropping error: there exist still common indices ***")
         sys.exit()
-    else:   
+    else:
         print("   *** Dropping error ***")
         sys.exit()
     return xr_drop
-    
+
 def print_title(title_str):
     print("\n------------------------------------------------------------------------------")
     print(title_str+"\n")
-    
+
 print("\n==============================================================================")
 print(" Merging / Concatenating two training datasets")
 print(" ---------------------------------------------")
@@ -75,7 +75,7 @@ print(" ---------------------------------------------")
 ## Decide between merging and concatenation:
 print_text = """
 Do you want to merge or concatenate two datasets?
-  Concatenating -> Concatenating two training datasets with the same variables (e.g. sampling summers 
+  Concatenating -> Concatenating two training datasets with the same variables (e.g. sampling summers
                    2018 and 2019) along one dimension (e.g. DATE_TRT_ID).
                    In case there is an overlap in the dimension which is concatenated (e.g.
                    several times the same DATE_TRT_ID), the overlap in this dimension is
@@ -112,12 +112,12 @@ for item in xr_1.dims:
         unequal_dimensions.append(item)
         print("\n  Warning: Differing dimension: %s" % item)
         print(xr_1[item],"\n")
-        print(xr_2[item],"\n")   
+        print(xr_2[item],"\n")
 
-## 4) Define dimensions along which to concatenate the datasets (most likely 'DATE_TRT_ID'):   
-ipt = " " 
+## 4) Define dimensions along which to concatenate the datasets (most likely 'DATE_TRT_ID'):
+ipt = " "
 if combi_type=="c":
-    print_title("Define dimension along which to concatenate the datasets (most likely 'DATE_TRT_ID'):")     
+    print_title("Define dimension along which to concatenate the datasets (most likely 'DATE_TRT_ID'):")
     if len(unequal_dimensions)==1:
         print_str = "  Should the datasets be concatenated along dimension %s (else abort script)? [y/n] " % unequal_dimensions[0]
         while (ipt!="y" and ipt != "n"): ipt = raw_input(print_str)
@@ -141,7 +141,7 @@ elif combi_type=="m":
         print_str = "  How do you want to join the datasets (%s)? " % ', '.join(map(str, join_opts))
         while (join_opt not in join_opts): join_opt = raw_input(print_str)
         concat_dim = np.array(xr_1.dims,dtype=np.object)[:]
-    
+
 ## 5) Check for common indices (e.g. same 'DATE_TRT_ID'):
 dict_concat_common = {}
 if combi_type=="c":
@@ -154,19 +154,19 @@ elif combi_type=="m":
     for dim in concat_dim:
         dict_concat_common[dim] = np.array(sorted(list(set(xr_1[dim].values).intersection(set(xr_2[dim].values)))))
     do_comparison = all([len(value)>0 for value in dict_concat_common.values()])
-    
+
 if do_comparison:
     print("  Found common indices, comparing the overlapping (and hopefully equal) data entries")
     xr_1_common = xr_1.loc[dict_concat_common]
     xr_2_common = xr_2.loc[dict_concat_common]
-       
+
     ## 5.a) Comparing non-TRT keys:
     keys_1 = xr_1.keys()
     keys_2 = xr_2.keys()
     keys_common = np.array(list(set(keys_1).intersection(set(keys_2))))
     matching_keys = {}
     print("\n  Compare pixc and stat keys (This can take a while):  ")
-    
+
     for key in keys_common:
         if ("_pixc" in key or "_stat" in key or key in xr_1_common.dims or key=="date"):
             print("   Checking key %s                                 " % key, end='\r'); sleep(0.01)
@@ -190,26 +190,26 @@ if do_comparison:
     matching_keys_TRT_corr = pd.DataFrame.from_dict(matching_keys_TRT_corr, orient='index',
                                                     columns=["Match","Corr","Mean diff [file1-file2]","Mean factor [file1/file2]"])
     print(matching_keys_TRT_corr)
-    
+
     ## 5.c) Make decision whether to proceed (is data overlap similar enough?):
     ipt = "1"
-    while (ipt!="y" and ipt != "n"): ipt = raw_input("\nAre the datasets very similar (up to machine precision)? Else abort. [y/n] ") 
+    while (ipt!="y" and ipt != "n"): ipt = raw_input("\nAre the datasets very similar (up to machine precision)? Else abort. [y/n] ")
     if ipt=="n": sys.exit()
-    
+
     ## 5.d1) Drop indices in one dataset if concatenating:
-    if combi_type=="c": 
+    if combi_type=="c":
         ipt = "1"; drop_file = "x"
         print_str = "\nShould %i common index values deleted? Else abort. [y/n]: " % len(DTI_common)
-        while (ipt!="y" and ipt != "n"): ipt = raw_input(print_str) 
+        while (ipt!="y" and ipt != "n"): ipt = raw_input(print_str)
         if ipt=="n": sys.exit(print_str)
         else:
             while (drop_file not in ["1","2"]): drop_file = raw_input("  Whose files index values should be dropped? [1/2] ")
             print("  Length of index %s before dropping: %i" % (concat_dim,xr_1[concat_dim].shape[0]))
             if drop_file=="1": xr_1 = dropping_indices(xr_1, xr_2, DTI_common, concat_dim)
             else: xr_2 = dropping_indices(xr_2, xr_1, DTI_common, concat_dim)
-            
+
     ## 5.d2) Drop variables in one of the datasets when merging:
-    if combi_type=="m": 
+    if combi_type=="m":
         drop_file = "x"
         while (drop_file not in ["1","2"]): drop_file = raw_input("  Whose files common variables should be dropped? [1/2] ")
         if drop_file=="1": xr_1 = xr_1.drop(list(set(keys_common)-set(xr_1.dims)))
@@ -219,7 +219,7 @@ else:
     if combi_type=="m": sys.exit()
 
 ## 6. Concatenate along chosen dimension:
-if combi_type=="c": 
+if combi_type=="c":
     print_title("Concatenating along dimension %s (this will take a while):" % concat_dim)
     xr_new = xr.concat([xr_1,xr_2],concat_dim)
     print(xr_new)
@@ -257,7 +257,7 @@ keys_pixc = ds_keys[np.where(["_pixc" in key_ele for key_ele in ds_keys])[0]]
 for key_pixc in keys_pixc: xr_new[key_pixc] = xr_new[key_pixc].astype(dtype_pixc)
 xr_new["CZC_lt57dBZ"] = xr_new["CZC_lt57dBZ"].astype(dtype_pixc)
 xr_new["TRT_cellcentre_indices"] = xr_new["TRT_cellcentre_indices"].astype(np.uint32)
-    
+
 with open("Combined_stat_pixcount.pkl", "wb") as output_file: pickle.dump(xr_new, output_file, protocol=-1)
 xr_new.to_netcdf("Combined_stat_pixcount.nc")
 """
