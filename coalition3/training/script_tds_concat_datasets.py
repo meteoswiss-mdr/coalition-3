@@ -1,15 +1,21 @@
-# coding: utf-8
+""" [COALITION3] With this script, two datasets can be merged or concatenated,
+    where the first means that new variables are added (e.g. Nowcasting-SAF
+    products etc.), whereas the latter refers to adding for example new
+    observations, but of the same variables. Several safety checks are per-
+    formed as well"""
+    
 from __future__ import division
 from __future__ import print_function
-import xarray as xr
-import pickle
-import numpy as np
-import matplotlib.pyplot as plt
+
 import os
 import sys
 import psutil
+import pickle
+import xarray as xr
+import numpy as np
 import pandas as pd
 from time import sleep
+import matplotlib.pyplot as plt
 sys.stdout.flush()
 
 def file_path_reader(path_number):
@@ -62,11 +68,6 @@ def print_title(title_str):
     print("\n------------------------------------------------------------------------------")
     print(title_str+"\n")
     
-#path_23_5min  = u"/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/training_dataset_5min_16km_23km_20181211/stat_output/diam_23km/nc/Combined_stat_pixcount.nc"
-#path_23_30min = u"/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/training_dataset_30min_16km_23km_20181128/stat_output/diam_23km/nc/Combined_stat_pixcount.nc"
-#path_16_5min  = u"/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/training_dataset_5min_16km_23km_20181211/stat_output/diam_16km/nc/Combined_stat_pixcount.nc"
-#path_16_30min = u"/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/training_dataset_30min_16km_23km_20181128/stat_output/diam_16km/nc/Combined_stat_pixcount.nc"
-
 print("\n==============================================================================")
 print(" Merging / Concatenating two training datasets")
 print(" ---------------------------------------------")
