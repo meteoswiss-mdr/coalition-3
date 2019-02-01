@@ -14,7 +14,7 @@ import configparser
 import numpy as np
 
 import coalition3.inout.readconfig as cfg
-import coalition3_casestudy_fun as ccs
+import coalition3.casestudy.casestudy as ccs
 
 sys.path.insert(0, '/data/COALITION2/database/radar/ccs4/python')
 import metranet
