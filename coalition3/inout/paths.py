@@ -14,7 +14,7 @@ import pysteps as st
 
 ## Reader for general path names in the beginning of scripts:
 def file_path_reader(path_description,user_argv_path=None):
-    while not os.path.exists(user_argv_path):
+    while user_argv_path is None or not os.path.exists(user_argv_path):
         user_argv_path = raw_input("  Please provide path to file %s: " % path_description)
         if not os.path.exists(user_argv_path): print("  No such path found!")
     return user_argv_path
