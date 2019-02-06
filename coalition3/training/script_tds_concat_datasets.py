@@ -16,26 +16,11 @@ import numpy as np
 import pandas as pd
 from time import sleep
 import matplotlib.pyplot as plt
+
+import coalition3.inout.readxr as rxr
+import coalition3.inout.paths as pth
+
 sys.stdout.flush()
-
-def file_path_reader(path_number):
-    path_str = "this_is_an_unrealistic_path_name"
-    while not os.path.exists(path_str):
-        path_str = raw_input("  Please provide path to file %i: " % path_number)
-        if not os.path.exists(path_str): print("  No such path found!")
-    return path_str
-
-def xarray_file_loader(path_str,path_number):
-    if path_str[-3:]==".nc":
-        expected_memory_need = float(os.path.getsize(path_str))/psutil.virtual_memory().available*100
-        if expected_memory_need > 35:
-            print("  *** Warning: File %i is opened as dask dataset (expected memory use: %02d%%) ***" %\
-                  (path_number, expected_memory_need))
-            xr_n = xr.open_mfdataset(path_str,chunks={"DATE_TRT_ID":1000})
-        else: xr_n = xr.open_dataset(path_str)
-    elif path_str[-4:]==".pkl":
-        with open(path_str, "rb") as path: xr_n = pickle.load(path)
-    return xr_n
 
 def calculate_statistics(xr_1, xr_2):
     ind = np.where(np.logical_and(np.isfinite(xr_1_common[key].values.flatten()),
@@ -92,13 +77,13 @@ while (combi_type!="m" and combi_type != "c"): combi_type = raw_input("Merge or 
 
 ## 1) Reading the paths to the files:
 print_title("Paths to the respective xarray datasets:")
-path_str_1 = file_path_reader(1)
-path_str_2 = file_path_reader(2)
+path_str_1 = pth.file_path_reader(1)
+path_str_2 = pth.file_path_reader(2)
 
 ## 2) Reading the files:
 print_title("Loading the xarray datasets:")
-xr_1 = xarray_file_loader(path_str_1,1)
-xr_2 = xarray_file_loader(path_str_2,2)
+xr_1 = rxr.xarray_file_loader(path_str_1)
+xr_2 = rxr.xarray_file_loader(path_str_2)
 print("  Finished loading the datasets")
 
 ## 3) Compare dimensions of the datasets:
