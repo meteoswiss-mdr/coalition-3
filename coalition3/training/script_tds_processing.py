@@ -52,12 +52,12 @@ if len(sys.argv)>1 and sys.argv[1]=="std2file":
     sys.stdout = log_file
 
 t0 = datetime.datetime.now()
-## Change t0 to timestep:
+## [OPERATIONAL] Change t0 to timestep:
 cfg_set_input["t0"]     = time_point
 cfg_set_input["t0_doy"] = cfg_set_input["t0"].timetuple().tm_yday
 cfg_set_input["t0_str"] = cfg_set_input["t0"].strftime("%Y%m%d%H%M")
 
-## Read in variables to .nc/.npy files and displace TRT cell centres:
+## [OPERATIONAL] Read in variables to .nc/.npy files and displace TRT cell centres:
 t1 = datetime.datetime.now()
 print(" =========== Start displacement algorithm =========== \n")
 prc.displace_variables(cfg_set_input,cfg_var,reverse=False)
@@ -67,13 +67,13 @@ t2 = datetime.datetime.now()
 print("  Elapsed time for the displacement: "+str(t2-t1))
 print(" ============ End displacement algorithm ============\n\n")
 
-## Read in statistics and pixel counts
+## [OPERATIONAL] Read in statistics and pixel counts
 print(" ======================= Start reading statistics =======================\n")
 t1 = datetime.datetime.now()
 stat.append_statistics_pixcount(cfg_set_input,cfg_var,cfg_var_combi,reverse=False)
 stat.append_statistics_pixcount(cfg_set_input,cfg_var,cfg_var_combi,reverse=True)
 
-## Move statistics out of /tmp directory to collection directory:
+## [OPERATIONAL] Move statistics out of /tmp directory to collection directory:
 prc.move_statistics(cfg_set_input,cfg_set_tds,"diam_16km/")
 t2 = datetime.datetime.now()
 print("\n  Elapsed time for reading the statistics / pixel counts: "+str(t2-t1))
@@ -88,7 +88,7 @@ t2 = datetime.datetime.now()
 print("\n  Elapsed time for reading the statistics with changed form: "+str(t2-t1))
 print(" ============ End process with change form width ============\n\n")
 
-## Delete all .nc files (vararr and disparr files)
+## [OPERATIONAL] Delete all .nc files (vararr and disparr files)
 prc.clean_disparr_vararr_tmp(cfg_set_input)
     
 ## State that the processing is finished
