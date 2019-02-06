@@ -27,7 +27,7 @@ sys.stdout.flush()
 
 #@dask.delayed
 def da2df(da,key):
-    print("  Working on %s" % key, end='\r')
+    print("  Working on %s" % key) #, end='\r')
     return da.to_pandas().to_frame(filter_observations=False).T
     
 ## ============================================================================
