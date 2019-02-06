@@ -13,12 +13,11 @@ import pysteps as st
 ## FUNCTIONS:
 
 ## Reader for general path names in the beginning of scripts:
-def file_path_reader(path_description):
-    path_str = "this_is_an_unrealistic_path_name"
-    while not os.path.exists(path_str):
-        path_str = raw_input("  Please provide path to file %s: " % path_description)
-        if not os.path.exists(path_str): print("  No such path found!")
-    return path_str
+def file_path_reader(path_description,user_argv_path=None):
+    while not os.path.exists(user_argv_path):
+        user_argv_path = raw_input("  Please provide path to file %s: " % path_description)
+        if not os.path.exists(user_argv_path): print("  No such path found!")
+    return user_argv_path
 
 ## Provide path to variable array:
 def path_creator_vararr(type,var,cfg_set,
