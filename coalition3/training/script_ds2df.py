@@ -25,6 +25,8 @@ import coalition3.inout.paths as pth
 import coalition3.inout.readxr as rxr
 import coalition3.inout.readconfig as cfg
 
+sys.stdout.flush()
+
 #@dask.delayed
 def da2df(da,key):
     print("  Working on %s" % key, end='\r')
