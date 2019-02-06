@@ -6,14 +6,9 @@ import xarray as xr
 import os
 from scipy import ndimage
 
+import coalition3.inout.paths as pth
+import coalition3.inout.readxr as rxr
 import coalition3.operational.statistics as stat
-
-def file_path_reader(path_name):
-    path_str = "this_is_an_unrealistic_path_name"
-    while not os.path.exists(path_str):
-        path_str = raw_input("  Please provide path to file %s: " % path_name)
-        if not os.path.exists(path_str): print("  No such path found!")
-    return path_str
 
 def contour_of_2dHist(hist2d_1_data,percentiles=[0,40,60,80,95,100],smooth=True):
     if True:
@@ -41,9 +36,9 @@ def contour_of_2dHist(hist2d_1_data,percentiles=[0,40,60,80,95,100],smooth=True)
 
     return hist_2d_perc.T, levels
 
-#path_to_xarray = file_path_reader("Combined_stat_pixcount.nc")
-xr_new_TRT = xr.open_mfdataset("Combined_stat_pixcount.nc")
-#xr_old_TRT = xr.open_mfdataset("Combined_stat_pixcount_oldTRTRank.nc")
+path_to_xarray = pth.file_path_reader("xarray training dataset")
+xr_new_TRT = xrx.xarray_file_loader(path_str)
+#xr_new_TRT = xr.open_mfdataset("Combined_stat_pixcount.nc")
 
 Rank_TRT = xr_new_TRT["RANKr"]/10.
 Rank_TRT_rand = Rank_TRT+np.random.uniform(-0.1,0.1,len(Rank_TRT))
