@@ -77,24 +77,49 @@ print("  Extract 2D variables (with 'time_delta' coordinate)")
 ds_23d  = ds_drop[[var for var in ds_drop.data_vars if len(ds_drop[var].shape)>=2]]
 del(ds_drop)
 
+## Decide between deltas between time steps to delta to t0:
+print_text = """
+\nHow should variables be treated over time:
+  Option 1 -> Keep the absolute values of the statistics [path addon 'nodiff']
+              (e.g. MaxRZC(t0-45min), MaxRZC(t0-40min), .. , MaxRZC(t0))
+  Option 2 -> Take the difference to the statistic at t0 and keep absolute value at t0 [path addon 't0diff']
+              (e.g. MaxRZC(t0)-MaxRZC(t-45min), MaxRZC(t0)-MaxRZC(t-40min), .. , MaxRZC(t0))
+  Option 3 -> Between each time step (and keep absolute value at t0) [path addon 'dtdiff']
+              (e.g. MaxRZC(t0-40min)-MaxRZC(t0-45min), MaxRZC(t0-35min)-MaxRZC(t0-40min), .. , MaxRZC(t0))
+"""
+print(print_text)
+diff_option = None
+while (diff_option!="1" and diff_option != "2" and diff_option != "3"):
+    diff_option = str(raw_input("Which option do you choose? [1/2/3] "))
+
+## Delete "future" values:
 print("     Take difference to t0 value / set NaN to min_value in '_nonmin' statistics (TIME CONSUMING)")
 ds_past = ds_23d.where(ds_23d["time_delta"]<=0, drop=True)
 del(ds_23d)
 
+## Take the difference:
 cfg_set, cfg_var, cfg_var_combi = cfg.get_config_info_op()
 for var in ds_past.data_vars:
-    if len(ds_past[var].sel(time_delta=0).values.shape)==1:
-        ## Special case for variable 'CZC_lt57dBZ'
-        sub_val = ds_past[var].sel(time_delta=slice(-45,-5)).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis]
-        ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis]],axis=1)
-    else:
-        sub_val = ds_past[var].sel(time_delta=slice(-45,-5)).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]
-        ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]],axis=1)
+    if diff_option == "2":
+        if len(ds_past[var].sel(time_delta=0).values.shape)==1:
+            ## Special case for variable 'CZC_lt57dBZ'
+            sub_val = ds_past[var].sel(time_delta=slice(-45,-5)).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis]
+            ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis]],axis=1)
+        else:
+            sub_val = ds_past[var].sel(time_delta=slice(-45,-5)).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]
+            ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]],axis=1)
         
+    elif diff_option == "3":
+        sub_val = ds_past[var].sel(time_delta=slice(-40,0)).values-ds_past[var].sel(time_delta=slice(-45,-5)).values
+        if len(ds_past[var].sel(time_delta=0).values.shape)==1:
+            ## Special case for variable 'CZC_lt57dBZ'
+            ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis]],axis=1)
+        else:
+            ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]],axis=1)
+            
     ## Set NaN-values in "_nonmin" statistics to min_value:
     if "_nonmin" in var:
          ds_past[var].values[np.isnan(ds_past[var].values)] = cfg_set["minval_dict"][var[:-12]]
-
 
 ## Convert 3d dataarrays (xarray) to 2d dataframes (pandas) - TIME CONSUMING!
 print("  Converting 3D variables to dataframe (TIME CONSUMING)")
@@ -139,7 +164,13 @@ df_1d = ds_1d.to_dataframe()
 ## Concatenate 3d/2d/1d dataframes and save to disk:
 print("  Concatenate into one big dataframe and save to disk")
 df = pd.concat([df_1d,df_2d,df_3d,df_TRT],axis=1,copy=False)
-save_path = "%s_df.h5" % os.path.splitext(user_argv_path)[0]
+if diff_option == "1":
+    path_addon = "nodiff"
+elif diff_option == "2":
+    path_addon = "t0diff"
+elif diff_option == "3":
+    path_addon = "dtdiff"
+save_path = "%s_df_%s.h5" % (os.path.splitext(user_argv_path)[0],path_addon)
 df.to_hdf(save_path,key="df",mode="w",complevel=0)
 print("    Saving successfull")
 
