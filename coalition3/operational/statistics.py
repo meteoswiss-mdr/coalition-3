@@ -41,7 +41,11 @@ def read_TRT_area_indices(cfg_set_input,reverse):
     cell_info_df = pd.read_pickle(filename)
     cell_info_df = cell_info_df.loc[cell_info_df["RANKr"] >= cfg_set["min_TRT_rank"]]*10
     cell_info_df["Border_cell"] = False
-
+    
+    ## Correct date column (repetitions out of nowhere...)
+    if len(cell_info_df[["date"]].values[0][0])>12:
+        cell_info_df["date"] = np.array([date_i[:12] for date_i in cell_info_df["date"].values],dtype=np.object)
+        
     ## Read file with displaced TRT centres:
     orig_disp_TRT = "disp" if cfg_set["displ_TRT_cellcent"] else "orig"
     filename = path_creator_vararr(orig_disp_TRT,"TRT",cfg_set)
