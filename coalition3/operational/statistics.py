@@ -264,7 +264,8 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
         t1_inter = datetime.datetime.now()
         vararr = interpolate_COSMO_fields(vararr, method="KDTree")
         t2_inter = datetime.datetime.now()
-        if var=="RELHUM_85000": print("   Elapsed time for interpolating the data in %s: %s" % (var,str(t2_inter-t1_inter)))
+        if var=="RELHUM_85000" and cfg_set["verbose"]:
+            print("   Elapsed time for interpolating the data in %s: %s" % (var,str(t2_inter-t1_inter)))
 
     ## Calculate local standard deviation of specific COSMO_CONV fields:
     if cfg_var.loc[cfg_var["VARIABLE"]==var,"VARIABILITY"].values:
@@ -278,7 +279,8 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
                                         boundary='symm', mode='same'))
         #plt.imshow(vararr[2,:,:]); plt.show()
         t2_std = datetime.datetime.now()
-        if var=="POT_VORTIC_70000": print("   Elapsed time for finding the local standard deviation in %s: %s" % (var,str(t2_std-t1_std)))
+        if var=="POT_VORTIC_70000" and cfg_set["verbose"]:
+            print("   Elapsed time for finding the local standard deviation in %s: %s" % (var,str(t2_std-t1_std)))
 
     ## Smooth (COSMO) fields:
     if cfg_var.loc[cfg_var["VARIABLE"]==var,"SMOOTH"].values:
@@ -287,7 +289,8 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
         for t in range(vararr.shape[0]): vararr[t,:,:] = ndimage.gaussian_filter(vararr[t,:,:],cfg_set["smooth_sig"])
         #if var=="RELHUM_85000": plt.imshow(vararr[3,:,:]); plt.title(var+" smooth"); plt.show() #pause(.5)
         t2_smooth = datetime.datetime.now()
-        if var=="RELHUM_85000": print("   Elapsed time for smoothing the fields of %s: %s" % (var,str(t2_smooth-t1_smooth)))
+        if var=="RELHUM_85000" and cfg_set["verbose"]:
+            print("   Elapsed time for smoothing the fields of %s: %s" % (var,str(t2_smooth-t1_smooth)))
 
     ## Read in statistics and pixel counts / read in category counts:
     t1_stat = datetime.datetime.now()
@@ -300,7 +303,7 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
         ## Get count of nans and minimum values:
         array_pixc = np.stack([np.sum(np.isnan(vararr_sel),axis=2),
                                np.sum(vararr_sel<=min_val,axis=2)],axis=2)
-        xr_stat_pixcount[var+"_pixc"] = (('DATE_TRT_ID', 'time_delta', 'pixel_count'), array_pixc)
+        xr_stat_pixcount[var+"_pixc"] = (('DATE_TRT_ID', 'time_delta', 'pixel_count'), array_pixc.astype(np.uint16,copy=False))
 
         ## Calculate the actual statistics:
         perc_values = [0,1,5,25,50,75,95,99,100]
@@ -308,7 +311,7 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
                                np.mean(vararr_sel,axis=2), #nanmean
                                np.std(vararr_sel,axis=2)]) #nanstd
         array_stat = np.moveaxis(np.concatenate([array_stat,np.percentile(vararr_sel,perc_values,axis=2)]),0,2) #nanpercentile
-        xr_stat_pixcount[var+"_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat)
+        xr_stat_pixcount[var+"_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat.astype(np.float32,copy=False))
 
 
         ## Add specific statistics for Radar variables, only analysing values above minimum value:
@@ -318,17 +321,7 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
                                           np.nanmean(vararr_sel,axis=2),
                                           np.nanstd(vararr_sel,axis=2)])
             array_stat_nonmin = np.moveaxis(np.concatenate([array_stat_nonmin,np.nanpercentile(vararr_sel,perc_values,axis=2)]),0,2)
-            xr_stat_pixcount[var+"_stat_nonmin"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat_nonmin)
-
-        if False: #var=="lat_1" or var=="lon_1":
-            print(xr_stat_pixcount[var+"_stat"].values[21,:,1])
-            print(xr_stat_pixcount[var+"_stat"].values[21,:,-3])
-            print(xr_stat_pixcount[var+"_pixc"].values[21,:,0])
-            plt.plot(-xr_stat_pixcount["time_delta"],np.moveaxis(xr_stat_pixcount[var+"_stat"].values[:,:,1],0,1))
-            #plt.plot(-xr_stat_pixcount["time_delta"],np.moveaxis(xr_stat_pixcount[var+"_stat"].values[:,:,-3],0,1))
-            plt.title("Mean of variable: "+var)
-            #plt.title("95% percentile of variable: "+var)
-            plt.show() #pause(2)
+            xr_stat_pixcount[var+"_stat_nonmin"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat_nonmin.astype(np.float32,copy=False))
 
     else:
         ## Read in values at indices:
@@ -337,11 +330,12 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
         ## Get count different categories:
         raise ImplementationError("Categorical counting not yet implemented")
     t2_stat = datetime.datetime.now()
-    if var=="RELHUM_85000": print("   Elapsed time for calculating the statistics of %s: %s" % (var,str(t2_stat-t1_stat)))
+    if var=="RELHUM_85000" and cfg_set["verbose"]:
+        print("   Elapsed time for calculating the statistics of %s: %s" % (var,str(t2_stat-t1_stat)))
 
     ## Read number of pixels with max-echo value higher than 57dBZ
     if var=="CZC":
-        xr_stat_pixcount[var+"_lt57dBZ"] = (('DATE_TRT_ID', 'time_delta'), np.sum(vararr_sel>57.,axis=2))
+        xr_stat_pixcount[var+"_lt57dBZ"] = (('DATE_TRT_ID', 'time_delta'), np.sum(vararr_sel>57.,axis=2).astype(np.uint16,copy=False))
         #print("   Max CZC value: %s" % np.nanmax(vararr_sel))
         #print("   Number of CZC pixels > 57dBZ: %s" % np.sum(vararr_sel>57.,axis=2))
 
