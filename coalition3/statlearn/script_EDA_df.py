@@ -19,7 +19,7 @@ import coalition3.inout.paths as pth
 user_argv_path = sys.argv[1] if len(sys.argv)==2 else None
 path_to_df = pth.file_path_reader("pandas training dataframe",user_argv_path)
 df = pd.read_hdf(path_to_df,key="df")
-"""
+
 ## Make analysis of how many values are missing per column:
 df_nan_count_sort = df.isna().sum().sort_values(ascending=False)
 df_nan_count_sort[:6].plot(drawstyle="steps", linewidth=2)
@@ -28,8 +28,9 @@ plt.title("Number of missing values per feature")
 plt.xticks(rotation=20)
 plt.tight_layout()
 plt.show()
-"""
+
 ## Analyse pearson correlation between features (VERY TIME CONSUMING!):
+"""
 print("Start calculating Pearson correlation")
 d_start = dt.datetime.now()
 df_pears_corr_feat = df.corr()
@@ -38,6 +39,7 @@ save_path = "%s_pcorr.h5" % os.path.splitext(path_to_df)[0]
 df_pears_corr_feat.to_hdf(save_path,key="pearson_corr",mode="w",complevel=0)
 del(df_pears_corr_feat)
 
+## [Never conducted spearmans rank correlation calculation]
 print("Start calculating Spearmans rank correlation")
 d_start = dt.datetime.now()
 df_rank_corr_feat = df.corr(method="spearman")
@@ -45,21 +47,24 @@ print("  Elapsed time for calculating rank correlation: %s" % (dt.datetime.now()
 df_rank_corr_feat.to_hdf(save_path,key="rank_corr",mode="w",complevel=0)
 del(df_rank_corr_feat)
 
-"""
+df_pears_corr_feat = pd.read_hdf("%s_pcorr.h5" % os.path.splitext(path_to_df)[0],key="pearson_corr")
 percentage_corr = [(df_pears_corr_feat>corr_thr).sum().sum()/((10099**2)/2.) for corr_thr in np.arange(1,0.1,-0.025)]
+fig = plt.figure(figsize = [8,6])
+ax1 = fig.add_subplot(1,1,1)
+ax1.plot(np.arange(1,0.1,-0.025)[:35],percentage_corr[:35],"b-")
+ax1.plot(np.arange(1,0.1,-0.025)[34:],percentage_corr[34:],"b--")
+ax1.set_title("Feature correlation")
+ax1.set_xlabel(r"Pearson correlation coefficient $\rho$")
+ax1.set_ylabel(r"Fraction of feature pairs with correlation $\rho_{pair} \geq \rho$")
+plt.gca().invert_xaxis()
+vals = ax1.get_yticks()
+ax1.set_yticklabels(['{:,.0%}'.format(x) for x in vals])
+plt.grid()
+plt.show()
 """
 
 
 
-
-
-
-
-
-
-
-
-"""
 ## Delete rows with nan-entries:
 df_nonnan = df.dropna(0,'any')
 df.to_hdf("df_23km_nonnan.h5",key="df_nonnan",mode="w",complevel=0)
