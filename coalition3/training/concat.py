@@ -187,16 +187,42 @@ def concat_future_past_concat_stat_files(pkl_path):
     
     del(xr_new)
 
+## Wrapper function for adding additional derived variables to dataset (in training dataset creation environment):    
+def wrapper_fun_add_derived_variables(pkl_path):
+    print(" Adding derived variables to xarray object in file:\n   %s" % file_path)
+    file_path = os.path.join(stat_path,"Combined_stat_pixcount.pkl")
+    xr_stat = xarray_file_loader(file_path)
+
+    ## Add TRT-Rank
+    print("  Adding TRT Rank:")
+    xr_stat = stat.add_derived_variables(xr_stat)
+
+    ## Save Pickle:
+    file_new = os.path.join(stat_path,"Combined_stat_pixcount.pkl")
+    with open(file_new, "wb") as output_file: pickle.dump(xr_stat, output_file, protocol=-1)
+    print("  Saved to pickle file.")
+
+    ## Save NetCDF:
+    file_new = os.path.join(stat_path,"nc/Combined_stat_pixcount.nc")
+    xr_stat.to_netcdf(file_new)
+    print("  Saved to NetCDF file.")
+
+    
 ## Wrapper function for adding additional auxiliary static variables to dataset (in training dataset creation environment):    
 def wrapper_fun_add_aux_static_variables(pkl_path):
+    print(" Adding auxiliary variables to xarray object in file:\n   %s" % file_path)
     cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
     file_path = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
-    print(" Adding auxiliary variables to xarray object in file:\n   %s" % file_path)
     
+    ## Add auxilirary variables:
     with open(file_path, "rb") as path: ds = pickle.load(path)
     ds = stat.add_aux_static_variables(ds, cfg_set_input)
+    
+    ## Save Pickle:
     with open(file_path, "wb") as output_file: pickle.dump(ds, output_file, protocol=-1)
     print(" Saved pickle file with added auxiliary variables")
+    
+    ## Save NetCDF:
     file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
     ds.to_netcdf(file_new)
     print(" Saved NetCDF file with added auxiliary variables")
