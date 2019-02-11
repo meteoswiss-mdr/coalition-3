@@ -1,12 +1,12 @@
 VARIABLE;CATEGORY;UNIT;SOURCE;OPERATION;dt;VARIABLE_1;VARIABLE_2;VARIABLE_3;PREDICTOR;;VARIABLE;READ
-CD1;Cloud Depth;K;SEVIRI;diff;0;WV_062;IR_108;none;1;;IR_039;0
-CD2;Cloud Depth;K;SEVIRI;diff;0;WV_062;WV_073;none;1;;IR_087;1
-CD3;Cloud Depth;K;SEVIRI;none;0;IR_108;none;none;0;;IR_097;1
-CD4;Cloud Depth;K;SEVIRI;diff;0;WV_073;IR_134;none;1;;IR_108;1
-CD5;Cloud Depth;K;SEVIRI;diff;0;WV_062;IR_097;none;1;;IR_120;1
-CG1;Cloud Glaciation;K;SEVIRI;sum_2diff;0;IR_087;IR_120;IR_108;1;;WV_062;1
-CG2;Cloud Glaciation;K;SEVIRI;diff;0;IR_087;IR_108;none;1;;WV_073;1
-CG3;Cloud Glaciation;K;SEVIRI;diff;0;IR_120;IR_108;none;1;;;
+CD1;Cloud Depth;K;SEVIRI;diff;0;WV_062;IR_108;none;0;;IR_039;0
+CD2;Cloud Depth;K;SEVIRI;diff;0;WV_062;WV_073;none;1;;IR_087;0
+CD3;Cloud Depth;K;SEVIRI;none;0;IR_108;none;none;0;;IR_097;0
+CD4;Cloud Depth;K;SEVIRI;diff;0;WV_073;IR_134;none;0;;IR_108;0
+CD5;Cloud Depth;K;SEVIRI;diff;0;WV_062;IR_097;none;0;;IR_120;0
+CG1;Cloud Glaciation;K;SEVIRI;sum_2diff;0;IR_087;IR_120;IR_108;0;;WV_062;1
+CG2;Cloud Glaciation;K;SEVIRI;diff;0;IR_087;IR_108;none;0;;WV_073;1
+CG3;Cloud Glaciation;K;SEVIRI;diff;0;IR_120;IR_108;none;0;;;
 US1;Updraft Strength;K s-1;SEVIRI;diff;1;WV_062;WV_073;none;0;;;
 US2;Updraft Strength;K s-1;SEVIRI;none;1;IR_108;none;none;0;;;
 US5;Updraft Strength;K s-1;SEVIRI;diff;1;IR_097;IR_134;none;0;;;
