@@ -5,6 +5,7 @@
 import os
 import sys
 
+import pickle
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -93,7 +94,7 @@ plt.show()
 
 ## Delete rows with nan-entries:
 df_nonnan = df.dropna(0,'any')
-df.to_hdf("df_23km_nonnan.h5",key="df_nonnan",mode="w",complevel=0)
+df_nonnan.to_hdf("df_23km_nonnan.h5",key="df_nonnan",mode="w",complevel=0)
 
 ## Choose columns not containing TRT
 X = df_nonnan[[Xcol for Xcol in df_nonnan.columns if "TRT" not in Xcol]]
@@ -101,11 +102,16 @@ y_10 = df_nonnan[["TRT_Rank|10"]]
 y_30 = df_nonnan[["TRT_Rank|30"]]
 
 #os.environ['KMP_DUPLICATE_LIB_OK']='True'
-model_10 = xgb.XGBRegressor(n_jobs=6,nthreads=6) #objective=reg:linear
+model_10 = xgb.XGBRegressor(max_depth=10,silent=False,n_jobs=6,nthreads=6) #objective=reg:linear
+d_start = dt.datetime.now()
 model_10.fit(X, y_10, verbose=True)
-model_30 = xgb.XGBRegressor(n_jobs=6,nthreads=6) #objective=reg:linear
-model_30.fit(X, y_30, verbose=True)
-with open("model_10_.pkl","wb") as file: pickle.dump(model_10,file,protocol=-1)
-with open("model_30.pkl","wb") as file: pickle.dump(model_30,file,protocol=-1)
+print("  Elapsed time for XGBoost model fitting: %s" % (dt.datetime.now()-d_start))
+with open("model_10_t0diff_maxdepth10.pkl","wb") as file: pickle.dump(model_10,file,protocol=-1)
 plot_feature_importance(model_10,10)
+
+model_30 = xgb.XGBRegressor(max_depth=10,silent=False,n_jobs=6,nthreads=6) #objective=reg:linear
+d_start = dt.datetime.now()
+model_30.fit(X, y_30)
+print("  Elapsed time for XGBoost model fitting: %s" % (dt.datetime.now()-d_start))
+with open("model_30_t0diff_maxdepth10.pkl","wb") as file: pickle.dump(model_30,file,protocol=-1)
 plot_feature_importance(model_30,30)
