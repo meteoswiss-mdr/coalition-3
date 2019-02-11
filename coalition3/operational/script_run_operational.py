@@ -16,7 +16,7 @@ import sys
 import datetime
 
 import coalition3.inout.readconfig as cfg
-import coalition3.training.processing as prc
+import coalition3.operational.processing as prc
 import coalition3.operational.statistics as stat
 
 ## ===============================================================================
@@ -45,10 +45,19 @@ stat.add_auxiliary_derived_variables(cfg_set)
 ## OR: 
 
 ## Update to next time step:
-#t0_str_new = cfg_set["t0"] + datetime.timedelta(minutes=cfg_set["timestep"])
-#cfg_set    = cfg.cfg_set_append_t0(cfg_set,t0_str_new.strftime("%Y%m%d%H%M"))
-#prc.update_fields(cfg_set,verbose=False)
+t0_str_new = cfg_set["t0"] + datetime.timedelta(minutes=cfg_set["timestep"])
+cfg_set    = cfg.cfg_set_append_t0(cfg_set,t0_str_new.strftime("%Y%m%d%H%M"))
+prc.update_fields(cfg_set,verbose=False)
         
+## Read in variables to .nc/.npy files and displace TRT cell centres:
+prc.displace_variables(cfg_set,cfg_var,reverse=False)
+
+## Read in statistics and pixel counts
+stat.append_statistics_pixcount(cfg_set,cfg_var,cfg_var_combi,reverse=False)
+
+## Add auxiliary and derived variables
+stat.add_auxiliary_derived_variables(cfg_set)
+
 
         
         

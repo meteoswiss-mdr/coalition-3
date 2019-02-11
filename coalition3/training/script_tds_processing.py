@@ -19,7 +19,7 @@ import datetime
 
 import coalition3.inout.readconfig as cfg
 import coalition3.training.logfile as log
-import coalition3.training.processing as prc
+import coalition3.operational.processing as prc
 import coalition3.operational.statistics as stat
 
 ## ===============================================================================
