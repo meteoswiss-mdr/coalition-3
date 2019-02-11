@@ -647,8 +647,10 @@ def displace_fields(cfg_set, resid=False):
                                                XYW_prev_0=XYW_prev_0,XYW_prev_1=XYW_prev_1) for var in cfg_set["var_list"][1:])
 
         else:
-            for var in cfg_set["var_list"]: displace_specific_variable(var,cfg_set,print_options,
-                                                                       UV_t0,Dx_sum,Dy_sum)
+            for var in cfg_set["var_list"]:
+                #if cfg_set["source_dict"][var]=="METADATA":
+                #    continue
+                displace_specific_variable(var,cfg_set,print_options,UV_t0,Dx_sum,Dy_sum)
             #if cfg_set["displ_TRT_cellcent"]:
             #    raise NotImplementedError("So far backdisplacement of TRT cells only implemented if usage ")
     if cfg_set["displ_TRT_cellcent"]: displace_specific_variable("TRT",cfg_set,print_options,

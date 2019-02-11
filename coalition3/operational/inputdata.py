@@ -44,6 +44,8 @@ def create_new_vararray(cfg_set,cfg_var):
     source = None
     
     for var in cfg_set["var_list"]:
+        if cfg_set["source_dict"][var]=="METADATA":
+            continue
         source_new = cfg_var["SOURCE"].loc[cfg_var["VARIABLE"]==var].values[0]
         if source_new!=source or var==cfg_set["var_list"][-1]:
             t2 = datetime.datetime.now()
@@ -64,7 +66,7 @@ def create_new_vararray(cfg_set,cfg_var):
 ## Create variable array of specific variable:
 def create_new_vararray_core(cfg_set,var):
     """Create variable array of specific variable."""
-    if var in ["U_OFLOW","V_OFLOW"]:
+    if cfg_set["source_dict"][var]=="METADATA":
         return
     
     t1 = datetime.datetime.now()

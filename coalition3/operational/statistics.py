@@ -16,8 +16,10 @@ import xarray as xr
 import matplotlib.pylab as plt
 from scipy import ndimage, signal, interpolate, spatial
 
-from coalition3.inout.paths import path_creator_vararr, path_creator_UV_disparr
+from mpop.satin import swissradar
+
 from coalition3.inout.iotmp import save_nc, load_file
+from coalition3.inout.paths import path_creator_vararr, path_creator_UV_disparr
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -245,8 +247,12 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
     """
 
     if var in cfg_set["var_list"]:
+        ## Filter out auxiliary variables which are appended later (due to higher
+        ## efficiency when creating the training dataset):
+        if cfg_set["source_dict"][var]=="METADATA" and var not in ["U_OFLOW","V_OFLOW"]:
+            return
         ## Change setting of file type for U_OFLOW and V_OFLOW variable:
-        if var in ["U_OFLOW","V_OFLOW"]:
+        elif var in ["U_OFLOW","V_OFLOW"]:
             var_name = "Vx" if var=="U_OFLOW" else "Vy"
             if file_type=="orig":
                 file_type_UV = "standard"
@@ -462,6 +468,26 @@ def interpolate_COSMO_fields(vararr, method="KDTree"):
     else: raise ImplementationError("No other interpolation method implemented")
     return vararr
 
+## Add auxiliary and derived variables to operational stats & pixcount dataset:
+def add_auxiliary_derived_variables(cfg_set):
+    """This wrapper calls those functions adding the auxiliary/static and
+    derived (TRT Rank) variables to the stats & pixcount dataset"""
+    print("Adding auxiliary and derived variables")
+    
+    ## Get xarray dataset from tmp/ directory:
+    disp_reverse_str = "" if not cfg_set["future_disp_reverse"] else "_rev"
+    filename = os.path.join(cfg_set["tmp_output_path"],"%s%s%s%s" % \
+                            (cfg_set["t0_str"],"_stat_pixcount",disp_reverse_str,".pkl"))
+    with open(filename, "rb") as output_file: ds = pickle.load(output_file)
+
+    ## Add auxiliary and derived variables:
+    ds = add_aux_static_variables(ds, cfg_set)
+    ds = add_derived_variables(ds)
+
+    ## Save Pickle:
+    with open(filename, "wb") as output_file: pickle.dump(ds, output_file, protocol=-1)
+    print("  Saved pickle file with added auxiliary variables")
+    
 ## Add auxiliary variables (solar time, topography, radar frequency)
 def add_aux_static_variables(ds, cfg_set):
     """This function adds static auxilary variables like solar time (sin/cos), topography information and
@@ -486,18 +512,19 @@ def add_aux_static_variables(ds, cfg_set):
         else: ds["TRT_domain_indices"] = ds["TRT_domain_indices"].astype(np.uint32,copy=False)
 
     ## Check whether topography information should be added:
-    alt_var_ls = ["Aspect"] #"Altitude","Slope","Aspect"]
+    alt_var_ls = {"TOPO_ALTITUDE":"Altitude","TOPO_SLOPE":"Slope","TOPO_ASPECT":"Aspect"}
     if set(alt_var_ls).issubset(cfg_set["var_list"]):
         ## Add topography information:
         ds_alt = xr.open_dataset(config_aux["path_altitude_map"])
 
         for alt_var in list(set(alt_var_ls).intersection(cfg_set["var_list"])):
-            print("  Get statistics of topography variable '%s'" % alt_var)
-            DEM_vals = ds_alt[alt_var].values.flat[ds.TRT_domain_indices.values]
-            if alt_var == "Aspect":
+            if cfg_set["verbose"]: print("  Get statistics of topography variable '%s'" % alt_var_ls[alt_var])
+            DEM_vals = ds_alt[alt_var_ls[alt_var]].values.flat[ds.TRT_domain_indices.values]
+            if alt_var == "TOPO_ASPECT":
                 # Get x- and y-component of 2d direction of the aspect-vector:
                 x_asp   = np.cos(DEM_vals)
                 y_asp   = np.sin(DEM_vals)
+                DEM_shape = DEM_vals.shape
                 del(DEM_vals)
 
                 ## Get u- and v-component of optical flow and extent to the same extent as x_asp/y_asp (to the number of
@@ -509,10 +536,10 @@ def add_aux_static_variables(ds, cfg_set):
                 denominator_2 = np.sqrt(u_oflow**2+v_oflow**2)
 
                 ## Calculate aspect-flow-alignment factor:
-                DEM_vals      = np.zeros(DEM_vals.shape)
-                print("   Looping through %s pixel of TRT domain:" % DEM_vals.shape[2])
+                DEM_vals      = np.zeros(DEM_shape)
+                if cfg_set["verbose"]: print("   Looping through %s pixel of TRT domain:" % DEM_vals.shape[2])
                 for pix_ind in np.arange(DEM_vals.shape[2]):
-                    if pix_ind%50==0: print("\r     Working on pixel index %s" % pix_ind)
+                    if pix_ind%50==0 and cfg_set["verbose"]: print("\r     Working on pixel index %s" % pix_ind)
                     numerator     = u_oflow*x_asp[:,:,pix_ind] + v_oflow*y_asp[:,:,pix_ind];   #print("     Calculated the numerator")
                     denominator_1 = np.sqrt(x_asp[:,:,pix_ind]**2+y_asp[:,:,pix_ind]**2)
                     #del(x_asp); del(y_asp)
@@ -528,16 +555,16 @@ def add_aux_static_variables(ds, cfg_set):
             array_stat = np.array([np.sum(DEM_vals,axis=2),  #nansum
                                    np.mean(DEM_vals,axis=2), #nanmean
                                    np.std(DEM_vals,axis=2)]) #nanstd
-            print("   Calculated sum / mean / standard deviation")
+            if cfg_set["verbose"]: print("   Calculated sum / mean / standard deviation")
             array_stat = np.moveaxis(np.concatenate([array_stat,np.percentile(DEM_vals,perc_values,axis=2)]),0,2)
-            print("   Calculated quantiles")
+            if cfg_set["verbose"]: print("   Calculated quantiles")
 
             ## Add variable to dataset:
             ds[alt_var+"_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat)
 
     ## Check whether topography information should be added:
-    if "Radar_Freq_Qual" in cfg_set["var_list"]:
-        print("  Get radar frequency qualitiy information")
+    if "RADAR_FREQ_QUAL" in cfg_set["var_list"]:
+        if cfg_set["verbose"]: print("  Get radar frequency qualitiy information")
 
         ## Import radar frequency map:
         from PIL import Image
@@ -552,26 +579,26 @@ def add_aux_static_variables(ds, cfg_set):
         array_stat = np.array([np.sum(qual_vals,axis=2),  #nansum
                                np.mean(qual_vals,axis=2), #nanmean
                                np.std(qual_vals,axis=2)]) #nanstd
-        print("   Calculated sum / mean / standard deviation")
+        if cfg_set["verbose"]: print("   Calculated sum / mean / standard deviation")
         array_stat = np.moveaxis(np.concatenate([array_stat,np.percentile(qual_vals,perc_values,axis=2)]),0,2)
-        print("   Calculated quantiles")
+        if cfg_set["verbose"]: print("   Calculated quantiles")
 
         ## Add variable to dataset:
-        ds["Radar_Freq_Qual_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat)
+        ds["RADAR_FREQ_QUAL_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat)
 
     ## Check whether solar time information should be added:
-    solar_time_ls = ["Solar_Time_sin","Solar_Time_cos"]
+    solar_time_ls = ["SOLAR_TIME_SIN","SOLAR_TIME_COS"]
     if set(solar_time_ls).issubset(cfg_set["var_list"]):
-        print("  Get local solar time (sind & cos component)")
+        if cfg_set["verbose"]: print("  Get local solar time (sin & cos component)")
 
         ## Sin and Cos element of local solar time:
         time_points = [datetime.datetime.strptime(DATE_TRT_ID_date, "%Y%m%d%H%M") for DATE_TRT_ID_date in ds.date.values]
         lon_loc_rad = np.deg2rad(ds.lon_1_stat.sel(statistic="MEAN",time_delta=0).values)
         solar_time_sincos = [solartime(time_points_i,lon_loc_rad_i) for time_points_i,lon_loc_rad_i in zip(time_points,lon_loc_rad)]
-        ds["Solar_Time_sin"] = (('DATE_TRT_ID'), np.array(solar_time_sincos)[:,0])
-        ds["Solar_Time_cos"] = (('DATE_TRT_ID'), np.array(solar_time_sincos)[:,1])
+        ds["SOLAR_TIME_SIN"] = (('DATE_TRT_ID'), np.array(solar_time_sincos)[:,0])
+        ds["SOLAR_TIME_COS"] = (('DATE_TRT_ID'), np.array(solar_time_sincos)[:,1])
 
-    return ds
+    return(ds)
 
     """
     ## Remove 'time_delta' coordinate in TRT variables (which are only available for t0):
@@ -609,24 +636,14 @@ def xarray_file_loader(path_str):
     return xr_n
 
 ## Add derived information (e.g. TRT-Rank):
-def add_derived_variables(stat_path):
+def add_derived_variables(ds):
     print("Adding derived information:")
-    file_path = os.path.join(stat_path,"Combined_stat_pixcount.pkl")
-    xr_stat = xarray_file_loader(file_path)
 
     ## Add TRT-Rank
     print("  Adding TRT Rank:")
-    xr_stat = calc_TRT_Rank(xr_stat,ET_option="cond_median")
-
-    ## Save Pickle:
-    file_new = os.path.join(stat_path,"Combined_stat_pixcount.pkl")
-    with open(file_new, "wb") as output_file: pickle.dump(xr_stat, output_file, protocol=-1)
-    print("  Saved to pickle file.")
-
-    ## Save NetCDF:
-    file_new = os.path.join(stat_path,"nc/Combined_stat_pixcount.nc")
-    xr_stat.to_netcdf(file_new)
-    print("  Saved to NetCDF file.")
+    ds = calc_TRT_Rank(ds,ET_option="cond_median")
+    
+    return(ds)
 
 ## Calculate TRT Rank:
 def calc_TRT_Rank(xr_stat,ET_option="cond_median"):
