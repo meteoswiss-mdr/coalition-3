@@ -1,9 +1,6 @@
 """ [COALITION3] Updating the displacement and variable arrays in an operational context
     (the respective NetCDF or .npy files are opened, but only the most recent observations
     are added, whereas the older observations are kept)."""
-
-""" THIS MODULE HAS NOT BEEN UPDATED FOR THE NEW TASK OF DISPLACING TRT CELL CENTRES
-    AND SHOULD THEREFORE NOT BE USED AS SUCH! """
     
 from __future__ import division
 from __future__ import print_function
@@ -19,7 +16,9 @@ from coalition3.operational.lagrangian import displace_fields
 
 ## =============================================================================
 ## FUNCTIONS:
-    
+
+""" THIS MODULE HAS NOT BEEN UPDATED FOR THE NEW TASK OF DISPLACING TRT CELL CENTRES
+    AND SHOULD THEREFORE NOT BE USED AS SUCH! """
     
 ## Update fields for next time step:
 def update_fields(cfg_set,verbose_time=False):
