@@ -25,22 +25,22 @@ print("Current time: %s" % dt.datetime.now())
 
 n_processed_TRT = np.sum(df["Processed"])
 tot_TRT         = df.shape[0]
-print("  Percentage of already processed TRT cells: ....................... %02d%% (%s/%s)" % \
+print("  Percentage of already processed TRT cells: ......................... %3d%% (%5i/%5i)" % \
       (100.*n_processed_TRT/tot_TRT, n_processed_TRT, tot_TRT))
 
 n_processed_dt  = len(np.unique(df["date"].loc[df["Processed"]]))
 tot_dt          = len(np.unique(df["date"]))
-print("  Percentage of already processed time points: ..................... %02d%% (%s/%s)" % \
+print("  Percentage of already processed time points: ....................... %3d%% (%5i/%5i)" % \
       (100.*n_processed_dt/tot_dt,n_processed_dt,tot_dt))
 
 n_processing_TRT = np.sum(df["Processing"])
 tot_TRT          = df.shape[0]
-print("  Percentage of processing TRT cells: .............................. %02d%% (%s/%s)" % \
+print("  Percentage of processing TRT cells: ................................ %3d%% (%5i/%5i)" % \
       (100.*n_processing_TRT/tot_TRT, n_processing_TRT, tot_TRT))
 
 n_processing_dt  = len(np.unique(df["date"].loc[df["Processing"]]))
 tot_dt           = len(np.unique(df["date"]))
-print("  Percentage of processing time points: ............................ %02d%% (%s/%s)" % \
+print("  Percentage of processing time points: .............................. %3d%% (%5i/%5i)" % \
       (100.*n_processing_dt/tot_dt,n_processing_dt,tot_dt))
       
 dates_recent = np.unique(df["Processing_End"].values[np.where(np.logical_and(df["Processing_End"]>dt.datetime.now()-dt.timedelta(hours=2),
@@ -50,9 +50,9 @@ if len(dates_recent) > 0:
         dates_recent_dt = dt.datetime.utcfromtimestamp(max(dates_recent).astype(int) * 1e-9)
     except AttributeError:
         dates_recent_dt = max(dates_recent)
-    print("  Newest xarray object created on: ................................. %s" % dates_recent_dt)
+    print("  Newest xarray object created on: ................................... %s" % dates_recent_dt)
 
-print("  Number of xarray objects created in the past 2h: ................. %s" % len(dates_recent))
+print("  Number of xarray objects created in the past 2h: ................... %s" % len(dates_recent))
 if len(dates_recent)>5:
     timedeltas = [dates_recent[i-1]-dates_recent[i] for i in range(1, len(dates_recent))]
     try:
@@ -61,11 +61,11 @@ if len(dates_recent)>5:
         timedeltas = [dates_recent[i]-dates_recent[i-1] for i in range(1, len(dates_recent))]
         average_timedelta = sum(timedeltas, dt.timedelta(0)) / len(timedeltas)
     
-    print("  Average time delta between xarray object generated in the past 2h: %s" % average_timedelta)
+    print("  Average time delta between xarray object generated in the past 2h: . %s" % average_timedelta)
     time_remaining = average_timedelta*(tot_dt-n_processed_dt)
     time_finishing = dt.datetime.now()+time_remaining
-    print("  Expected time remaining: ......................................... %s" % time_remaining)
-    print("  Expected time finishing: ......................................... %s" % time_finishing)
+    print("  Expected time remaining: ........................................... %s" % time_remaining)
+    print("  Expected time finishing: ........................................... %s" % time_finishing)
 else:
     print("  No more than five xarray objects created in the past 2h")
 
