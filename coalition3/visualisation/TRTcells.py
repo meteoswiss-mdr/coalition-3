@@ -10,12 +10,40 @@ import numpy as np
 import matplotlib.pylab as plt
 import matplotlib.patheffects as pe
 import matplotlib.patches as patches
+from scipy import ndimage
 from PIL import Image
 import shapefile
 
 
 ## =============================================================================
 ## FUNCTIONS:
+             
+## Plot contour lines in 2D histogram, showing the fraction of points within contour line:
+def contour_of_2dHist(hist2d_1_data,percentiles=[0,40,60,80,95,100],smooth=True):
+    if True:
+        counts_total = np.sum(hist2d_1_data)
+        hist2d_1_cumsum = np.zeros(len(hist2d_1_data.flatten()))
+        hist2d_1_cumsum[np.argsort(hist2d_1_data.flatten())] = \
+            np.cumsum(hist2d_1_data.flatten()[np.argsort(hist2d_1_data.flatten())])
+        hist2d_1_data = hist2d_1_cumsum.reshape(hist2d_1_data.shape)
+        hist2d_1_data = 100-hist2d_1_data/np.sum(counts_total)*100.
+    else:
+        non_zero_perc_vals = np.percentile(hist2d_1_data[hist2d_1_data>0],
+                                           percentiles[1:-1])
+    if smooth:
+        hist2d_1_data_smooth = ndimage.gaussian_filter(hist2d_1_data,hist2d_1_data.shape[0]//100)
+        hist2d_1_data_smooth[hist2d_1_data==0] = 0
+        hist2d_1_data = hist2d_1_data_smooth
+
+    if True:
+        hist_2d_perc = hist2d_1_data; levels = percentiles[1:-1]
+    else:
+        hist_2d_perc = np.searchsorted(non_zero_perc_vals,hist2d_1_data)
+        for val_old, val_new in zip(np.unique(hist_2d_perc), percentiles):
+            hist_2d_perc[hist_2d_perc==val_old] = val_new
+        levels = np.unique(hist_2d_perc)[1:]
+
+    return hist_2d_perc.T, levels
              
 ## Print histogram of TRT cell values:
 def print_TRT_cell_histograms(samples_df,cfg_set_tds):
