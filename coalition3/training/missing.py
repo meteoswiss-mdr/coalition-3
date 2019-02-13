@@ -38,7 +38,8 @@ def create_df_missing(cfg_set_tds,cfg_set_input,cfg_var,check_sources):
     for sampling_time in dt_complete_list:
         perc_checked = np.round((sampling_time.hour*60+sampling_time.minute)/1440.,2)*100
         print("  Check input data availability of date: %s - %02d%%" % (sampling_time.strftime("%d.%m.%Y"),perc_checked), end='\r')
-        
+        sys.stdout.flush()
+
         for RADAR_var in RADAR_vars:
             if path_creator(sampling_time, RADAR_var, "RADAR", cfg_set_input)[0][0] is None:
                 df_missing.loc[sampling_time,RADAR_var] = True
