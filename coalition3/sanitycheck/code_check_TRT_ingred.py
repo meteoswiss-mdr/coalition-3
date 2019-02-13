@@ -23,15 +23,15 @@ da_VIL = xr.open_dataset("201805091905_LZC_orig.nc")
 
 ar_EZC = da_EZC["EZC45"].values[0,:,:]
 ar_CZC = da_CZC["CZC"].values[0,:,:]
-ar_VIL = da_VIL["LZC"].values[0,:,:]
 plt.imshow(ar_VIL); plt.show()
 
+ar_VIL = da_VIL["LZC"].values[0,:,:]
 for i, dt in enumerate(np.arange(0,-50,-5)):
-    print(da_VIL["LZC"].values[i,:,:].flatten()[ds["TRT_domain_indices"].sel(time_delta=dt,DATE_TRT_ID="201805091905_2018050919050039")])
-    print(np.max(da_VIL["LZC"].values[i,:,:].flatten()[ds["TRT_domain_indices"].sel(time_delta=dt,DATE_TRT_ID="201805091905_2018050919050039")]))
+    print(da_VIL["LZC"].values[i,:,:].flatten()[ds["TRT_domain_indices"].sel(time_delta=dt,DATE_TRT_ID="201807041715_2018070413250135")])
+    print(np.max(da_VIL["LZC"].values[i,:,:].flatten()[ds["TRT_domain_indices"].sel(time_delta=dt,DATE_TRT_ID="201807041715_2018070413250135")]))
 
     flat_ar_VIL = da_VIL["LZC"].values[i,:,:].flatten()
-    flat_ar_VIL[ds["TRT_domain_indices"].sel(time_delta=dt,DATE_TRT_ID="201805091905_2018050919050039")] = 1000
+    flat_ar_VIL[ds["TRT_domain_indices"].sel(time_delta=dt,DATE_TRT_ID="201807041715_2018070413250135")] = 1000
     nonflat_ar_VIL = flat_ar_VIL.reshape(ar_VIL.shape)
     plt.clf()
     plt.imshow(da_VIL["LZC"].values[i,:,:])
