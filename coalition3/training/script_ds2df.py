@@ -23,11 +23,14 @@ import coalition3.inout.paths as pth
 import coalition3.inout.readxr as rxr
 import coalition3.inout.readconfig as cfg
 
-sys.stdout.flush()
-
 #@dask.delayed
-def da2df(da,key):
-    print("  Working on %s" % key) #, end='\r')
+def da2df(da,key,data_vars=None):
+    if data_vars is not None:
+        perc_fin = np.float(np.where(data_vars==key)[0][0])/len(data_vars)
+        print("  Working on %s (%3i)          " % (key,int(perc_fin)), end='\r')
+    else:
+        print("  Working on %s           " % key, end='\r')
+    sys.stdout.flush()
     return da.to_pandas().to_frame(filter_observations=False).T
     
 ## ============================================================================
@@ -43,17 +46,22 @@ user_argv_path = sys.argv[1] if len(sys.argv)==2 else None
 path_to_ds = pth.file_path_reader("xarray training ds",user_argv_path)
 ds = rxr.xarray_file_loader(path_to_ds)
 
+## Get time delta values (also just pos/neg ones):
+time_del = ds.time_delta.values
+neg_del  = time_del[time_del<0]; neg0_del  = time_del[time_del<=0]
+pos_del  = time_del[time_del>0]; pos0_del  = time_del[time_del>=0]
+
 ## Check for new variables which cannot be converted yet (e.g. categorical variables):
 unconvertable_vars = [var for var in ds.data_vars if "CMA" in var or "CT" in var]
-if len(unconvertable_vars)>0:
-    raise ImplementationError("Categorical counting not yet implemented")
+if len(unconvertable_vars)>1: # and unconvertable_vars[0]!='TOPO_ASPECT_stat':
+    raise NotImplementedError("Categorical counting not yet implemented")
 
 ## Extract future TRT Ranks (target variable) and calculate
 ## Rank difference to t0.
 print("  Extract future TRT Ranks and pixel counts (treated seperately)")
-ds_TRTrank_future = ds["TRT_Rank"].where(ds["time_delta"]>0, drop=True).rename("TRT_Rank")
-ds_TRTrank_future = ds_TRTrank_future.sel(time_delta=slice(5,45)) - \
-                    ds["TRT_Rank"].sel(time_delta=0)
+ds_TRTrank_val  = ds["TRT_Rank"] #.where(ds["time_delta"]>0, drop=True).rename("TRT_Rank")
+ds_TRTrank_diff = ds_TRTrank_val - ds["TRT_Rank"].sel(time_delta=0) #ds_TRTrank_val.sel(time_delta=slice(5,45)) - \
+ds_TRTrank_diff = ds_TRTrank_diff.rename("TRT_Rank_diff")
 
 ## Extract pixel counts of Radar variables with "nonmin" statistics:
 ds_pixc_radar = ds[[var[:-12]+u"_pixc" for var in ds.data_vars if "nonmin" in var]]
@@ -103,14 +111,14 @@ for var in ds_past.data_vars:
     if diff_option == "2":
         if len(ds_past[var].sel(time_delta=0).values.shape)==1:
             ## Special case for variable 'CZC_lt57dBZ'
-            sub_val = ds_past[var].sel(time_delta=slice(-45,-5)).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis]
+            sub_val = ds_past[var].sel(time_delta=slice(neg_del[0],neg_del[-1])).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis]
             ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis]],axis=1)
         else:
-            sub_val = ds_past[var].sel(time_delta=slice(-45,-5)).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]
+            sub_val = ds_past[var].sel(time_delta=slice(neg_del[0],neg_del[-1])).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]
             ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]],axis=1)
         
     elif diff_option == "3":
-        sub_val = ds_past[var].sel(time_delta=slice(-40,0)).values-ds_past[var].sel(time_delta=slice(-45,-5)).values
+        sub_val = ds_past[var].sel(time_delta=slice(neg_del[1],0)).values-ds_past[var].sel(time_delta=slice(neg_del[0],neg_del[-1])).values
         if len(ds_past[var].sel(time_delta=0).values.shape)==1:
             ## Special case for variable 'CZC_lt57dBZ'
             ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis]],axis=1)
@@ -123,7 +131,7 @@ for var in ds_past.data_vars:
 
 ## Convert 3d dataarrays (xarray) to 2d dataframes (pandas) - TIME CONSUMING!
 print("  Converting 3D variables to dataframe (TIME CONSUMING)")
-df_list_3d = [da2df(ds_past[da],da) for da in ds_past.data_vars if len(ds_past[da].shape)==3]
+df_list_3d = [da2df(ds_past[da],da,ds_past.data_vars) for da in ds_past.data_vars if len(ds_past[da].shape)==3]
 #df_list.compute()
 df_3d = pd.concat(df_list_3d,axis=1,copy=False,
                   keys=[da for da in ds_past.data_vars if len(ds_past[da].shape)==3])
@@ -139,21 +147,24 @@ df_3d.index   = df_3d.index.astype(np.unicode)
 
 ## Convert 2d dataarrays (xarray) to 2d dataframes (pandas)
 print("  Converting 2D variables to dataframe")
-df_list_2d = [ds_past[u'CZC_lt57dBZ'].sel(time_delta=deltime).drop("time_delta").to_dataframe() for deltime in np.arange(-45,5,5)]
-df_list_colnames = [u'CZC_lt57dBZ|%i|SUM' % deltime for deltime in np.arange(-45,5,5)]
+df_list_2d = [ds_past[u'CZC_lt57dBZ'].sel(time_delta=deltime).drop("time_delta").to_dataframe() for deltime in neg0_del]
+df_list_colnames = [u'CZC_lt57dBZ|%i|SUM' % deltime for deltime in neg0_del]
 for var in ds_pixc_radar.data_vars:
-    df_list_2d += [ds_pixc_radar[var].sel(time_delta=deltime).drop("time_delta").to_dataframe() for deltime in np.arange(-45,5,5)]
-    df_list_colnames += [u'%s_NONMIN|%i|SUM' % (var,deltime) for deltime in np.arange(-45,5,5)]
+    df_list_2d += [ds_pixc_radar[var].sel(time_delta=deltime).drop("time_delta").to_dataframe() for deltime in neg0_del]
+    df_list_colnames += [u'%s_NONMIN|%i|SUM' % (var,deltime) for deltime in neg0_del]
 df_2d = pd.concat(df_list_2d,axis=1,copy=False)
 df_2d.columns = df_list_colnames
 df_2d = df_2d.astype(np.int16)
 del(df_list_2d,df_list_colnames,ds_past,ds_pixc_radar)
 #df_2d.to_hdf("df_23km_nd.h5",key="df_2d",mode="a",complevel=0)
 
-df_list_TRT = [ds_TRTrank_future.sel(time_delta=deltime).drop("time_delta").to_dataframe() for deltime in np.arange(5,50,5)]
-df_TRT = pd.concat(df_list_TRT,axis=1,copy=False)
-df_TRT.columns = [u'TRT_Rank|%i' % deltime for deltime in np.arange(5,50,5)]
-del(df_list_TRT)
+df_list_TRT_val     = [ds_TRTrank_val.sel(time_delta=deltime).drop("time_delta").to_dataframe() for deltime in time_del]
+df_TRT_val          = pd.concat(df_list_TRT_val,axis=1,copy=False)
+df_TRT_val.columns  = [u'TRT_Rank|%i' % deltime for deltime in time_del]
+df_list_TRT_diff    = [ds_TRTrank_diff.sel(time_delta=deltime).drop("time_delta").to_dataframe() for deltime in time_del]
+df_TRT_diff         = pd.concat(df_list_TRT_diff,axis=1,copy=False)
+df_TRT_diff.columns = [u'TRT_Rank_diff|%i' % deltime for deltime in time_del]
+del(df_list_TRT_val,df_list_TRT_diff)
 #df_TRT.to_hdf("df_23km_nd.h5",key="df_TRT",mode="a",complevel=0)
 
 ## Convert 1d dataarrays (xarray) to 2d dataframes (pandas)
@@ -163,14 +174,14 @@ df_1d = ds_1d.to_dataframe()
 
 ## Concatenate 3d/2d/1d dataframes and save to disk:
 print("  Concatenate into one big dataframe and save to disk")
-df = pd.concat([df_1d,df_2d,df_3d,df_TRT],axis=1,copy=False)
+df = pd.concat([df_1d,df_2d,df_3d,df_TRT_val,df_TRT_diff],axis=1,copy=False)
 if diff_option == "1":
     path_addon = "nodiff"
 elif diff_option == "2":
     path_addon = "t0diff"
 elif diff_option == "3":
     path_addon = "dtdiff"
-save_path = "%s_df_%s.h5" % (os.path.splitext(user_argv_path)[0],path_addon)
+save_path = "%s_df_%s.h5" % (os.path.splitext(path_to_ds)[0],path_addon)
 df.to_hdf(save_path,key="df",mode="w",complevel=0)
 print("    Saving successfull")
 
