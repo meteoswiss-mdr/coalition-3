@@ -216,7 +216,7 @@ def get_empty_tds(cfg_set_tds, cfg_set_input):
     
     ## Read in samples dataframe:
     samples_df = pd.read_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"Training_Dataset_Sampling_enhanced.pkl"))
-    samples_df_subset = samples_df.loc[samples_df["RANKr"] >= cfg_set_input["min_TRT_rank"]]
+    samples_df_subset = samples_df.loc[samples_df["RANKr"] >= cfg_set_input["min_TRT_rank"]*10]
     
     ## Get values of coordinates:
     statistics_coord = cfg_set_input["stat_list"] #cfg_var.columns[np.where(cfg_var.columns=="SUM")[0][0]:-1]
