@@ -32,6 +32,7 @@ def concat_stat_files(pkl_path, reverse, show_ctrl_plots=False):
     files = sorted(glob(os.path.join(pkl_path,"[0-9]*"+fileending)))
     print("\nStart concatenating the following files:\n   %s, ..." % \
           ', '.join([os.path.basename(file_x) for file_x in files[:3]]))
+    sys.stdout.flush()
     
     ## Initate array amongst which the dimensions are saved to check that no entries go missin/appear double:
     #datasets = [read_pickle_file(path) for path in files]
@@ -53,6 +54,7 @@ def concat_stat_files(pkl_path, reverse, show_ctrl_plots=False):
         perc_complete = 100*int(n)/float(len(files))
         str_print = "  Completed %02d%% (working on file: %s)" % (perc_complete,os.path.basename(path))
         print('\r',str_print,end='') #, end='\r'
+        sys.stdout.flush()
         #ls_datasets.append(read_nc_file(path))
         #new_ds = read_nc_file(path)
         new_ds = read_pickle_file(path)
@@ -121,6 +123,7 @@ def convert_stat_files(path):
             perc_complete = 100*int(n)/float(len(files))
             str_print = "  Completed %02d%% (working on file: %s)" % (perc_complete,os.path.basename(pkl_file))
             print('\r',str_print,end='') #, end='\r'
+            sys.stdout.flush()
             pickle2nc(pkl_file,nc_path)
         print("\nFinished converting NetCDF files to\n  %s\n" % nc_path)
 
