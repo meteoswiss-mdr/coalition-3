@@ -41,7 +41,7 @@ def read_TRT_area_indices(cfg_set_input,reverse):
                                cfg_set["t0"].strftime("%Y%m%d%H%M"),
                                "_TRT_df.pkl")
     cell_info_df = pd.read_pickle(filename)
-    cell_info_df = cell_info_df.loc[cell_info_df["RANKr"] >= cfg_set["min_TRT_rank"]]*10
+    cell_info_df = cell_info_df.loc[cell_info_df["RANKr"] >= cfg_set["min_TRT_rank"]*10]
     cell_info_df["Border_cell"] = False
     
     ## Correct date column (repetitions out of nowhere...)
@@ -306,7 +306,9 @@ def calculate_statistics_pixcount(var,cfg_set,cfg_var,cfg_var_combi,file_type,xr
     t1_stat = datetime.datetime.now()
     if var not in ["CMA","CT"]:
         ## Read in values at indices:
-        vararr_sel = vararr.flat[xr_stat_pixcount["TRT_domain_indices"].values].astype(np.float32)
+        vararr_sel = np.stack([vararr[time_point,:,:].flat[xr_stat_pixcount["TRT_domain_indices"].values[:,time_point,:]].astype(np.float32) \
+                               for time_point in range(vararr.shape[0])])
+        vararr_sel = np.swapaxes(vararr_sel,0,1)
         if np.any(xr_stat_pixcount["TRT_domain_indices"].values==0):
             vararr_sel[xr_stat_pixcount["TRT_domain_indices"].values==0] = np.nan
 
