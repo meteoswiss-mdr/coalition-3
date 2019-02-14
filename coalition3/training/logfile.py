@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import datetime
 import pickle
 import shutil
@@ -26,7 +27,8 @@ def setup_log_file(cfg_set_tds,cfg_set_input):
     samples_df = samples_df.reset_index(drop=True)
         
     ## Only keep RANKs bigger than minimum value:
-    samples_df = samples_df.loc[samples_df["RANKr"]>=cfg_set_input["min_TRT_rank"]*10]
+    sel_dates = samples_df["date"].loc[samples_df["RANKr"]>=cfg_set_tds["min_TRT_rank_tds"]*10]
+    samples_df = samples_df[samples_df["date"].isin(sel_dates)]
     
     ## Add columns indicating whether time step has already been processed, 
     ## is currently being processed, and whether all input data is available.
@@ -41,17 +43,26 @@ def setup_log_file(cfg_set_tds,cfg_set_input):
     samples_df["Border_cell"]         = False 
     samples_df["Non_NAN_stat"]        = False 
     
+    ## Preload missing input data dataframe:
+    missing_date_df_path = os.path.join(cfg_set_tds["root_path_tds"],"MissingInputData.pkl")
+    with open(missing_date_df_path, "rb") as path: missing_date_df = pickle.load(path)
+    
     ## Check input data availability:
+    t_start = datetime.datetime.now()
+    t_exp   = "(calculating)"
     for counter, date_i in enumerate(np.unique(samples_df["date"])):
-        perc_complete = 100*int(counter)/float(len(np.unique(samples_df["date"])))
-        str_print = "  Completed %02d%% of dates" % (perc_complete)
-        print('\r',str_print,end='') #, end='\r'
         date_i_dt = datetime.datetime.strptime(date_i,"%Y%m%d%H%M")
-        #date_i_dt = datetime.datetime.utcfromtimestamp(date_i.astype(int) * 1e-9)
-        samples_df, not_avail = check_input_data_availability(samples_df,date_i_dt,cfg_set_input,cfg_set_tds)
-        #samples_df, not_avail = check_input_data_availability(samples_df,date_i_dt,None,None,
-        #                                                      "/opt/users/jmz/0_training_NOSTRADAMUS_ANN/MissingInputData.pkl",
-        #                                                      10,5)
+        
+        perc_complete = int(counter)/float(len(np.unique(samples_df["date"])))
+        if counter%100==0 and counter > 10:
+            t_exp = (datetime.datetime.now() + \
+                     (datetime.datetime.now() - t_start)*int((1-perc_complete)/perc_complete)).strftime("%d.%m.%Y %H:%M")
+        str_print = "  Completed %3d.1%% of dates (%s) - Expexted finishing time: %s" % \
+                        (100*perc_complete,date_i_dt.strftime("%d.%m.%Y %H:%M"),t_exp)
+        print(str_print,end='\r') #, end='\r'
+        sys.stdout.flush()
+        
+        samples_df, not_avail = check_input_data_availability(samples_df,date_i_dt,cfg_set_input,cfg_set_tds,missing_date_df)
         if not_avail:
             samples_df.loc[samples_df["date"]==date_i, "Processed"] = True
     
@@ -152,10 +163,14 @@ def read_edit_log_file(cfg_set_tds,cfg_set_input,process_point,t0_object=None,lo
 
 ## Function which checks whether the input data at the respective time point is available:
 def check_input_data_availability(samples_df,time_point,cfg_set_input,cfg_set_tds,
-                                  missing_date_df_path=None,n_integ=None,timestep=None):
+                                  missing_date_df=None,missing_date_df_path=None,
+                                  n_integ=None,timestep=None):
                                   
-    if missing_date_df_path is None:
+    if missing_date_df_path is None and missing_date_df is None:
         missing_date_df_path = "%s%s" % (cfg_set_tds["root_path_tds"],"MissingInputData.pkl")
+        with open(missing_date_df_path, "rb") as path: missing_date_df = pickle.load(path)
+    elif missing_date_df is None:
+        with open(missing_date_df_path, "rb") as path: missing_date_df = pickle.load(path)
     if n_integ is None:
         n_integ = cfg_set_input["n_integ"]
     if timestep is None:
@@ -164,7 +179,7 @@ def check_input_data_availability(samples_df,time_point,cfg_set_input,cfg_set_td
     dates_of_needed_input_data = pd.date_range(time_point-n_integ*datetime.timedelta(minutes=timestep),
                                                time_point+n_integ*datetime.timedelta(minutes=timestep),
                                                freq=str(timestep)+'Min')
-    with open(missing_date_df_path, "rb") as path: missing_date_df = pickle.load(path)
+                                               
     t_ind = (missing_date_df.index >= dates_of_needed_input_data[0]) & \
             (missing_date_df.index <= dates_of_needed_input_data[-1])
 
