@@ -38,7 +38,7 @@ def create_df_missing(cfg_set_tds,cfg_set_input,cfg_var,check_sources):
     cfg_set_input["n_past_frames"]=0
     for sampling_time in dt_complete_list:
         perc_checked = np.round((sampling_time.hour*60+sampling_time.minute)/1440.,2)*100
-        print("  Check input data availability of date: %s - %02d%%" % (sampling_time.strftime("%d.%m.%Y"),perc_checked), end='\r')
+        print("  Check input data availability of date: %s - %3d%%" % (sampling_time.strftime("%d.%m.%Y"),perc_checked), end='\r')
         sys.stdout.flush()
 
         for RADAR_var in RADAR_vars:
@@ -78,10 +78,13 @@ def analyse_df_missing(cfg_set_tds,cfg_set_input,cfg_var,check_sources):
         df_missing_SEVIRI.groupby(df_missing_SEVIRI.index.month).count().plot(kind="bar")
         plt.title("Number of missing\nSEVIRI files per month")
         plt.pause(4)
+    plt.close()
+    
     if len(df_missing_COSMO.index.month)>0:
         df_missing_COSMO.groupby(df_missing_COSMO.index.month).count().plot(kind="bar")
         plt.title("Number of missing\nCOSMO files per month")
         plt.pause(4)
+    plt.close()
     
     df_missing_SEVIRI["datetime"] = df_missing_SEVIRI.index
     df_missing_COSMO["datetime"]  = df_missing_COSMO.index
