@@ -89,6 +89,7 @@ def get_config_info_tds(coalition3_path=None, CONFIG_PATH=None):
     cfg_set_tds.update({
         "tds_period_start":     tds_period_start,
         "tds_period_end":       tds_period_end,
+        "min_TRT_rank_tds":     float(config_bs["min_TRT_rank"]),
         "dt_samples":           int(config_bs["dt_samples"]),
         "dt_daily_shift":       int(config_bs["dt_daily_shift"]),
         "tds_period_start_doy": tds_period_start.timetuple().tm_yday,
@@ -348,7 +349,7 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
         "stat_sel_form":       stat_sel_form,
         "stat_sel_form_width": stat_sel_form_width,
         "stat_sel_form_size":  stat_sel_form_size,
-        "min_TRT_rank":        float(config_sc["min_TRT_rank"]),
+        "min_TRT_rank_op":     float(config_sc["min_TRT_rank"]),
         "save_TRT_domain_map": config_sc["save_TRT_domain_map"]=='True',
         "save_stat_ctrl_imag": config_sc["save_stat_ctrl_imag"]=='True',
         "stat_list":           stat_list,
