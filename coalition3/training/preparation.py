@@ -75,9 +75,15 @@ def get_TRT_cell_info(dt_sampling_list,cfg_set_tds,cfg_set_input=None,len_ini_df
     #ind_df = 0; first_append = True; doy_temp = -1
     
     ## Loop over time steps to gather information on TRT cells at specific time step:
-    for sampling_time in dt_sampling_list:
-        perc_checked = np.round((sampling_time.hour*60+sampling_time.minute)/1440.,2)*100
-        print("  Check input data availability of date: %s - %02d%%  " % (sampling_time.strftime("%d.%m.%Y"),perc_checked), end='\r')
+    t_start = datetime.datetime.now(); t_exp   = "(calculating)"
+    for counter, sampling_time in enumerate(dt_sampling_list):
+        perc_checked = np.round((sampling_time.hour*60+sampling_time.minute)/1440.,2)
+        if counter%100==0 and counter > 10:
+            t_exp = (datetime.datetime.now() + \
+                     (datetime.datetime.now() - t_start)*int((1-perc_checked)/perc_checked)).strftime("%d.%m.%Y %H:%M")
+        
+        print("  Check input data availability of date: %s - %3d%% (expected finishing time: %s) " % \
+            (sampling_time.strftime("%d.%m.%Y"),100*perc_checked,t_exp), end='\r')
         
         ## Update time in config dict:
         cfg_set_input["t0"]     = sampling_time
