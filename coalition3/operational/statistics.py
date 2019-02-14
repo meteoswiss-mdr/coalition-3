@@ -41,7 +41,7 @@ def read_TRT_area_indices(cfg_set_input,reverse):
                                cfg_set["t0"].strftime("%Y%m%d%H%M"),
                                "_TRT_df.pkl")
     cell_info_df = pd.read_pickle(filename)
-    cell_info_df = cell_info_df.loc[cell_info_df["RANKr"] >= cfg_set["min_TRT_rank"]*10]
+    cell_info_df = cell_info_df.loc[cell_info_df["RANKr"] >= cfg_set["min_TRT_rank_op"]*10]
     cell_info_df["Border_cell"] = False
     
     ## Correct date column (repetitions out of nowhere...)
