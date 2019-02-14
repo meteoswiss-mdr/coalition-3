@@ -80,14 +80,14 @@ def setup_log_file(cfg_set_tds,cfg_set_input):
      
 ## Read and edit log file which is containing information on training dataset generation:
 def read_edit_log_file(cfg_set_tds,cfg_set_input,process_point,t0_object=None,log_file=None,
-                       samples_df=None,check_input_data=True):    
+                       samples_df=None,check_input_data=True,file_ending=""):    
     """Read and edit log file which is containing information on training dataset generation."""
     
     print("Reading training dataset generation log file at %s of input generation process" % process_point)
     if log_file is None:
-        log_file_path = os.path.join(cfg_set_tds["root_path_tds"],u'Training_Dataset_Processing_Status.pkl')
+        log_file_path = os.path.join(cfg_set_tds["root_path_tds"],u'Training_Dataset_Processing_Status%s.pkl' % file_ending)
     if log_file is None and samples_df is None:
-        log_file_path = os.path.join(cfg_set_tds["root_path_tds"],u'Training_Dataset_Processing_Status.pkl')
+        log_file_path = os.path.join(cfg_set_tds["root_path_tds"],u'Training_Dataset_Processing_Status%s.pkl' % file_ending)
         with open(log_file_path, "rb") as path: samples_df = pickle.load(path)
     elif samples_df is None: 
         log_file_path = log_file

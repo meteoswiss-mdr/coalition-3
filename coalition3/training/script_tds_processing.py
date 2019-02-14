@@ -30,8 +30,18 @@ cfg_set_tds   = cfg.get_config_info_tds()
 cfg.print_config_info_tds(cfg_set_tds)
 cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
         
+## Look for numeric sys.argv (processing status file ending):
+file_end = ""
+if len(sys.argv)>1:
+    file_end_ls = ["_%s" % sysargv for sysargv in sys.argv if unicode(sysargv).isnumeric()]
+    if len(file_end_ls)>1:
+        raise ValueError("More than one sys.argv with purely numeric values")
+    elif len(file_end_ls)==1:
+        file_end = file_end_ls[0]
+    
 ## Get time point to be processed:
-time_point, samples_df = log.read_edit_log_file(cfg_set_tds,cfg_set_input,"start")
+time_point, samples_df = log.read_edit_log_file(cfg_set_tds,cfg_set_input,"start",
+                                                file_ending=file_end)
 
 ## In case all time points are processed,
 ## exit the processing and return exit code 200.
@@ -42,9 +52,10 @@ if time_point==200:
 ## try another time point:
 while time_point is None:
     time_point, samples_df = log.read_edit_log_file(cfg_set_tds,cfg_set_input,
-                                                    "start",samples_df=samples_df)
+                                                    "start",samples_df=samples_df,
+                                                    file_ending=file_end)
 ## Write all stdout ouput to file:
-if len(sys.argv)>1 and sys.argv[1]=="std2file":
+if len(sys.argv)>1 and "std2file" in sys.argv:
     orig_stdout = sys.stdout
     log_file_path = os.path.join(cfg_set_tds["stdout_output_path"],
                                  "%s.txt" % time_point.strftime("%Y%m%d%H%M"))
@@ -92,7 +103,8 @@ print(" ============ End process with change form width ============\n\n")
 prc.clean_disparr_vararr_tmp(cfg_set_input)
     
 ## State that the processing is finished
-exit_code = log.read_edit_log_file(cfg_set_tds,cfg_set_input,"end",time_point)                                        
+exit_code = log.read_edit_log_file(cfg_set_tds,cfg_set_input,"end",time_point,
+                                   file_ending=file_end)                                        
 if exit_code==200: print("\n\n ALL TIMEPOINTS HAVE BEEN PROCESSED")
 
 tend = datetime.datetime.now()
