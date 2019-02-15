@@ -117,7 +117,8 @@ def read_edit_log_file(cfg_set_tds,cfg_set_input,process_point,t0_object=None,lo
                                                    
         ## Check whether SEVIRI and COSMO input data is available:
         if check_input_data:
-            samples_df, not_avail = check_input_data_availability(samples_df,chosen_date,cfg_set_input,cfg_set_tds)
+            samples_df, not_avail = check_input_data_availability(samples_df,chosen_date,cfg_set_input,cfg_set_tds,
+                                                                  file_end=file_ending)
 
         if not_avail:
             ## If any input data is missing, skip this time point and set 'Processed' to True:
@@ -142,7 +143,7 @@ def read_edit_log_file(cfg_set_tds,cfg_set_input,process_point,t0_object=None,lo
         samples_df.loc[samples_df["date"]==t0_object, "Processing_End"] = datetime.datetime.now()
         samples_df.loc[samples_df["date"]==t0_object, "Processed"]      = True
         samples_df.loc[samples_df["date"]==t0_object, "Processing"]     = False
-        print("\n",samples_df.loc[samples_df["date"]==t0_object],"\n")
+        #print("\n",samples_df.loc[samples_df["date"]==t0_object],"\n")
         
         ## Delete files in /tmp directory of time steps where processing started more than 2h ago:
         dates_old = samples_df.loc[samples_df["Processing_End"]<datetime.datetime.now()-datetime.timedelta(hours=2),["Processing_Start"]]
@@ -164,10 +165,10 @@ def read_edit_log_file(cfg_set_tds,cfg_set_input,process_point,t0_object=None,lo
 ## Function which checks whether the input data at the respective time point is available:
 def check_input_data_availability(samples_df,time_point,cfg_set_input,cfg_set_tds,
                                   missing_date_df=None,missing_date_df_path=None,
-                                  n_integ=None,timestep=None):
+                                  n_integ=None,timestep=None,file_end=""):
                                   
     if missing_date_df_path is None and missing_date_df is None:
-        missing_date_df_path = "%s%s" % (cfg_set_tds["root_path_tds"],"MissingInputData.pkl")
+        missing_date_df_path = os.path.join(cfg_set_tds["root_path_tds"],"MissingInputData%s.pkl" % file_end)
         with open(missing_date_df_path, "rb") as path: missing_date_df = pickle.load(path)
     elif missing_date_df is None:
         with open(missing_date_df_path, "rb") as path: missing_date_df = pickle.load(path)
