@@ -202,9 +202,6 @@ def check_input_data_availability(samples_df,time_point,cfg_set_input,cfg_set_td
      
 ## Split status dataframe into sub-frames by month to process seperately:
 def split_processing_status_file(cfg_set_tds):
-    input_path = os.path.join(cfg_set_tds["root_path_tds"],
-                                           u'Training_Dataset_Processing_Status.pkl')
-    with open(input_path, "rb") as path: df_status_split = pickle.load(path)
     
     ## Read in lists of months which should stay in the same dataframe:
     split_mon = []; split_answer = ""
@@ -218,7 +215,12 @@ def split_processing_status_file(cfg_set_tds):
         split_answer = raw_input("  Type month(s) for seperate dataframe: ")
         if split_answer!="n":
             split_mon.append(split_answer.split(","))
-
+    
+    ## Import file to be split:
+    input_path = os.path.join(cfg_set_tds["root_path_tds"],
+                                           u'Training_Dataset_Processing_Status.pkl')
+    with open(input_path, "rb") as path: df_status_split = pickle.load(path)
+    
     ## Split into monthly datasets:
     dict_df_mon = {mon.month: df_mon.reset_index() for mon, df_mon in df_status_split.set_index('date').groupby(pd.Grouper(freq='M'))}
     
