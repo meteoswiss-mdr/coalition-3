@@ -36,9 +36,16 @@ def create_df_missing(cfg_set_tds,cfg_set_input,cfg_var,check_sources):
     df_missing = pd.DataFrame(bool_array,index=dt_complete_list,columns=columns_list)
     
     cfg_set_input["n_past_frames"]=0
-    for sampling_time in dt_complete_list:
-        perc_checked = np.round((sampling_time.hour*60+sampling_time.minute)/1440.,2)*100
-        print("  Check input data availability of date: %s - %3d%%" % (sampling_time.strftime("%d.%m.%Y"),perc_checked), end='\r')
+    t_start = datetime.datetime.now()
+    t_exp   = "(calculating)"
+    for counter, sampling_time in enumerate(dt_complete_list):
+        perc_checked_total = float(counter)/len(dt_complete_list)
+        perc_checked = np.round((sampling_time.hour*60+sampling_time.minute)/1440.,2)        
+        if counter%100==0 and counter > 10:
+            t_exp = (datetime.datetime.now() + \
+                     (datetime.datetime.now() - t_start)*int((1-perc_checked_total)/perc_checked_total)).strftime("%d.%m.%Y %H:%M")
+        print("  Check input data availability of date: %s - %3d%% | Expected finishing time: %s" % \
+              (sampling_time.strftime("%d.%m.%Y"),perc_checked*100,t_exp), end='\r')
         sys.stdout.flush()
 
         for RADAR_var in RADAR_vars:
