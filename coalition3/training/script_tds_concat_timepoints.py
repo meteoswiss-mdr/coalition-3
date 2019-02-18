@@ -29,11 +29,12 @@ cnc.concat_stat_files(stat_path,False)
 ## Concatenate past and future statistics into the final mega-super-duper stats file:
 cnc.concat_future_past_concat_stat_files(stat_path)
 
-## Add auxiliary static variables (solar time, topographical and qualitiy (freq. of radar returns) information):
+## Add auxiliary static variables (solar time, topographical and qualitiy
+## (freq. of radar returns) information) and TRT Rank:
 cnc.wrapper_fun_add_aux_static_variables(stat_path)   
 
-## Add derived information (e.g. TRT-Rank):
-cnc.wrapper_fun_add_derived_variables(stat_path)
+## [DEPRECATED] Add derived information (e.g. TRT-Rank):
+#cnc.wrapper_fun_add_derived_variables(stat_path)
 """
 ## Make various plots (nothing too serious, just for an overview):
 cnc.collection_of_plotting_functions(stat_path)

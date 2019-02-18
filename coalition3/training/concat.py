@@ -8,6 +8,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import psutil
 import datetime
 import numpy as np
@@ -153,6 +154,13 @@ def concat_future_past_concat_stat_files(pkl_path):
         with open(file_past, "rb") as path: xr_past = pickle.load(path)
     xr_past = xr_past.where(xr_past["time_delta"]<0,drop=True)
 
+    ## Drop DATE_TRT_ID which do not agreee:
+    DTI_unique = np.intersect1d(xr_past["DATE_TRT_ID"].values,
+                                xr_future["DATE_TRT_ID"].values,
+                                assume_unique=True)
+    xr_past = xr_past.sel(DATE_TRT_ID=DTI_unique)
+    xr_future = xr_future.sel(DATE_TRT_ID=DTI_unique)
+
     ## Concatenate to one file (first bringing 'time_delta' in xr_past in ascending order):
     xr_new = xr.concat([xr_past.sortby("time_delta"),xr_future],"time_delta")
     del(xr_past); del(xr_future)
@@ -178,8 +186,8 @@ def concat_future_past_concat_stat_files(pkl_path):
     xr_new["TRT_cellcentre_indices"] = xr_new["TRT_cellcentre_indices"].astype(np.uint32)
     
     ## In case the dates have bin concatenated, only keep the twelve initial characters (Date+Time):
-    if len(xr_new["DATE_TRT_ID"].values[0])>12:
-        xr_new["date"].values = np.array([date_i[:12] for date_i in xr_new["date"].values])
+    #if len(xr_new["date"].values[0])>12:
+    #    xr_new["date"].values = np.array([date_i[:12] for date_i in xr_new["date"].values])
     
     ## Save NetCDF:
     file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
@@ -193,7 +201,7 @@ def concat_future_past_concat_stat_files(pkl_path):
 
 ## Wrapper function for adding additional derived variables to dataset (in training dataset creation environment):    
 def wrapper_fun_add_derived_variables(pkl_path):
-    file_path = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
+    file_path = os.path.join(pkl_path,"Combined_stat_pixcount_aux.pkl")
     print(" Adding derived variables to xarray object in file:\n   %s" % file_path)
     xr_stat = rxr.xarray_file_loader(file_path)
 
@@ -206,28 +214,32 @@ def wrapper_fun_add_derived_variables(pkl_path):
     print("  Saved to pickle file.")
 
     ## Save NetCDF:
-    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
+    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount_auxder.nc")
     xr_stat.to_netcdf(file_new)
     print("  Saved to NetCDF file.")
 
     
-## Wrapper function for adding additional auxiliary static variables to dataset (in training dataset creation environment):    
+## Wrapper function for adding additional auxiliary static variables and TRT Rank
+## to dataset (in training dataset creation environment):    
 def wrapper_fun_add_aux_static_variables(pkl_path):
     cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
     file_path = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
-    print(" Adding auxiliary variables to xarray object in file:\n   %s" % file_path)
+    print(" Adding auxiliary variables and TRT Rank to xarray object in file:\n   %s" % file_path)
     cfg_set_input["verbose"] = True
     
     ## Add auxilirary variables:
-    with open(file_path, "rb") as path: ds = pickle.load(path)
+    #with open(file_path, "rb") as path: ds = pickle.load(path)
+    #ds = xr.open_dataset(file_path)
+    ds = rxr.xarray_file_loader(file_path)
     ds = stat.add_aux_static_variables(ds, cfg_set_input)
+    ds = stat.add_derived_variables(ds)
     
     ## Save Pickle:
     with open(file_path, "wb") as output_file: pickle.dump(ds, output_file, protocol=-1)
     print(" Saved pickle file with added auxiliary variables")
     
     ## Save NetCDF:
-    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
+    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount_auxder.nc")
     ds.to_netcdf(file_new)
     print(" Saved NetCDF file with added auxiliary variables")
     
