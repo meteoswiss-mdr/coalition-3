@@ -26,7 +26,7 @@ import coalition3.training.missing as miss
 cfg_set_tds = cfg.get_config_info_tds()
 cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
 cfg.print_config_info_tds(cfg_set_tds)
-"""
+
 ## Set up list with sampling datetime objects 
 t1 = datetime.datetime.now()
 dt_sampling_list = prep.create_dt_sampling_list(cfg_set_tds)
@@ -61,7 +61,6 @@ print("  Elapsed time for creation of sampling timepoint list: "+str(t2-t1)+"\n"
 ## Make file which is containing information on training dataset generation
 ## which is filled up during the training dataset generation:
 log.setup_log_file(cfg_set_tds,cfg_set_input)
-"""
 split_op = ""
 while (split_op!="y" and split_op != "n"):
     split_op = raw_input("Do you want to split the Processing Status file by months? [y/n] ")
@@ -69,7 +68,6 @@ while (split_op!="y" and split_op != "n"):
 
 ## Set up the trainings dataset (DEPRECATED):
 # Nds.get_empty_tds(cfg_set_tds,cfg_set_input)
-
     
     
     
