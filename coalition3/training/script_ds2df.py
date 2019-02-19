@@ -24,12 +24,13 @@ import coalition3.inout.readxr as rxr
 import coalition3.inout.readconfig as cfg
 
 #@dask.delayed
-def da2df(da,key,data_vars=None):
+def da2df(da,data_vars=None):
     if data_vars is not None:
-        perc_fin = np.float(np.where(data_vars==key)[0][0])/len(data_vars)
-        print("  Working on %s (%3i)          " % (key,int(perc_fin)), end='\r')
+        perc_fin = np.float(list(data_vars).index(da.name)+1)/len(data_vars)*100
+        print("  Working on %s (%3d%%)                     " % \
+                (da.name,int(perc_fin)), end='\r')
     else:
-        print("  Working on %s           " % key, end='\r')
+        print("  Working on %s           " % da.name, end='\r')
     sys.stdout.flush()
     return da.to_pandas().to_frame(filter_observations=False).T
     
@@ -131,7 +132,7 @@ for var in ds_past.data_vars:
 
 ## Convert 3d dataarrays (xarray) to 2d dataframes (pandas) - TIME CONSUMING!
 print("  Converting 3D variables to dataframe (TIME CONSUMING)")
-df_list_3d = [da2df(ds_past[da],da,ds_past.data_vars) for da in ds_past.data_vars if len(ds_past[da].shape)==3]
+df_list_3d = [da2df(ds_past[da],ds_past.data_vars) for da in ds_past.data_vars if len(ds_past[da].shape)==3]
 #df_list.compute()
 df_3d = pd.concat(df_list_3d,axis=1,copy=False,
                   keys=[da for da in ds_past.data_vars if len(ds_past[da].shape)==3])
