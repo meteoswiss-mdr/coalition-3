@@ -13,7 +13,7 @@ import shutil
 import numpy as np
 import pandas as pd
 
-import coalition3.training.processing as prc
+import coalition3.operational.processing as prc
 
 ## =============================================================================
 ## FUNCTIONS:
