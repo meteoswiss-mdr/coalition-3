@@ -669,19 +669,22 @@ def calc_TRT_Rank(xr_stat,ET_option="cond_median"):
     elif ET_option == "all_max":
         ET45_scal = xr_stat.EZC45_stat.sel(statistic=b"MAX")            ## EchoTop 45dBZ (MAX)
 
+    ## Set NaN-values in EchoTop 45dBZ to zero (are due to zero pixels with non-zero values)
+    ET45_scal[np.isnan(ET45_scal)] = 0.
+    
     ## Scale variables to values between min and max according to Powerpoint Slide
     ## M:\lom-prod\mdr-prod\oper\adula\Innovation\6224_COALITION2\06-Presentations\2018-10-17_TRT_Workshop-DACH_MWO_hea.pptx:
     VIL_scal.values[VIL_scal.values>65.]   = 65. ## Max  VIL:       56 kg m-2
     ME_scal.values[ME_scal.values<45.]     = 45. ## Min MaxEcho:    45 dBZ
     ME_scal.values[ME_scal.values>57.]     = 57. ## Max MaxEcho:    57 dBZ
     ET45_scal.values[ET45_scal.values>10.] = 10. ## Max EchoTop:    10 km
-    A55_scal.values[A55_scal.values>40.]   = 40. ## Max pix >57dBZ: 40
+    A55_scal.values[A55_scal.values>40]    = 40  ## Max pix >57dBZ: 40
 
     ## Scale variables to values between 0 and 4:
     VIL_scal  = VIL_scal/65.*4
     ET45_scal = ET45_scal/10.*4
     ME_scal   = (ME_scal-45.)/12.*4
-    A55_scal  = A55_scal/40.*4
+    A55_scal  = A55_scal.astype(np.float32,copy=False)/40.*4
 
     ## Calculate TRT rank:
     TRT_Rank = (2.*VIL_scal+2*ET45_scal+ME_scal+2.*A55_scal)/7.
