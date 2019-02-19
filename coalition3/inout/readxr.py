@@ -12,10 +12,10 @@ import xarray as xr
 ## FUNCTIONS:
     
 ## Read xarray datasets into RAM (either fully or lazy if too big): 
-def xarray_file_loader(path_str):
+def xarray_file_loader(path_str,except_perc=50):
     if path_str[-3:]==".nc":
         expected_memory_need = float(os.path.getsize(path_str))/psutil.virtual_memory().available*100
-        if expected_memory_need > 50:
+        if expected_memory_need > except_perc:
             print("  *** Warning: File is opened as dask dataset (expected memory use: %02d%%) ***" %\
                   (expected_memory_need))
             xr_n = xr.open_mfdataset(path_str,chunks={"DATE_TRT_ID":1000})
