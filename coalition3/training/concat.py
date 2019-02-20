@@ -253,7 +253,6 @@ def wrapper_fun_add_derived_variables(pkl_path,xr_stat=None):
             file_path = os.path.join(pkl_path,"nc/Combined_stat_pixcount_aux.nc")
         xr_stat = rxr.xarray_file_loader(file_path)
     print(" Adding derived variables to xarray object in file:\n   %s" % file_path)
-    cfg_set_input["verbose"] = True
 
     ## Add TRT-Rank
     xr_stat = stat.add_derived_variables(xr_stat)
@@ -299,9 +298,9 @@ def wrapper_fun_add_aux_static_variables(pkl_path,ds=None):
                  #compute=True)
     
     ## Save Pickle:
-    print("  Start saving pickle file")
     file_new = os.path.join(pkl_path,"Combined_stat_pixcount_aux.pkl")
     try:
+        print("  Start saving pickle file")
         with open(file_new, "wb") as output_file:
             pickle.dump(ds, output_file, protocol=-1)
     except struct.error:

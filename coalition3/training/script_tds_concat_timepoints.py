@@ -31,7 +31,7 @@ stat_path      = pth.get_stat_path(user_argv_path)
 
 ## Add auxiliary static variables (solar time, topographical and qualitiy
 ## (freq. of radar returns) information) and TRT Rank:
-ds = cnc.wrapper_fun_add_aux_static_variables(stat_path, ds)   
+#ds = cnc.wrapper_fun_add_aux_static_variables(stat_path, ds)   
 
 ## [DEPRECATED] Add derived information (e.g. TRT-Rank):
 ds = cnc.wrapper_fun_add_derived_variables(stat_path, ds)
