@@ -196,11 +196,14 @@ def concat_future_past_concat_stat_files(pkl_path, xr_past=None, xr_future=None)
     ## Concatenate to one file (first bringing 'time_delta' in xr_past in ascending order):
     print("  Concatenate past and future obs", end="  ")
     xr_new = xr.concat([xr_past.sortby("time_delta"),xr_future],"time_delta")
+    
+    ## Keep all TRT variables in the same datatype:
+    for TRTvar in ds_keys[:32]: xr_new[TRTvar] = xr_new[TRTvar].astype(xr_future[TRTvar])
     del(xr_past); del(xr_future)
     print("(finished)")
 
     ## Remove 'time_delta' coordinate in TRT variables (which are only available for t0):
-    ds_keys  = np.array(xr_new.keys())
+    ds_keys  = np.array(xr_new.data_vars)
     keys_TRT = ds_keys[np.where(["stat" not in key_ele and "pixc" not in key_ele for key_ele in ds_keys])[0]]
     keys_TRT_timedelta = xr_new.coords.keys()+["TRT_domain_indices","TRT_cellcentre_indices","CZC_lt57dBZ"]
     keys_TRT = list(set(keys_TRT) - set(keys_TRT_timedelta))
@@ -211,7 +214,6 @@ def concat_future_past_concat_stat_files(pkl_path, xr_past=None, xr_future=None)
     for dim_name in ["DATE_TRT_ID","statistic","pixel_count","CHi_CHj","date"]:
         xr_new[dim_name] = xr_new[dim_name].astype(np.unicode)
     
-    """
     ## Change all stat-variables to float32:
     keys_stat = ds_keys[np.where(["_stat" in key_ele for key_ele in ds_keys])[0]]
     for key_stat in keys_stat: xr_new[key_stat] = xr_new[key_stat].astype(np.float32)
@@ -222,7 +224,7 @@ def concat_future_past_concat_stat_files(pkl_path, xr_past=None, xr_future=None)
     for key_pixc in keys_pixc: xr_new[key_pixc] = xr_new[key_pixc].astype(dtype_pixc)
     xr_new["CZC_lt57dBZ"] = xr_new["CZC_lt57dBZ"].astype(dtype_pixc)
     xr_new["TRT_cellcentre_indices"] = xr_new["TRT_cellcentre_indices"].astype(np.uint32)
-    """
+
     ## In case the dates have bin concatenated, only keep the twelve initial characters (Date+Time):
     #if len(xr_new["date"].values[0])>12:
     #    xr_new["date"].values = np.array([date_i[:12] for date_i in xr_new["date"].values])
