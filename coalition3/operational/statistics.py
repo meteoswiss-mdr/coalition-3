@@ -513,6 +513,32 @@ def add_aux_static_variables(ds, cfg_set):
             ds["TRT_domain_indices"] = ds["TRT_domain_indices"].astype(np.uint16,copy=False)
         else: ds["TRT_domain_indices"] = ds["TRT_domain_indices"].astype(np.uint32,copy=False)
 
+    ## Add radar quality information:
+    if "RADAR_FREQ_QUAL" in cfg_set["var_list"]:
+        if cfg_set["verbose"]: print("  Get radar frequency qualitiy information")
+
+        ## Import radar frequency map:
+        from PIL import Image
+        frequency_data = swissradar.convertToValue(Image.open(config_aux["path_frequency_image"]),
+                                                   config_aux["path_frequency_scale"])
+        frequency_data[np.logical_or((frequency_data >= 9999.0),(frequency_data <= 0.5))] = np.nan
+
+        ## Get values in TRT domains:
+        qual_vals = frequency_data.flat[ds.TRT_domain_indices.values]
+        del(frequency_data)
+
+        ## Calcualte the statistics:
+        array_stat = np.array([np.sum(qual_vals,axis=2),  #nansum
+                               np.mean(qual_vals,axis=2), #nanmean
+                               np.std(qual_vals,axis=2)]) #nanstd
+        if cfg_set["verbose"]: print("   Calculated sum / mean / standard deviation")
+        array_stat = np.moveaxis(np.concatenate([array_stat,np.percentile(qual_vals,perc_values,axis=2)]),0,2)
+        if cfg_set["verbose"]: print("   Calculated quantiles")
+
+        ## Add variable to dataset:
+        ds["RADAR_FREQ_QUAL_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat)
+        del(array_stat,qual_vals)
+
     ## Check whether topography information should be added:
     alt_var_ls = {"TOPO_ALTITUDE":"Altitude","TOPO_SLOPE":"Slope","TOPO_ASPECT":"Aspect"}
     if set(alt_var_ls).issubset(cfg_set["var_list"]):
@@ -563,30 +589,7 @@ def add_aux_static_variables(ds, cfg_set):
 
             ## Add variable to dataset:
             ds[alt_var+"_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat)
-
-    ## Check whether topography information should be added:
-    if "RADAR_FREQ_QUAL" in cfg_set["var_list"]:
-        if cfg_set["verbose"]: print("  Get radar frequency qualitiy information")
-
-        ## Import radar frequency map:
-        from PIL import Image
-        frequency_data = swissradar.convertToValue(Image.open(config_aux["path_frequency_image"]),
-                                                   config_aux["path_frequency_scale"])
-        frequency_data[np.logical_or((frequency_data >= 9999.0),(frequency_data <= 0.5))] = np.nan
-
-        ## Get values in TRT domains:
-        qual_vals = frequency_data.flat[ds.TRT_domain_indices.values]
-
-        ## Calcualte the statistics:
-        array_stat = np.array([np.sum(qual_vals,axis=2),  #nansum
-                               np.mean(qual_vals,axis=2), #nanmean
-                               np.std(qual_vals,axis=2)]) #nanstd
-        if cfg_set["verbose"]: print("   Calculated sum / mean / standard deviation")
-        array_stat = np.moveaxis(np.concatenate([array_stat,np.percentile(qual_vals,perc_values,axis=2)]),0,2)
-        if cfg_set["verbose"]: print("   Calculated quantiles")
-
-        ## Add variable to dataset:
-        ds["RADAR_FREQ_QUAL_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat)
+            del(array_stat)
 
     ## Check whether solar time information should be added:
     solar_time_ls = ["SOLAR_TIME_SIN","SOLAR_TIME_COS"]
@@ -624,6 +627,7 @@ def solartime(time, lon_loc_rad, sun=ephem.Sun()):
     return np.sin(angle_rad), np.cos(angle_rad)
 
 ## Read xarray files from disk, depending on file ending (as .pkl or .nc file):
+"""
 def xarray_file_loader(path_str):
     import psutil
     if path_str[-3:]==".nc":
@@ -636,6 +640,7 @@ def xarray_file_loader(path_str):
     elif path_str[-4:]==".pkl":
         with open(path_str, "rb") as path: xr_n = pickle.load(path)
     return xr_n
+"""
 
 ## Add derived information (e.g. TRT-Rank):
 def add_derived_variables(ds):
@@ -670,7 +675,7 @@ def calc_TRT_Rank(xr_stat,ET_option="cond_median"):
         ET45_scal = xr_stat.EZC45_stat.sel(statistic=b"MAX")            ## EchoTop 45dBZ (MAX)
 
     ## Set NaN-values in EchoTop 45dBZ to zero (are due to zero pixels with non-zero values)
-    ET45_scal[np.isnan(ET45_scal)] = 0.
+    ET45_scal.values[np.isnan(ET45_scal.values)] = 0.
     
     ## Scale variables to values between min and max according to Powerpoint Slide
     ## M:\lom-prod\mdr-prod\oper\adula\Innovation\6224_COALITION2\06-Presentations\2018-10-17_TRT_Workshop-DACH_MWO_hea.pptx:
