@@ -20,22 +20,22 @@ user_argv_path = sys.argv[1] if len(sys.argv)==2 else None
 stat_path      = pth.get_stat_path(user_argv_path)
 
 ## Convert single '<Datetime>_stat_pixcount*.pkl' files to NetCDF:
-cnc.convert_stat_files(stat_path)
+#cnc.convert_stat_files(stat_path)
 
 ## Concatenate single event <Datetime>_stat_pixcount*.pkl' files to one big file (past and future seperate):
-cnc.concat_stat_files(stat_path,True)
-cnc.concat_stat_files(stat_path,False)
+#ds_past   = cnc.concat_stat_files(stat_path,False)
+#ds_future = cnc.concat_stat_files(stat_path,True)
 
 ## Concatenate past and future statistics into the final mega-super-duper stats file:
-cnc.concat_future_past_concat_stat_files(stat_path)
+#ds = cnc.concat_future_past_concat_stat_files(stat_path, ds_past, ds_future)
 
 ## Add auxiliary static variables (solar time, topographical and qualitiy
 ## (freq. of radar returns) information) and TRT Rank:
-cnc.wrapper_fun_add_aux_static_variables(stat_path)   
+ds = cnc.wrapper_fun_add_aux_static_variables(stat_path, ds)   
 
 ## [DEPRECATED] Add derived information (e.g. TRT-Rank):
-#cnc.wrapper_fun_add_derived_variables(stat_path)
-"""
+ds = cnc.wrapper_fun_add_derived_variables(stat_path, ds)
+
 ## Make various plots (nothing too serious, just for an overview):
-cnc.collection_of_plotting_functions(stat_path)
-"""
+#cnc.collection_of_plotting_functions(stat_path)
+

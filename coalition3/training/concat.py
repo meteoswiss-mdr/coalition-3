@@ -10,6 +10,7 @@ from __future__ import print_function
 import os
 import sys
 import psutil
+import struct
 import datetime
 import numpy as np
 import pandas as pd
@@ -51,6 +52,8 @@ def concat_stat_files(pkl_path, reverse, show_ctrl_plots=False):
     
     ## Loop over all single files to be concatenated:
     print("Start reading in the data")
+    combined_ds = xr.concat([read_pickle_file(path,verbose=True) for path in files], dim)
+    """
     for n, path in enumerate(files[1:],2):
         perc_complete = 100*int(n)/float(len(files))
         str_print = "  Completed %02d%% (working on file: %s)" % (perc_complete,os.path.basename(path))
@@ -89,13 +92,8 @@ def concat_stat_files(pkl_path, reverse, show_ctrl_plots=False):
     if len(files_KeyError)>0:
         print("Files which could not be appended:\n  %s" % files_KeyError)
         pdb.set_trace()
+    """
     
-    ## Save Pickle:
-    pkl_pathfile = os.path.join(pkl_path,"Combined_stat_"+fileending_out)
-    with open(pkl_pathfile, "wb") as output_file: pickle.dump(combined_ds, output_file, protocol=-1)
-    if os.path.exists(pkl_pathfile): print("Pickle file has been created in %s" % pkl_pathfile)
-    else: raise FileNotFoundError("Pickle file was not created")
-
     ## Save NetCDF:
     nc_path = os.path.join(pkl_path,"nc/")
     if not os.path.exists(nc_path): os.makedirs(nc_path)
@@ -104,6 +102,18 @@ def concat_stat_files(pkl_path, reverse, show_ctrl_plots=False):
     combined_ds.to_netcdf(nc_pathfile)
     if os.path.exists(nc_pathfile): print("NetCDF file has been created in %s" % nc_pathfile)
     else: raise FileNotFoundError("NetCDF file was not created")
+
+    ## Save Pickle:
+    pkl_pathfile = os.path.join(pkl_path,"Combined_stat_"+fileending_out)
+    try:
+        with open(pkl_pathfile, "wb") as output_file: pickle.dump(combined_ds, output_file, protocol=-1)
+    except struct.error:
+        print("   *** File to large to be saved as pickle ***")
+    else:
+        if os.path.exists(pkl_pathfile): print("Pickle file has been created in %s" % pkl_pathfile)
+        else: raise FileNotFoundError("Pickle file was not created")
+        
+    return(combined_ds)
 
 ## Convert pickle files containing statistics and pixel counts to NetCDF files:
 def convert_stat_files(path):
@@ -129,12 +139,25 @@ def convert_stat_files(path):
         print("\nFinished converting NetCDF files to\n  %s\n" % nc_path)
 
 ## Concatenate the concatenations of past and future statistics into one big file
-def concat_future_past_concat_stat_files(pkl_path):
+def concat_future_past_concat_stat_files(pkl_path, xr_past=None, xr_future=None):
     print("\nConcatenate the concatenations of past and future statistics into one big file")
     import psutil
     
     ## Read file with future (t0 + n min) statistics:
-    file_future = os.path.join(pkl_path,"Combined_stat_pixcount_future.pkl")
+    if xr_past is None:
+        file_past   = os.path.join(pkl_path,"Combined_stat_pixcount_past.pkl")
+        if not os.path.exists(file_future):
+            file_future = os.path.join(pkl_path,"nc/Combined_stat_pixcount_future.nc")
+        print("  Reading the file containing past observations")
+        xr_past   = rxr.xarray_file_loader(file_past,except_perc=20)
+    if xr_future is None:
+        file_future = os.path.join(pkl_path,"Combined_stat_pixcount_future.pkl")
+        if not os.path.exists(file_past):
+            file_past   = os.path.join(pkl_path,"nc/Combined_stat_pixcount_past.nc")
+        print("  Reading the file containing future observations")
+        xr_future = rxr.xarray_file_loader(file_future,except_perc=20)
+    
+    """
     expected_memory_need = float(os.path.getsize(file_future))/psutil.virtual_memory().available*100
     if expected_memory_need > 20:
         print("  *** Warning: File 'Combined_stat_pixcount_future.pkl' is expected ***\n"+\
@@ -152,18 +175,29 @@ def concat_future_past_concat_stat_files(pkl_path):
     else:
         file_past = os.path.join(pkl_path,"Combined_stat_pixcount_past.pkl")
         with open(file_past, "rb") as path: xr_past = pickle.load(path)
+    """
+    
+    ## Remove observations at t0 for past obs
     xr_past = xr_past.where(xr_past["time_delta"]<0,drop=True)
 
     ## Drop DATE_TRT_ID which do not agreee:
     DTI_unique = np.intersect1d(xr_past["DATE_TRT_ID"].values,
                                 xr_future["DATE_TRT_ID"].values,
                                 assume_unique=True)
-    xr_past = xr_past.sel(DATE_TRT_ID=DTI_unique)
+    if len(DTI_unique)!=len(xr_past["DATE_TRT_ID"].values) or \
+       len(DTI_unique)!=len(xr_future["DATE_TRT_ID"].values):
+        print("  Keeping %d%% of time point in past obs" % \
+              (np.float(len(DTI_unique))/len(xr_past["DATE_TRT_ID"].values)*100))
+        print("  Keeping %d%% of time point in future obs" % \
+              (np.float(len(DTI_unique))/len(xr_future["DATE_TRT_ID"].values)*100))
+    xr_past   = xr_past.sel(DATE_TRT_ID=DTI_unique)
     xr_future = xr_future.sel(DATE_TRT_ID=DTI_unique)
 
     ## Concatenate to one file (first bringing 'time_delta' in xr_past in ascending order):
+    print("  Concatenate past and future obs", end="  ")
     xr_new = xr.concat([xr_past.sortby("time_delta"),xr_future],"time_delta")
     del(xr_past); del(xr_future)
+    print("(finished)")
 
     ## Remove 'time_delta' coordinate in TRT variables (which are only available for t0):
     ds_keys  = np.array(xr_new.keys())
@@ -174,6 +208,10 @@ def concat_future_past_concat_stat_files(pkl_path):
         if key_TRT in keys_TRT_timedelta: continue
         xr_new[key_TRT] = xr_new[key_TRT].sel(time_delta=0).drop("time_delta")
     
+    for dim_name in ["DATE_TRT_ID","statistic","pixel_count","CHi_CHj","date"]:
+        xr_new[dim_name] = xr_new[dim_name].astype(np.unicode)
+    
+    """
     ## Change all stat-variables to float32:
     keys_stat = ds_keys[np.where(["_stat" in key_ele for key_ele in ds_keys])[0]]
     for key_stat in keys_stat: xr_new[key_stat] = xr_new[key_stat].astype(np.float32)
@@ -184,64 +222,91 @@ def concat_future_past_concat_stat_files(pkl_path):
     for key_pixc in keys_pixc: xr_new[key_pixc] = xr_new[key_pixc].astype(dtype_pixc)
     xr_new["CZC_lt57dBZ"] = xr_new["CZC_lt57dBZ"].astype(dtype_pixc)
     xr_new["TRT_cellcentre_indices"] = xr_new["TRT_cellcentre_indices"].astype(np.uint32)
-    
+    """
     ## In case the dates have bin concatenated, only keep the twelve initial characters (Date+Time):
     #if len(xr_new["date"].values[0])>12:
     #    xr_new["date"].values = np.array([date_i[:12] for date_i in xr_new["date"].values])
     
     ## Save NetCDF:
-    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
+    print("  Start saving NetCDF file")
+    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc",
+                            encoding={'zlib': True, 'complevel': 5},
+                            compute=True)
     xr_new.to_netcdf(file_new)
     
     ## Save Pickle:
+    print("  Start saving pickle file")
     file_new = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
-    with open(file_new, "wb") as output_file: pickle.dump(xr_new, output_file, protocol=-1)
-    
+    try:
+        with open(file_new, "wb") as output_file:
+            pickle.dump(xr_new, output_file, protocol=-1)
+    except struct.error:
+        print("   *** File to large to be saved as pickle ***")
     del(xr_new)
 
-## Wrapper function for adding additional derived variables to dataset (in training dataset creation environment):    
-def wrapper_fun_add_derived_variables(pkl_path):
+## Wrapper function for adding additional derived variables to dataset
+## (in training dataset creation environment):    
+def wrapper_fun_add_derived_variables(pkl_path,xr_stat=None):
     file_path = os.path.join(pkl_path,"Combined_stat_pixcount_aux.pkl")
+    if xr_stat is None:
+        if not os.path.exists(file_path):
+            file_path = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
+        xr_stat = rxr.xarray_file_loader(file_path)
     print(" Adding derived variables to xarray object in file:\n   %s" % file_path)
-    xr_stat = rxr.xarray_file_loader(file_path)
+    cfg_set_input["verbose"] = True
 
     ## Add TRT-Rank
     xr_stat = stat.add_derived_variables(xr_stat)
-
-    ## Save Pickle:
-    file_new = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
-    with open(file_new, "wb") as output_file: pickle.dump(xr_stat, output_file, protocol=-1)
-    print("  Saved to pickle file.")
-
+    
     ## Save NetCDF:
+    print("  Start saving NetCDF file")
     file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount_auxder.nc")
-    xr_stat.to_netcdf(file_new)
-    print("  Saved to NetCDF file.")
+    xr_stat.to_netcdf(file_new) #,
+                      #encoding={'zlib': True, 'complevel': 5},
+                      #compute=True)
+    
+    ## Save Pickle:
+    print("  Start saving pickle file")
+    file_new = os.path.join(pkl_path,"Combined_stat_pixcount_auxder.pkl")
+    try:
+        with open(file_new, "wb") as output_file:
+            pickle.dump(xr_stat, output_file, protocol=-1)
+    except struct.error:
+        print("   *** File to large to be saved as pickle ***")
+    return(xr_stat)
 
     
-## Wrapper function for adding additional auxiliary static variables and TRT Rank
+## Wrapper function for adding additional auxiliary static variables
 ## to dataset (in training dataset creation environment):    
-def wrapper_fun_add_aux_static_variables(pkl_path):
+def wrapper_fun_add_aux_static_variables(pkl_path,ds=None):
     cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
-    file_path = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
-    print(" Adding auxiliary variables and TRT Rank to xarray object in file:\n   %s" % file_path)
+    if ds is None:
+        file_path = os.path.join(pkl_path,"Combined_stat_pixcount_aux.pkl")
+        if not os.path.exists(file_path):
+            file_path = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
+        ds = rxr.xarray_file_loader(file_path)
+    print(" Adding auxiliary variables to xarray object in file:\n   %s" % file_path)
     cfg_set_input["verbose"] = True
     
     ## Add auxilirary variables:
-    #with open(file_path, "rb") as path: ds = pickle.load(path)
-    #ds = xr.open_dataset(file_path)
-    ds = rxr.xarray_file_loader(file_path)
     ds = stat.add_aux_static_variables(ds, cfg_set_input)
-    ds = stat.add_derived_variables(ds)
-    
-    ## Save Pickle:
-    with open(file_path, "wb") as output_file: pickle.dump(ds, output_file, protocol=-1)
-    print(" Saved pickle file with added auxiliary variables")
     
     ## Save NetCDF:
+    print("  Start saving NetCDF file")
     file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount_auxder.nc")
-    ds.to_netcdf(file_new)
-    print(" Saved NetCDF file with added auxiliary variables")
+    ds.to_netcdf(file_new)#,
+                 #encoding={'zlib': True, 'complevel': 5},
+                 #compute=True)
+    
+    ## Save Pickle:
+    print("  Start saving pickle file")
+    file_new = os.path.join(pkl_path,"Combined_stat_pixcount_auxder.pkl")
+    try:
+        with open(file_new, "wb") as output_file:
+            pickle.dump(ds, output_file, protocol=-1)
+    except struct.error:
+        print("   *** File to large to be saved as pickle ***")
+    return(ds)
     
 def pickle2nc(pkl_pathfile,nc_path):
     nc_filename = os.path.join(nc_path,os.path.basename(pkl_pathfile)[:-3]+"nc")
@@ -249,17 +314,20 @@ def pickle2nc(pkl_pathfile,nc_path):
         try:
             with open(pkl_pathfile, "rb") as path: xr_stat_pixcount = pickle.load(path)
         except EOFError:
-            print("\n   *** Warning: File could not be converted due to EOF Error - skip this file *** \n        %s" % os.path.basename(pkl_pathfile))
+            print("\n   *** Warning: File could not be converted due to EOF Error - skip this file *** \n        %s" % \
+            os.path.basename(pkl_pathfile))
         else:
             xr_stat_pixcount.date.values = np.array([date_str[:12] for date_str in xr_stat_pixcount.date.values],dtype=np.object)
             xr_stat_pixcount.to_netcdf(nc_filename)
             path.close()
     
-def read_pickle_file(filename):
+def read_pickle_file(filename,verbose=False):
+    if verbose: print("\r   Reading: %s" % os.path.basename(filename),end="\r")
     try:
         with open(filename, "rb") as path: xr_stat_pixcount = pickle.load(path)
     except EOFError:
-        print("\n   *** Warning: File could not be converted due to EOF Error - skip this file *** \n        %s" % os.path.basename(pkl_pathfile))
+        print("\n   *** Warning: File could not be converted due to EOF Error - skip this file *** \n        %s\n" % \
+        os.path.basename(pkl_pathfile))
     else:
         return xr_stat_pixcount
         
@@ -316,12 +384,6 @@ def collection_of_plotting_functions(pkl_path):
     plt_text = "%02d%% equal" % perc_equal
     plt.text(8,14,plt_text)
     plt.show()
-
-## Exploratory data analysis
-def EDA_wrapper(pkl_path, cfg_set):
-    file_path = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
-    print("Perform exploratory data analysis on the dataset:\n   %s" % file_path)
-    
 
 
 
