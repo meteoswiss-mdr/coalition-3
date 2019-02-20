@@ -250,7 +250,7 @@ def wrapper_fun_add_derived_variables(pkl_path,xr_stat=None):
     file_path = os.path.join(pkl_path,"Combined_stat_pixcount_aux.pkl")
     if xr_stat is None:
         if not os.path.exists(file_path):
-            file_path = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
+            file_path = os.path.join(pkl_path,"nc/Combined_stat_pixcount_aux.nc")
         xr_stat = rxr.xarray_file_loader(file_path)
     print(" Adding derived variables to xarray object in file:\n   %s" % file_path)
     cfg_set_input["verbose"] = True
@@ -281,7 +281,7 @@ def wrapper_fun_add_derived_variables(pkl_path,xr_stat=None):
 def wrapper_fun_add_aux_static_variables(pkl_path,ds=None):
     cfg_set_input, cfg_var, cfg_var_combi = cfg.get_config_info_op()
     if ds is None:
-        file_path = os.path.join(pkl_path,"Combined_stat_pixcount_aux.pkl")
+        file_path = os.path.join(pkl_path,"Combined_stat_pixcount.pkl")
         if not os.path.exists(file_path):
             file_path = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
         ds = rxr.xarray_file_loader(file_path)
@@ -293,14 +293,14 @@ def wrapper_fun_add_aux_static_variables(pkl_path,ds=None):
     
     ## Save NetCDF:
     print("  Start saving NetCDF file")
-    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount_auxder.nc")
+    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount_aux.nc")
     ds.to_netcdf(file_new)#,
                  #encoding={'zlib': True, 'complevel': 5},
                  #compute=True)
     
     ## Save Pickle:
     print("  Start saving pickle file")
-    file_new = os.path.join(pkl_path,"Combined_stat_pixcount_auxder.pkl")
+    file_new = os.path.join(pkl_path,"Combined_stat_pixcount_aux.pkl")
     try:
         with open(file_new, "wb") as output_file:
             pickle.dump(ds, output_file, protocol=-1)
