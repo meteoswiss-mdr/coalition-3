@@ -146,14 +146,14 @@ def concat_future_past_concat_stat_files(pkl_path, xr_past=None, xr_future=None)
     ## Read file with future (t0 + n min) statistics:
     if xr_past is None:
         file_past   = os.path.join(pkl_path,"Combined_stat_pixcount_past.pkl")
-        if not os.path.exists(file_future):
-            file_future = os.path.join(pkl_path,"nc/Combined_stat_pixcount_future.nc")
+        if not os.path.exists(file_past):
+            file_past = os.path.join(pkl_path,"nc/Combined_stat_pixcount_past.nc")
         print("  Reading the file containing past observations")
         xr_past   = rxr.xarray_file_loader(file_past,except_perc=20)
     if xr_future is None:
         file_future = os.path.join(pkl_path,"Combined_stat_pixcount_future.pkl")
-        if not os.path.exists(file_past):
-            file_past   = os.path.join(pkl_path,"nc/Combined_stat_pixcount_past.nc")
+        if not os.path.exists(file_future):
+            file_future   = os.path.join(pkl_path,"nc/Combined_stat_pixcount_future.nc")
         print("  Reading the file containing future observations")
         xr_future = rxr.xarray_file_loader(file_future,except_perc=20)
     
