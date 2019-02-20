@@ -176,6 +176,7 @@ df_1d = ds_1d.to_dataframe()
 ## Concatenate 3d/2d/1d dataframes and save to disk:
 print("  Concatenate into one big dataframe and save to disk")
 df = pd.concat([df_1d,df_2d,df_3d,df_TRT_val,df_TRT_diff],axis=1,copy=False)
+del(df_1d,df_2d,df_3d,df_TRT_val,df_TRT_diff)
 if diff_option == "1":
     path_addon = "nodiff"
 elif diff_option == "2":
