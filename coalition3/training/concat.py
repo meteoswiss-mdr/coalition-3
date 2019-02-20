@@ -145,17 +145,17 @@ def concat_future_past_concat_stat_files(pkl_path, xr_past=None, xr_future=None)
     
     ## Read file with future (t0 + n min) statistics:
     if xr_past is None:
-        file_past   = os.path.join(pkl_path,"Combined_stat_pixcount_past.pkl")
-        if not os.path.exists(file_past):
-            file_past = os.path.join(pkl_path,"nc/Combined_stat_pixcount_past.nc")
+        #file_past   = os.path.join(pkl_path,"Combined_stat_pixcount_past.pkl")
+        #if not os.path.exists(file_past):
+        file_past = os.path.join(pkl_path,"nc/Combined_stat_pixcount_past.nc")
         print("  Reading the file containing past observations")
-        xr_past   = rxr.xarray_file_loader(file_past,except_perc=20)
+        xr_past   = rxr.xarray_file_loader(file_past,except_perc=20,lazy=True)
     if xr_future is None:
-        file_future = os.path.join(pkl_path,"Combined_stat_pixcount_future.pkl")
-        if not os.path.exists(file_future):
-            file_future   = os.path.join(pkl_path,"nc/Combined_stat_pixcount_future.nc")
+        #file_future = os.path.join(pkl_path,"Combined_stat_pixcount_future.pkl")
+        #if not os.path.exists(file_future):
+        file_future   = os.path.join(pkl_path,"nc/Combined_stat_pixcount_future.nc")
         print("  Reading the file containing future observations")
-        xr_future = rxr.xarray_file_loader(file_future,except_perc=20)
+        xr_future = rxr.xarray_file_loader(file_future,except_perc=20,lazy=True)
     
     """
     expected_memory_need = float(os.path.getsize(file_future))/psutil.virtual_memory().available*100
@@ -229,10 +229,10 @@ def concat_future_past_concat_stat_files(pkl_path, xr_past=None, xr_future=None)
     
     ## Save NetCDF:
     print("  Start saving NetCDF file")
-    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc",
-                            encoding={'zlib': True, 'complevel': 5},
-                            compute=True)
-    xr_new.to_netcdf(file_new)
+    file_new = os.path.join(pkl_path,"nc/Combined_stat_pixcount.nc")
+    xr_new.to_netcdf(file_new)#,
+                     #encoding={'zlib': True, 'complevel': 5},
+                     #compute=True)
     
     ## Save Pickle:
     print("  Start saving pickle file")
