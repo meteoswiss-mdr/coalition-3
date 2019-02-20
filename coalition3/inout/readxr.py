@@ -18,7 +18,7 @@ def xarray_file_loader(path_str,except_perc=50):
         if expected_memory_need > except_perc:
             print("  *** Warning: File is opened as dask dataset (expected memory use: %02d%%) ***" %\
                   (expected_memory_need))
-            xr_n = xr.open_mfdataset(path_str,chunks={"DATE_TRT_ID":1000})
+            xr_n = xr.open_mfdataset(path_str,chunks={"DATE_TRT_ID":5000})
         else: xr_n = xr.open_dataset(path_str)
     elif path_str[-4:]==".pkl":
         with open(path_str, "rb") as path: xr_n = pickle.load(path)
