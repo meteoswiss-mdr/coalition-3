@@ -537,6 +537,7 @@ def add_aux_static_variables(ds, cfg_set):
 
         ## Add variable to dataset:
         ds["RADAR_FREQ_QUAL_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat)
+        ds["RADAR_FREQ_QUAL_stat"] = ds["RADAR_FREQ_QUAL_stat"].astype(np.float32)
         del(array_stat,qual_vals)
 
     ## Check whether topography information should be added:
@@ -589,6 +590,7 @@ def add_aux_static_variables(ds, cfg_set):
 
             ## Add variable to dataset:
             ds[alt_var+"_stat"] = (('DATE_TRT_ID', 'time_delta', 'statistic'), array_stat)
+            ds[alt_var+"_stat"] = ds[alt_var+"_stat"].astype(np.float32)
             del(array_stat)
 
     ## Check whether solar time information should be added:
@@ -602,6 +604,8 @@ def add_aux_static_variables(ds, cfg_set):
         solar_time_sincos = [solartime(time_points_i,lon_loc_rad_i) for time_points_i,lon_loc_rad_i in zip(time_points,lon_loc_rad)]
         ds["SOLAR_TIME_SIN"] = (('DATE_TRT_ID'), np.array(solar_time_sincos)[:,0])
         ds["SOLAR_TIME_COS"] = (('DATE_TRT_ID'), np.array(solar_time_sincos)[:,1])
+        ds["SOLAR_TIME_SIN"] = ds["SOLAR_TIME_SIN"].astype(np.float32)
+        ds["SOLAR_TIME_COS"] = ds["SOLAR_TIME_COS"].astype(np.float32)
 
     return(ds)
 
