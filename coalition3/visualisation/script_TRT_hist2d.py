@@ -12,7 +12,7 @@ from coalition3.visualisation.TRTcells import contour_of_2dHist
 
 
 path_to_xarray = pth.file_path_reader("xarray training dataset")
-xr_new_TRT = xrx.xarray_file_loader(path_str)
+xr_new_TRT = rxr.xarray_file_loader(path_to_xarray)
 #xr_new_TRT = xr.open_mfdataset("Combined_stat_pixcount.nc")
 
 Rank_TRT = xr_new_TRT["RANKr"]/10.
