@@ -679,7 +679,7 @@ def calc_TRT_Rank(xr_stat,ET_option="cond_median"):
         ET45_scal = xr_stat.EZC45_stat.sel(statistic=b"MAX")            ## EchoTop 45dBZ (MAX)
 
     ## Set NaN-values in EchoTop 45dBZ to zero (are due to zero pixels with non-zero values)
-    ET45_scal.values[np.isnan(ET45_scal.values)] = 0.
+    ET45_scal = ET45_scal.fillna(0.)
     
     ## Scale variables to values between min and max according to Powerpoint Slide
     ## M:\lom-prod\mdr-prod\oper\adula\Innovation\6224_COALITION2\06-Presentations\2018-10-17_TRT_Workshop-DACH_MWO_hea.pptx:
