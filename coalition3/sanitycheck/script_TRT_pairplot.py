@@ -50,7 +50,7 @@ A55_scal  = A55_scal.astype(np.float32,copy=False)/40.*4
 ## Calculate TRT rank:
 TRT_Rank = (2.*VIL_scal.values+2*ET45_scal.values+ME_scal.values+2.*A55_scal.values)/7.
 TRT_Rank = TRT_Rank[:,0]
-df_all = pd.concat([pd.DataFrame.from_dict({"TRT Rank":TRT_Rank}).set_index(VIL_scal.index,drop=False),ET45_scal,VIL_scal,ME_scal],axis=1)
+df_all = pd.concat([pd.DataFrame.from_dict({"TRT Rank":TRT_Rank}).set_index(VIL_scal.index,drop=False),ET45_scal,VIL_scal,ME_scal,A55_scal],axis=1)
 sns.pairplot(df_all)
 plt.show()
 
@@ -58,5 +58,6 @@ sns.set_style("white")
 g = sns.PairGrid(df_all)
 g = g.map_diag(plt.hist,bins=20)
 g.map_offdiag(pairgrid_heatmap, bins=20, norm=LogNorm())
-
+plt.tight_layout()
+plt.savefig("TRT_Rank_Terms.pdf", orientation="portrait")
 
