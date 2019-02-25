@@ -11,11 +11,13 @@ import sys
 import pickle
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import datetime as dt
 import matplotlib.pylab as plt
 import matplotlib.colors as mcolors
 
 import coalition3.inout.paths as pth
+import coalition3.inout.readconfig as cfg
 from coalition3.visualisation.TRTcells import contour_of_2dHist
 
 def get_X_col(colname):
@@ -61,11 +63,11 @@ def plot_TRT_scatter(df_plot,list_min_plus,path_addon="",contour=False):
     plt.tight_layout()
     path_addon_num = "_".join([str(num) for num in list_min_plus])
     if len(path_addon)>0: path_addon = "_"+path_addon
-    plt.savefig(os.path.join(figure_path,"TRT_diff_scatter_%s%s.pdf" % (path_addon_num,path_addon)), orientation="landscape")
+    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"TRT_diff_scatter_%s%s.pdf" % (path_addon_num,path_addon)), orientation="landscape")
 
 ## ============================================================================
-figure_path = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/feature_selection/plots/diam_23km/"
-model_path = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/feature_selection/models/diam_23km/"
+## Get config info:
+cfg_tds = cfg.get_config_info_tds()
 col10 = '#E69F00'
 col30 = '#D55E00'
 
@@ -73,12 +75,6 @@ col30 = '#D55E00'
 user_argv_path = sys.argv[1] if len(sys.argv)==2 else None
 path_to_df = pth.file_path_reader("pandas training dataframe",user_argv_path)
 df = pd.read_hdf(path_to_df,key="df")
-
-
-"""
-GET PATH TO NONNAN FROM USER INPUT
-GET DIAM FROM USER INPUT
-"""
 
 """
 ## Make analysis of how many values are missing per column:
@@ -126,16 +122,20 @@ del(df_pears_corr_feat)
 """
 
 ## Delete rows with nan-entries:
+print("Dropping NaN values")
 df_nonnan = df.dropna(0,'any')
-df_nonnan.to_hdf("df_23km_nonnan.h5",key="df_nonnan",mode="w",complevel=0)
-df_nonnan = pd.read_hdf("df_23km_nonnan.h5","df_nonnan")
+df_nonnan.to_hdf(os.path.join(os.path.dirname(path_to_df),"df_23km_nonnan.h5"),
+                 key="df_nonnan",mode="w",complevel=0)
+#df_nonnan = pd.read_hdf("df_23km_nonnan.h5","df_nonnan")
 
 ## Construct selection criteria for input dataset:
+print("Split in 10min and 30min forcast")
 X = df_nonnan[[Xcol for Xcol in df_nonnan.columns if get_X_col(Xcol)]]
 y_10 = df_nonnan[["TRT_Rank_diff|10"]]
 y_30 = df_nonnan[["TRT_Rank_diff|30"]]
 
 ## Plot histogram of Rank changes:
+print("Plot histograms of TRT Rank changes")
 fig = plt.figure(figsize = [10,5])
 plt.title("Histogram of TRT Rank difference")
 plt.hist([y_10.values,y_30.values],
@@ -144,7 +144,7 @@ plt.hist([y_10.values,y_30.values],
          label=['10min Rank difference', '30min Rank difference'])
 plt.legend()
 plt.grid()
-plt.savefig(os.path.join(figure_path,"Hist_TRT_Rank_diff.pdf"), orientation="portrait")
+plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Hist_TRT_Rank_diff.pdf"), orientation="portrait")
 
 fig = plt.figure(figsize = [10,5])
 axes = fig.add_subplot(1,1,1)
@@ -154,29 +154,23 @@ plt.xlabel("TRT Rank difference")
 plt.title("Kernel density estimation of TRT Rank difference")
 plt.grid()
 axes.get_yaxis().set_visible(False)
-plt.savefig(os.path.join(figure_path,"KDE_TRT_Rank_diff.pdf"), orientation="portrait")
+plt.savefig(os.path.join(cfg_tds["fig_output_path"],"KDE_TRT_Rank_diff.pdf"), orientation="portrait")
 
-print("Count of absolute TRT Rank differences > 0.2 after 10min: %6i (%2d.1%%)" % (np.sum(np.abs(y_10.values)>0.2), 100.*np.sum(np.abs(y_10.values)>0.2)/len(y_10)))
-print("Count of absolute TRT Rank differences > 0.5 after 10min: %6i (%2d.1%%)" % (np.sum(np.abs(y_10.values)>0.5), 100.*np.sum(np.abs(y_10.values)>0.5)/len(y_10)))
-print("Count of absolute TRT Rank differences > 0.2 after 30min: %6i (%2d.1%%)" % (np.sum(np.abs(y_30.values)>0.2), 100.*np.sum(np.abs(y_30.values)>0.2)/len(y_30)))
-print("Count of absolute TRT Rank differences > 0.5 after 30min: %6i (%2d.1%%)" % (np.sum(np.abs(y_30.values)>0.5), 100.*np.sum(np.abs(y_30.values)>0.5)/len(y_30)))
+print("Print amount of cells showing higher absolute rank changes than threshold:")
+for TRT_Rank_thresh in [0.2,0.5,1.0,1.5,2.0,2.5,3.0,3.5]:
+    print("  Count of absolute TRT Rank differences > %.1f after 10min: %6i (%2.1f%%)" % \
+          (TRT_Rank_thresh,np.sum(np.abs(y_10.values)>TRT_Rank_thresh), 100.*np.sum(np.abs(y_10.values)>TRT_Rank_thresh)/len(y_10)))
+    print("  Count of absolute TRT Rank differences > %.1f after 30min: %6i (%2.1f%%)" % \
+          (TRT_Rank_thresh,np.sum(np.abs(y_30.values)>TRT_Rank_thresh), 100.*np.sum(np.abs(y_30.values)>TRT_Rank_thresh)/len(y_30)))
 
 ## Plot relationship TRT Rank difference with TRT Rank at t0:
+print("Plot scatterplot (TRT Rank (t0) vs. TRT Rank change)")
 plot_TRT_scatter(df_nonnan,[10,30],"all")
 df_nonnan_nonzerot0 = df_nonnan.loc[df_nonnan["TRT_Rank|0"]>=0.15]
 plot_TRT_scatter(df_nonnan_nonzerot0,[10,30],"nonzerot0")
 df_nonnan_nonzerot0t10 = df_nonnan.loc[(df_nonnan["TRT_Rank|10"]>=0.15) & (df_nonnan["TRT_Rank|0"]>=0.15)]
 df_nonnan_nonzerot0t30 = df_nonnan.loc[(df_nonnan["TRT_Rank|30"]>=0.15) & (df_nonnan["TRT_Rank|0"]>=0.15)]
 plot_TRT_scatter([df_nonnan_nonzerot0t10,df_nonnan_nonzerot0t30],[10,30],path_addon="nonzerot0t10t30",contour=True)
-
-
-
-
-
-
-
-
-
 
 
 
