@@ -124,7 +124,7 @@ del(df_pears_corr_feat)
 ## Delete rows with nan-entries:
 print("Dropping NaN values")
 df_nonnan = df.dropna(0,'any')
-df_nonnan.to_hdf(os.path.join(os.path.dirname(path_to_df),"df_23km_nonnan.h5"),
+df_nonnan.to_hdf("%s_nonnan.h5" % os.path.splitext(path_to_df),
                  key="df_nonnan",mode="w",complevel=0)
 #df_nonnan = pd.read_hdf("df_23km_nonnan.h5","df_nonnan")
 
