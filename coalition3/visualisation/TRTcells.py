@@ -128,7 +128,7 @@ def print_TRT_cell_map(samples_df,cfg_set_tds):
     fig.savefig(os.path.join(cfg_set_tds["fig_output_path"],u"TRT_Map.pdf"))
     
 ## Print map of TRT cells:
-def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True):
+def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True,radar_loc=True,radar_vis=True):
     """Print map of TRT cells."""
     
     ## Load DEM and Swiss borders
@@ -149,6 +149,8 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True):
     fig_extent = (255000,965000,-160000,480000)
     fig, axes = plt.subplots(1, 1)
     fig.set_size_inches(figsize_x, figsize_y)
+    
+    ## Plot altitude / hillshading
     if hillshade:
         ls = LightSource(azdeg=315, altdeg=45)
         axes.imshow(ls.hillshade(-dem, vert_exag=0.05),
@@ -210,18 +212,20 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True):
             axes.plot(x,y,color='darkred',linewidth=2,zorder=3)
 
     ## Add weather radar locations:
-    weather_radar_y = [237000,142000,100000,135000,190000]
-    weather_radar_x = [681000,497000,708000,604000,780000]
-    axes.scatter(weather_radar_x,weather_radar_y,
-                 color='orange',marker="D",zorder=10)
+    if radar_loc:
+        weather_radar_y = [237000,142000,100000,135000,190000]
+        weather_radar_x = [681000,497000,708000,604000,780000]
+        axes.scatter(weather_radar_x,weather_radar_y,
+                     color='orange',marker="D",zorder=10)
             
     ## Add radar visibility:
-    arr_visi = np.load(visi_path)
-    arr_visi[arr_visi<9000] = 0
-    arr_visi2 = morph.binary_opening(morph.binary_erosion(arr_visi, structure=np.ones((4,4))), structure=np.ones((4,4)))
-    arr_visi[arr_visi<9000] = np.nan
-    axes.imshow(arr_visi, cmap="gray", alpha=0.2, extent=fig_extent)
-    arr_visi[np.isnan(arr_visi)] = 1
+    if radar_vis:
+        arr_visi = np.load(visi_path)
+        arr_visi[arr_visi<9000] = 0
+        arr_visi2 = morph.binary_opening(morph.binary_erosion(arr_visi, structure=np.ones((4,4))), structure=np.ones((4,4)))
+        arr_visi[arr_visi<9000] = np.nan
+        axes.imshow(arr_visi, cmap="gray", alpha=0.2, extent=fig_extent)
+        arr_visi[np.isnan(arr_visi)] = 1
     #axes.contour(arr_visi[::-1,:], levels=[2], cmap="gray", linewidths=2,
     #             linestyle="solid", alpha=0.5, extent=fig_extent)
     #arr_visi = arr_visi[::4, ::4]
