@@ -7,7 +7,6 @@ from __future__ import print_function
 
 import os
 import sys
-import pdb
 
 import pickle
 import numpy as np
@@ -161,7 +160,6 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path):
     print("  Get models fitted with n top features")
     ls_models = [fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr) for n_feat in n_feat_arr]
     print("    Save list of models as pickle to disk")
-    pdb.set_trace()
     with open(os.path.join(model_path,"models_%i_t0diff_maxdepth6_nfeat.pkl" % pred_dt),"wb") as file:
         pickle.dump(ls_models, file, protocol=-1)
     #with open(os.path.join(model_path,"models_%i_t0diff_maxdepth6_nfeat.pkl" % pred_dt),"rb") as file:

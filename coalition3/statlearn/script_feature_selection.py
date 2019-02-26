@@ -23,6 +23,7 @@ cfg_op, __, __ = cfg.get_config_info_op()
 user_argv_path = sys.argv[1] if len(sys.argv)==2 else None
 path_to_df = pth.file_path_reader("pandas training dataframe (nonnan)",user_argv_path)
 model_path = pth.file_path_reader("model saving location")
+print("\nLoading nonnan dataframe into RAM")
 df_nonnan  = pd.read_hdf(path_to_df,key="df_nonnan")
 
 ## Delete rows where TRT Rank is close to zero at t0:
