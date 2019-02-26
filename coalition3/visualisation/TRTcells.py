@@ -11,9 +11,11 @@ import matplotlib.pylab as plt
 import matplotlib.patheffects as pe
 import matplotlib.patches as patches
 import matplotlib.ticker as ticker
+from matplotlib.colors import LightSource
 from scipy import ndimage
 from PIL import Image
 import shapefile
+import scipy.ndimage.morphology as morph
 
 
 ## =============================================================================
@@ -126,14 +128,15 @@ def print_TRT_cell_map(samples_df,cfg_set_tds):
     fig.savefig(os.path.join(cfg_set_tds["fig_output_path"],u"TRT_Map.pdf"))
     
 ## Print map of TRT cells:
-def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12):
+def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True):
     """Print map of TRT cells."""
     
     ## Load DEM and Swiss borders
     shp_path_CH      = os.path.join(cfg_set_tds["root_path"],u"data/shapefile/swissBOUNDARIES3D_1_3_TLM_LANDESGEBIET.shp")
     shp_path_Kantone = os.path.join(cfg_set_tds["root_path"],u"data/shapefile/swissBOUNDARIES3D_1_3_TLM_KANTONSGEBIET.shp")
-    shp_path_count   = os.path.join(cfg_set_tds["root_path"],u"data/shapefile//CCS4_merged_proj_clip_G05_countries.shp")
+    shp_path_count   = os.path.join(cfg_set_tds["root_path"],u"data/shapefile/CCS4_merged_proj_clip_G05_countries.shp")
     dem_path         = os.path.join(cfg_set_tds["root_path"],u"data/DEM/ccs4.png")
+    visi_path        = os.path.join(cfg_set_tds["root_path"],u"data/radar/radar_composite_visibility.npy")
 
     dem = Image.open(dem_path)
     dem = np.array(dem.convert('P'))
@@ -143,9 +146,15 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12):
     sf_ct = shapefile.Reader(shp_path_count)
 
     ## Setup figure
+    fig_extent = (255000,965000,-160000,480000)
     fig, axes = plt.subplots(1, 1)
     fig.set_size_inches(figsize_x, figsize_y)
-    axes.imshow(dem*0.6, extent=(255000,965000,-160000,480000), cmap='gray', alpha=0.5)
+    if hillshade:
+        ls = LightSource(azdeg=315, altdeg=45)
+        axes.imshow(ls.hillshade(-dem, vert_exag=0.05),
+                    extent=fig_extent, cmap='gray', alpha=0.5)
+    else:
+        axes.imshow(dem*0.6, extent=fig_extent, cmap='gray', alpha=0.5)
         
     ## Get borders of Cantons
     try:
@@ -159,7 +168,7 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12):
             endpoint = np.where(x==x[0])[0][1]
             x = x[:endpoint]
             y = y[:endpoint]
-            axes.plot(x,y,color='darkred',linewidth=1)
+            axes.plot(x,y,color='darkred',linewidth=1,zorder=5)
 
     ## Get borders of neighbouring countries
     try:
@@ -179,7 +188,7 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12):
             if ct_i in [3]:
                 axes.plot(x[20:170],y[20:170],color='black',linewidth=1)
             else:
-                axes.plot(x,y,color='black',linewidth=1)
+                axes.plot(x,y,color='black',linewidth=1,zorder=4)
 
     ## Get Swiss borders
     try:
@@ -198,9 +207,30 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12):
             
             ## Convert to swiss coordinates
             #x,y = lonlat2xy(lon, lat)
-            axes.plot(x,y,color='darkred',linewidth=2)
+            axes.plot(x,y,color='darkred',linewidth=2,zorder=3)
 
-    ## Convert lat/lon to Swiss coordinates:
+    ## Add weather radar locations:
+    weather_radar_y = [237000,142000,100000,135000,190000]
+    weather_radar_x = [681000,497000,708000,604000,780000]
+    axes.scatter(weather_radar_x,weather_radar_y,
+                 color='orange',marker="D",zorder=10)
+            
+    ## Add radar visibility:
+    arr_visi = np.load(visi_path)
+    arr_visi[arr_visi<9000] = 0
+    arr_visi2 = morph.binary_opening(morph.binary_erosion(arr_visi, structure=np.ones((4,4))), structure=np.ones((4,4)))
+    arr_visi[arr_visi<9000] = np.nan
+    axes.imshow(arr_visi, cmap="gray", alpha=0.2, extent=fig_extent)
+    arr_visi[np.isnan(arr_visi)] = 1
+    #axes.contour(arr_visi[::-1,:], levels=[2], cmap="gray", linewidths=2,
+    #             linestyle="solid", alpha=0.5, extent=fig_extent)
+    #arr_visi = arr_visi[::4, ::4]
+    #ys, xs = np.mgrid[arr_visi.shape[0]:0:-1,
+    #                  0:arr_visi.shape[1]]
+    #axes.scatter(xs.flatten(), ys.flatten(), s=4,
+    #             c=arr_visi.flatten().reshape(-1, 3), edgecolor='face')
+            
+    ## Add further elements:
     axes.set_xlim([255000,965000])
     axes.set_ylim([-160000,480000])
     axes.grid()
@@ -211,7 +241,7 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12):
     axes.get_yaxis().set_major_formatter( \
         ticker.FuncFormatter(lambda x, p: format(int(x), ",").replace(',', "'")))
     plt.yticks(rotation=90)
-    return fig, axes
+    return fig, axes, fig_extent
 
 ## Convert lat/lon-values in decimals to values in seconds:
 def dec2sec(angles):
