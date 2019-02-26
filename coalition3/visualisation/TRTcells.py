@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pylab as plt
 import matplotlib.patheffects as pe
 import matplotlib.patches as patches
+import matplotlib.ticker as ticker
 from scipy import ndimage
 from PIL import Image
 import shapefile
@@ -111,42 +112,8 @@ def print_TRT_cell_histograms(samples_df,cfg_set_tds):
 ## Print map of TRT cells:
 def print_TRT_cell_map(samples_df,cfg_set_tds):
     """Print map of TRT cells."""
-    ## Load DEM and Swiss borders
-    
-    shp_path = os.path.join(cfg_set_tds["root_path"],u"data/shapefile/CHE_adm0.shp")
-    #shp_path = "%s%s" % (cfg_set_tds["CONFIG_PATH_set_train"],"Shapefile_and_DTM/CCS4_merged_proj_clip_G05_countries.shp")
-    dem_path = os.path.join(cfg_set_tds["root_path"],u"data/DEM/ccs4.png")
 
-    dem = Image.open(dem_path)
-    dem = np.array(dem.convert('P'))
-
-    sf = shapefile.Reader(shp_path) #, encoding='utf-8')
-    # for shape in sf.shapeRecords():
-        # x = [i[0] for i in shape.shape.points[:]]
-        # y = [i[1] for i in shape.shape.points[:]]
-        # plt.plot(x,y)
-       
-    fig_map, axes = plt.subplots(1, 1)
-    fig_map.set_size_inches(12, 12)
-    axes.imshow(dem, extent=(255000,965000,-160000,480000), cmap='gray')
-        
-    ## Plot in swiss coordinates (radar CCS4 in LV03 coordinates)
-    try:
-        shp_records = sf.shapeRecords()
-    except UnicodeDecodeError:
-        print("   *** Warning: No country shape plotted (UnicodeDecodeErrror)")
-    else:
-        for shape in sf.shapeRecords():
-            lon = [i[0] for i in shape.shape.points[:]]
-            lat = [i[1] for i in shape.shape.points[:]]
-            
-            ## Convert to swiss coordinates
-            x,y = lonlat2xy(lon, lat)
-            #x = lon
-            #y = lat
-            axes.plot(x,y,color='b',linewidth=1)
-        
-    ## Convert lat/lon to Swiss coordinates:
+    fig, axes = ccs4_map()
     axes.scatter(samples_df["LV03_x"].loc[samples_df["category"] == "DEVELOPING"],
                  samples_df["LV03_y"].loc[samples_df["category"] == "DEVELOPING"],c='w',edgecolor=(.7,.7,.7),s=18)
     axes.scatter(samples_df["LV03_x"].loc[samples_df["category"] == "MODERATE"],
@@ -155,9 +122,96 @@ def print_TRT_cell_map(samples_df,cfg_set_tds):
                  samples_df["LV03_y"].loc[samples_df["category"] == "SEVERE"],c='y',edgecolor=(.7,.7,.7),s=26)
     axes.scatter(samples_df["LV03_x"].loc[samples_df["category"] == "VERY SEVERE"],
                  samples_df["LV03_y"].loc[samples_df["category"] == "VERY SEVERE"],c='r',edgecolor=(.7,.7,.7),s=30)
+    
+    fig.savefig(os.path.join(cfg_set_tds["fig_output_path"],u"TRT_Map.pdf"))
+    
+## Print map of TRT cells:
+def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12):
+    """Print map of TRT cells."""
+    
+    ## Load DEM and Swiss borders
+    shp_path_CH      = os.path.join(cfg_set_tds["root_path"],u"data/shapefile/swissBOUNDARIES3D_1_3_TLM_LANDESGEBIET.shp")
+    shp_path_Kantone = os.path.join(cfg_set_tds["root_path"],u"data/shapefile/swissBOUNDARIES3D_1_3_TLM_KANTONSGEBIET.shp")
+    shp_path_count   = os.path.join(cfg_set_tds["root_path"],u"data/shapefile//CCS4_merged_proj_clip_G05_countries.shp")
+    dem_path         = os.path.join(cfg_set_tds["root_path"],u"data/DEM/ccs4.png")
+
+    dem = Image.open(dem_path)
+    dem = np.array(dem.convert('P'))
+
+    sf_CH = shapefile.Reader(shp_path_CH)
+    sf_KT = shapefile.Reader(shp_path_Kantone)
+    sf_ct = shapefile.Reader(shp_path_count)
+
+    ## Setup figure
+    fig, axes = plt.subplots(1, 1)
+    fig.set_size_inches(figsize_x, figsize_y)
+    axes.imshow(dem*0.6, extent=(255000,965000,-160000,480000), cmap='gray', alpha=0.5)
+        
+    ## Get borders of Cantons
+    try:
+        shapes_KT = sf_KT.shapes()
+    except UnicodeDecodeError:
+        print("   *** Warning: No country shape plotted (UnicodeDecodeErrror)")
+    else:
+        for KT_i, shape in enumerate(shapes_KT):
+            x = np.array([i[0] for i in shape.points[:]])
+            y = np.array([i[1] for i in shape.points[:]])
+            endpoint = np.where(x==x[0])[0][1]
+            x = x[:endpoint]
+            y = y[:endpoint]
+            axes.plot(x,y,color='darkred',linewidth=1)
+
+    ## Get borders of neighbouring countries
+    try:
+        shapes_ct = sf_ct.shapes()
+    except UnicodeDecodeError:
+        print("   *** Warning: No country shape plotted (UnicodeDecodeErrror)")
+    else:
+        for ct_i, shape in enumerate(shapes_ct):
+            if ct_i in [0,1]:
+                continue
+            x = np.array([i[0] for i in shape.points[:]])
+            y = np.array([i[1] for i in shape.points[:]])
+            x[x<=255000] = 245000
+            x[x>=965000] = 975000
+            y[y<=-159000] = -170000
+            y[y>=480000] = 490000
+            if ct_i in [3]:
+                axes.plot(x[20:170],y[20:170],color='black',linewidth=1)
+            else:
+                axes.plot(x,y,color='black',linewidth=1)
+
+    ## Get Swiss borders
+    try:
+        #shp_records = sf_CH.shapeRecords()
+        shapes_CH = sf_CH.shapes()
+    except UnicodeDecodeError:
+        print("   *** Warning: No country shape plotted (UnicodeDecodeErrror)")
+    else:
+        for ct_i, shape in enumerate(shapes_CH): #sf_CH.shapeRecords():
+            if ct_i!=0: continue
+            x = np.array([i[0]-2000000 for i in shape.points[:]])
+            y = np.array([i[1]-1000000 for i in shape.points[:]])
+            endpoint = np.where(x==x[0])[0][1]
+            x = x[:endpoint]
+            y = y[:endpoint]
+            
+            ## Convert to swiss coordinates
+            #x,y = lonlat2xy(lon, lat)
+            axes.plot(x,y,color='darkred',linewidth=2)
+
+    ## Convert lat/lon to Swiss coordinates:
     axes.set_xlim([255000,965000])
     axes.set_ylim([-160000,480000])
-    fig_map.savefig(os.path.join(cfg_set_tds["fig_output_path"],u"TRT_Map.pdf"))
+    axes.grid()
+    axes.set_ylabel("CH1903 Northing")
+    axes.set_xlabel("CH1903 Easting")
+    axes.get_xaxis().set_major_formatter( \
+        ticker.FuncFormatter(lambda x, p: format(int(x), ",").replace(',', "'")))
+    axes.get_yaxis().set_major_formatter( \
+        ticker.FuncFormatter(lambda x, p: format(int(x), ",").replace(',', "'")))
+    plt.yticks(rotation=90)
+    return fig, axes
 
 ## Convert lat/lon-values in decimals to values in seconds:
 def dec2sec(angles):
