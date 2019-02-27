@@ -160,12 +160,15 @@ def print_basic_info(cfg_set_tds):
     print("   Number of TRT cells with rank >= 1: %s\n" % sum(samples_df["RANKr"]>=10))
     
 ## Change and append some of the TRT cell values or append additional ones:
-def change_append_TRT_cell_info(cfg_set_tds):    
+def change_append_TRT_cell_info(cfg_set_tds=None,df=None):    
     """Correct and append some information to TRT cell info."""
     
     print("Enhance and correct information of TRT cells within time period.")
-    samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
-                                u"Training_Dataset_Sampling.pkl"))
+    if df is None:
+        samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
+                                    u"Training_Dataset_Sampling.pkl"))
+    else:
+        samples_df = df
         
     ## Change datatypes
     ## Old:
@@ -192,16 +195,20 @@ def change_append_TRT_cell_info(cfg_set_tds):
                                               ordered=True)
     
     ## Save new dataset
-    samples_df.to_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"Training_Dataset_Sampling_enhanced.pkl"))
-    print("   Dataframe saved in: %s%s" % (cfg_set_tds["root_path_tds"],"Training_Dataset_Sampling_enhanced.pkl"))
+    if df is None:
+        samples_df.to_pickle("%s%s" % (cfg_set_tds["root_path_tds"],"Training_Dataset_Sampling_enhanced.pkl"))
+        print("   Dataframe saved in: %s%s" % (cfg_set_tds["root_path_tds"],"Training_Dataset_Sampling_enhanced.pkl"))
+    else:
+        return samples_df
 
 ## Plot some of the TRT data::
-def exploit_TRT_cell_info(cfg_set_tds):
+def exploit_TRT_cell_info(cfg_set_tds, samples_df=None):
     """Exploit information of TRT cells within time period."""
         
     print("Exploit information of TRT cells within time period.")
-    samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
-                                u"Training_Dataset_Sampling_enhanced.pkl"))
+    if samples_df is None:
+        samples_df = pd.read_pickle(os.path.join(cfg_set_tds["root_path_tds"],
+                                    u"Training_Dataset_Sampling_enhanced.pkl"))
     
     ## Print histograms:
     TRTvis.print_TRT_cell_histograms(samples_df,cfg_set_tds)
