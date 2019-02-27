@@ -47,7 +47,27 @@ def contour_of_2dHist(hist2d_1_data,percentiles=[0,40,60,80,95,100],smooth=True)
         levels = np.unique(hist_2d_perc)[1:]
 
     return hist_2d_perc.T, levels
-             
+
+def plot_band_TRT_col(axes,TRT_Rank_arr,y_loc_low,bandwidth,arrow_start=None):
+    ## Analyse distribution of ranks
+    nw = np.sum(np.logical_and(TRT_Rank_arr>=12, TRT_Rank_arr<15))
+    ng = np.sum(np.logical_and(TRT_Rank_arr>=15, TRT_Rank_arr<25))
+    ny = np.sum(np.logical_and(TRT_Rank_arr>=25, TRT_Rank_arr<35))
+    nr = np.sum(np.logical_and(TRT_Rank_arr>=35, TRT_Rank_arr<=40))
+    pw = patches.Rectangle((1.2, y_loc_low), 0.3, bandwidth, facecolor='w')
+    pg = patches.Rectangle((1.5, y_loc_low),   1, bandwidth, facecolor='g')
+    py = patches.Rectangle((2.5, y_loc_low),   1, bandwidth, facecolor='y')
+    pr = patches.Rectangle((3.5, y_loc_low), 0.5, bandwidth, facecolor='r')
+    axes.add_patch(pw); axes.add_patch(pg); axes.add_patch(py); axes.add_patch(pr)
+    text_loc = y_loc_low+bandwidth/2
+    if arrow_start is None:
+        arrow_start = y_loc_low+bandwidth*1.5
+    axes.annotate(str(nw),(1.35,text_loc),(1.25,arrow_start),ha='center',va='center',color='k',arrowprops={'arrowstyle':'->'}) #,arrowprops={arrowstyle='simple'}
+    axes.annotate(str(ng),(2,text_loc),ha='center',va='center',color='w') 
+    axes.annotate(str(ny),(3,text_loc),ha='center',va='center',color='w')
+    axes.annotate(str(nr),(3.75,text_loc),ha='center',va='center',color='w')
+    return axes
+       
 ## Print histogram of TRT cell values:
 def print_TRT_cell_histograms(samples_df,cfg_set_tds):
     """Print histograms of TRT cell information."""
@@ -56,6 +76,7 @@ def print_TRT_cell_histograms(samples_df,cfg_set_tds):
     fig_hist.set_size_inches(12, 15)
 
     ## Analyse distribution of ranks
+    """
     nw = np.sum(np.logical_and(samples_df["RANKr"]>=12, samples_df["RANKr"]<15))
     ng = np.sum(np.logical_and(samples_df["RANKr"]>=15, samples_df["RANKr"]<25))
     ny = np.sum(np.logical_and(samples_df["RANKr"]>=25, samples_df["RANKr"]<35))
@@ -64,7 +85,6 @@ def print_TRT_cell_histograms(samples_df,cfg_set_tds):
     print("  The number of Cells with TRT Rank g is: %s" % ng)
     print("  The number of Cells with TRT Rank y is: %s" % ny)
     print("  The number of Cells with TRT Rank r is: %s" % nr)
-    samples_df["RANKr"] = samples_df["RANKr"]/10.
     pw = patches.Rectangle((1.2, 65000), 0.3, 10000, facecolor='w')
     pg = patches.Rectangle((1.5, 65000),   1, 10000, facecolor='g')
     py = patches.Rectangle((2.5, 65000),   1, 10000, facecolor='y')
@@ -74,6 +94,9 @@ def print_TRT_cell_histograms(samples_df,cfg_set_tds):
     axes[0,0].annotate(str(ng),(2,70000),ha='center',va='center',color='w') 
     axes[0,0].annotate(str(ny),(3,70000),ha='center',va='center',color='w')
     axes[0,0].annotate(str(nr),(3.75,70000),ha='center',va='center',color='w') 
+    """
+    axes[0,0] = plot_band_TRT_col(axes[0,0],samples_df["RANKr"],65000,10000,arrow_start=90500)
+    samples_df["RANKr"] = samples_df["RANKr"]/10.
     samples_df["RANKr"].hist(ax=axes[0,0],bins=np.arange(0,4.25,0.25),facecolor=(.7,.7,.7),alpha=0.75,grid=True)
     axes[0,0].set_xlabel("TRT rank")
     axes[0,0].set_title("TRT Rank Distribution")
@@ -115,7 +138,7 @@ def print_TRT_cell_histograms(samples_df,cfg_set_tds):
 def print_TRT_cell_map(samples_df,cfg_set_tds):
     """Print map of TRT cells."""
 
-    fig, axes = ccs4_map()
+    fig, axes, extent = ccs4_map(cfg_set_tds)
     axes.scatter(samples_df["LV03_x"].loc[samples_df["category"] == "DEVELOPING"],
                  samples_df["LV03_y"].loc[samples_df["category"] == "DEVELOPING"],c='w',edgecolor=(.7,.7,.7),s=18)
     axes.scatter(samples_df["LV03_x"].loc[samples_df["category"] == "MODERATE"],
@@ -170,7 +193,7 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True,radar_loc=True
             endpoint = np.where(x==x[0])[0][1]
             x = x[:endpoint]
             y = y[:endpoint]
-            axes.plot(x,y,color='darkred',linewidth=1,zorder=5)
+            axes.plot(x,y,color='darkred',linewidth=0.5,zorder=5)
 
     ## Get borders of neighbouring countries
     try:
@@ -188,9 +211,37 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True,radar_loc=True
             y[y<=-159000] = -170000
             y[y>=480000] = 490000
             if ct_i in [3]:
-                axes.plot(x[20:170],y[20:170],color='black',linewidth=1)
+                axes.plot(x[20:170],y[20:170],color='black',linewidth=0.5)
+            if ct_i in [2]:
+                ## Delete common border of FR and CH:
+                x_south = x[y<=86000];  y_south = y[y<=86000]
+                x_north = x[np.logical_and(np.logical_and(y>=270577,y<=491000),x>510444)]
+                #x_north = x[np.logical_and(y>=270577,y<=491000)]
+                y_north = y[np.logical_and(np.logical_and(y>=270577,y<=491000),x>510444)]
+                #y_north = y[np.logical_and(y>=270577,y<=491000)]
+                axes.plot(x_south,y_south,color='black',linewidth=0.5,zorder=4)
+                axes.plot(x_north,y_north,color='black',linewidth=0.5,zorder=4)
+            if ct_i in [4]:
+                ## Delete common border of AT and CH:
+                x_south = x[np.logical_and(x>=831155,y<235000)]
+                y_south = y[np.logical_and(x>=831155,y<235000)]
+                #x_north1 = x[np.logical_and(x>=756622,y>=260466)]
+                x_north1 = x[np.logical_and(np.logical_and(x>=758622,y>=262466),x<=794261)]
+                #y_north1 = y[np.logical_and(x>=756622,y>=260466)]
+                y_north1 = y[np.logical_and(np.logical_and(x>=758622,y>=262466),x<=794261)]
+                y_north2 = y[np.logical_and(np.logical_and(x>=774261,y>=229333),x<=967000)]
+                x_north2 = x[np.logical_and(np.logical_and(x>=774261,y>=229333),x<=967000)]
+                y_north2 = np.concatenate([y_north2[np.argmin(x_north2):],y_north2[:np.argmin(x_north2)]])
+                x_north2 = np.concatenate([x_north2[np.argmin(x_north2):],x_north2[:np.argmin(x_north2)]])
+                x_LI = x[np.logical_and(np.logical_and(x<=773555,y>=214400),y<=238555)]
+                y_LI = y[np.logical_and(np.logical_and(x<=773555,y>=214400),y<=238555)]
+                axes.plot(x_south,y_south,color='black',linewidth=0.5,zorder=4)
+                axes.plot(x_north1,y_north1,color='black',linewidth=0.5,zorder=4)
+                axes.plot(x_north2,y_north2,color='black',linewidth=0.5,zorder=4)
+                axes.plot(x_LI,y_LI,color='black',linewidth=0.5,zorder=4)
             else:
-                axes.plot(x,y,color='black',linewidth=1,zorder=4)
+                continue
+                #axes.plot(x,y,color='black',linewidth=1,zorder=4)
 
     ## Get Swiss borders
     try:
@@ -209,14 +260,14 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True,radar_loc=True
             
             ## Convert to swiss coordinates
             #x,y = lonlat2xy(lon, lat)
-            axes.plot(x,y,color='darkred',linewidth=2,zorder=3)
+            axes.plot(x,y,color='darkred',linewidth=1,zorder=3)
 
     ## Add weather radar locations:
     if radar_loc:
         weather_radar_y = [237000,142000,100000,135000,190000]
         weather_radar_x = [681000,497000,708000,604000,780000]
-        axes.scatter(weather_radar_x,weather_radar_y,
-                     color='orange',marker="D",zorder=10)
+        axes.scatter(weather_radar_x,weather_radar_y,marker="D",#s=2,
+                     color='orange',edgecolor='black',zorder=10)
             
     ## Add radar visibility:
     if radar_vis:
