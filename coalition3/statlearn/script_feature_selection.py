@@ -32,6 +32,7 @@ df_nonnan_nonzerot0 = df_nonnan.loc[df_nonnan["TRT_Rank|0"]>=0.15]
 del(df_nonnan)
 
 ## Get feature importance for specified time delta:
+## Get lead times:
 ls_pred_dt = [-5]
 poss_fcst_steps = np.arange(cfg_op["timestep"],
                             cfg_op["timestep"]*cfg_op["n_integ"],
@@ -43,30 +44,73 @@ while not np.all([pred_dt_i in poss_fcst_steps for pred_dt_i in ls_pred_dt]):
     ls_pred_dt = [int(pred_dt_i.strip()) for pred_dt_i in ls_pred_dt]
 print("  Perform feature selection of lead times %s" % ', '.join([str(pred_dt_i) for pred_dt_i in ls_pred_dt]))
 
+## Get model boundaries:
+ls_model_bound = []; ls_model_names = []
+len_input = 0; keep_asking = True
+print("\nShould different features for different TRT Ranks (t0) be fitted? (if not, press 'n')")
+while (len_input!=2 and keep_asking):
+    ls_input = raw_input("  Please provide model boundaries (split with comma, stop with 'n'): ").split(",")
+    if ls_input[0]=='n':
+        keep_asking = False
+        break
+    elif len(ls_input)!=2:
+        print("    Please provide TWO numbers")
+        continue
+    else:
+        ls_input = [np.float32(ipt) for ipt in ls_input]
+    if (np.min(ls_input)<0 or np.max(ls_input)>4):
+        print("    Please provide bounds within TRT Rank range (0 to 4)")
+    else:
+        ls_model_bound.append(ls_input)
+        ls_model_names.append(raw_input("  Please provide model name: "))
+if len(ls_model_bound)>0:
+    print("  Using model boundaries:") # %s" % ls_model_bound)
+    for bound, name in zip(ls_model_bound, ls_model_names):
+        print("   Model '%s': %s" % (name, bound))
+    use_model_boundaries = True
+else:
+    print("  Using all samples")
+    use_model_boundaries = False
+    ls_model_bound.append(None)
+    ls_model_names.append("")
+
 print("\nLoop over different lead times to get feature importance")
 for pred_dt in ls_pred_dt:
-    feat.get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path)
-    feat.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path)
-
+    for bounds, name in zip(ls_model_bound, ls_model_names):
+        feat.get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
+                                    mod_bound=bounds,mod_name=name)
+        feat.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
+                                 mod_bound=bounds,mod_name=name)
+        
 ## Plot MSE as function of number of features:
-feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path)
+feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,ls_model_names)
 
 ## Fit model with optimal number of features:
 poss_n_feat = np.arange(1,501)
-ls_n_feat = [-5]
-print("\nFor which number of features (%i, %i, .., %i) should a fit be performed?" % \
-      (poss_n_feat[0], poss_n_feat[1], poss_n_feat[-1]))
-while not (np.all([n_feat_i in poss_n_feat for n_feat_i in ls_n_feat]) and \
-           len(ls_n_feat)==len(ls_pred_dt)):
-    ls_n_feat = raw_input("  Select n-feature thresholds (split with comma): ").split(",")
-    if len(ls_n_feat)!=len(ls_pred_dt):
-        print("    Must choose as many n-feature thresholds as time deltas %s" % ls_pred_dt)
-    ls_n_feat = [int(n_feat_i.strip()) for n_feat_i in ls_n_feat]
+ls_n_feat_dt = []
+for pred_dt in ls_pred_dt:
+    ls_n_feat = [-5]
+    if ls_model_names[0]!="":
+        model_name = " for model(s) '%s'" % "/".join(ls_model_names)
+    else:
+        model_name = ""
+    print("\nHow many features (%i, %i, .., %i) should a used for time delta %imin?" % \
+          (poss_n_feat[0], poss_n_feat[1], poss_n_feat[-1],pred_dt))
+    while not (np.all([n_feat_i in poss_n_feat for n_feat_i in ls_n_feat]) and \
+               len(ls_n_feat)==len(ls_model_names)):
+        ls_n_feat = raw_input("  Select n-feature thresholds%s (split with comma): " % model_name).split(",")
+        if len(ls_n_feat)!=len(ls_model_bound):
+            print("    Must choose as many %i n-feature thresholds" % (len(ls_model_bound)))
+        ls_n_feat = [int(n_feat_i.strip()) for n_feat_i in ls_n_feat]
+    print("  The following thresholds were selected for time delta %imin:" % pred_dt)
+    for model_name, n_feat in zip(ls_model_names, ls_n_feat):
+        print("    %s -> %i" % (model_name,n_feat))
+    ls_n_feat_dt.append(ls_n_feat)
 
-feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=ls_n_feat)
-for pred_dt, n_feat in zip(ls_pred_dt,ls_n_feat):
-    feat.plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat,cfg_tds,model_path)
-
+ls_n_feat_dt_flat = [item for sublist in ls_n_feat_dt for item in sublist]
+feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,ls_n_feat_dt_flat,ls_model_names)
+for i_dt, pred_dt in enumerate(ls_pred_dt):
+    feat.plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,ls_n_feat_dt[i_dt],cfg_tds,model_path,ls_model_bound,ls_model_names)
 
 
 
