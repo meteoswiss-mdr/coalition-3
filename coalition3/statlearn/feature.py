@@ -272,7 +272,7 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
         ax.set_xlabel("Number of features")
         ax.set_title("Normalised mean square error (MSE) as function of feature count")
         ax.grid()
-        if thresholds is not None:
+        if thresholds is not None and len(ls_model_names)==2:
             ps = dict(boxstyle='round', facecolor='white')
             ax.axvline(x=thresholds[0], color=col10, linestyle='solid', linewidth=2)
             ax.axvline(x=thresholds[1], color=col30, linestyle='solid', linewidth=2)
@@ -387,14 +387,14 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
         CS = axes.contour(cont2d_1,levels=lvl,extent=[xbins.min(),xbins.max(),ybins.min(),ybins.max()],linewidths=2,cmap="YlGn_r")
         CS_lab = axes.clabel(CS, inline=1, fontsize=10, fmt='%i%%', colors="black")
         #[txt.set_backgroundcolor('white') for txt in CS_lab]
-        [txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.7)) for txt in CS_lab] #pad=0,
+        [txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.14)) for txt in CS_lab] #pad=0,
     axes.set_xlabel(r'Observed TRT Rank difference t$\mathregular{_{+%imin}}$' % pred_dt)
     axes.set_ylabel(r'Predicted TRT Rank difference t$\mathregular{_{+%imin}}$' % pred_dt)
     model_title = "" if mod_name == "" else r" | Mod$\mathregular{_{%s}}$" % mod_name[1:]
     title_str = 'TRT Ranks differences\nTime delta: %imin' % pred_dt
     title_str += model_title
     axes.set_title(title_str)
-    axes.set_aspect('equal'); axes.patch.set_facecolor('0.7')
+    axes.set_aspect('equal'); axes.patch.set_facecolor('0.14')
     str_n_cells  = "Mean Squared Error (MSE): %.2f\n" % (mse_gain)
     str_n_cells += r"Coeff of determination ($R^2$): %.2f" % (r2_gain)
     props = dict(boxstyle='round', facecolor='white')
