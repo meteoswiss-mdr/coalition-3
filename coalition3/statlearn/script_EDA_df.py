@@ -82,7 +82,6 @@ def plot_TRT_scatter(df_plot,list_min_plus,path_addon="",contour=False,TRTcol=Fa
         #axes[ax_i].text(0.4,3.6,str_n_cells)
             
         if model_borders_ls is not None:
-            model_names = ["low","med","high"]
             model_borders = [0]+model_borders_ls+[4]
             for bord_i, border in enumerate(model_borders):
                 #if border not in [0,4]:
@@ -96,6 +95,11 @@ def plot_TRT_scatter(df_plot,list_min_plus,path_addon="",contour=False,TRTcol=Fa
                                      color="white", length_includes_head=True, head_width=0.07)
                     text_loc = border-(border-model_borders[bord_i-1])/2.
                     if len(model_borders)==4:
+                        model_names = ["low","med","high"]
+                        text_str = r"Mod$\mathregular{_{%s}}$" % model_names[bord_i-1]
+                        text_str += "\n%i" % n_samples
+                    elif len(model_borders)==3:
+                        model_names = ["0-12","12-40"]
                         text_str = r"Mod$\mathregular{_{%s}}$" % model_names[bord_i-1]
                         text_str += "\n%i" % n_samples
                     else:
