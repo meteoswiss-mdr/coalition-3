@@ -83,7 +83,8 @@ for pred_dt in ls_pred_dt:
                                  mod_bound=bounds,mod_name=name)
         
 ## Plot MSE as function of number of features:
-feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,ls_model_names)
+feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
+                          ls_model_names=ls_model_names)
 
 ## Fit model with optimal number of features:
 poss_n_feat = np.arange(1,501)
@@ -108,7 +109,8 @@ for pred_dt in ls_pred_dt:
     ls_n_feat_dt.append(ls_n_feat)
 
 ls_n_feat_dt_flat = [item for sublist in ls_n_feat_dt for item in sublist]
-feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,ls_n_feat_dt_flat,ls_model_names)
+feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=ls_n_feat_dt_flat,
+                          ls_model_names=ls_model_names)
 for i_dt, pred_dt in enumerate(ls_pred_dt):
     feat.plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,ls_n_feat_dt[i_dt],cfg_tds,model_path,ls_model_bound,ls_model_names)
 

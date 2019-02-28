@@ -263,8 +263,8 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
         fig = plt.figure(figsize = [10,5])
         ax = fig.add_subplot(1,1,1)
         if len(ls_model_names)==2:
-            df_mse_feat_count_norm.iloc[:,:2].plot(ax = ax, colors=[col10,col30])
-            df_mse_feat_count_norm.iloc[:,2:].plot(ax = ax, linestyle="--", colors=[col10,col30])
+            df_mse_feat_count_norm.iloc[:,:2].plot(ax = ax, color=[col10,col30])
+            df_mse_feat_count_norm.iloc[:,2:].plot(ax = ax, linestyle="--", color=[col10,col30])
         else:
             ax = df_mse_feat_count_norm.iloc[:,::2].plot(cmap="Paired")
             df_mse_feat_count_norm.iloc[:,1::2].plot(ax = ax, linestyle="--", cmap="Paired")
@@ -350,7 +350,7 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,ls
             pickle.dump(model,file,protocol=-1)
         
         ## Make the plot:
-        plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name)
+        plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg_tds)
     
         ## Append to list of results for combined plot:
         if len(ls_mod_bound)>1:
@@ -364,10 +364,10 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,ls
         mse_gain  = met.mean_squared_error(y_test_combi[["TRT_Rank_diff|%i" % pred_dt]],pred_gain_combi)
         r2_gain   = met.r2_score(y_test_combi[["TRT_Rank_diff|%i" % pred_dt]],pred_gain_combi)
         plot_pred_vs_obs_core(y_test_combi, pred_gain_combi,
-                              pred_dt,mse_gain,r2_gain,"_%s" % "|".join(ls_model_names))
+                              pred_dt,mse_gain,r2_gain,"_%s" % "|".join(ls_model_names),cfg_tds)
     
         
-def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name):
+def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg_tds):
     print("  Making the plot")
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=[10,8])
     if len(y_test)>1000:
