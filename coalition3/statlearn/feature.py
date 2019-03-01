@@ -283,6 +283,32 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
             plt.close()
         else:
             plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count.pdf"), orientation="portrait")
+    elif (len(ls_pred_dt) == 1 and ls_model_names != [""]):
+        df_mse_feat_count_norm = df_mse_feat_count/df_mse_feat_count.mean()
+        df_mse_feat_count_norm.columns = [colname.replace("_", " (")+")" for colname in df_mse_feat_count_norm.columns]
+        fig = plt.figure(figsize = [10,5])
+        ax = fig.add_subplot(1,1,1)
+        if len(ls_model_names)==1:
+            df_mse_feat_count_norm.iloc[:,:2].plot(ax = ax, color=[col10,col30])
+            #df_mse_feat_count_norm.iloc[:,2:].plot(ax = ax, linestyle="--", color=[col10,col30])
+        else:
+            ax = df_mse_feat_count_norm.iloc[:,::2].plot(cmap="Paired")
+            df_mse_feat_count_norm.iloc[:,1::2].plot(ax = ax, linestyle="--", cmap="Paired")
+        ax.set_ylabel("Normalised MSE")
+        ax.set_xlabel("Number of features")
+        ax.set_title("Normalised mean square error (MSE) as function of feature count")
+        ax.grid()
+        if thresholds is not None and len(ls_model_names)==2:
+            ps = dict(boxstyle='round', facecolor='white')
+            ax.axvline(x=thresholds[0], color=col10, linestyle='solid', linewidth=2)
+            #ax.axvline(x=thresholds[1], color=col30, linestyle='solid', linewidth=2)
+            #ax.axvline(x=thresholds[2], color=col10, linestyle='--', linewidth=2)
+            #ax.axvline(x=thresholds[3], color=col30, linestyle='--', linewidth=2)
+            plt.pause(8)
+            plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count_thresh.pdf"), orientation="portrait")
+            plt.close()
+        else:
+            plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count.pdf"), orientation="portrait")
     else:
         df_mse_feat_count.plot.line()
         plt.show()
@@ -351,7 +377,7 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,ls
         
         ## Make the plot:
         plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg_tds)
-    
+     
         ## Append to list of results for combined plot:
         if len(ls_mod_bound)>1:
             y_test_ls.append(y_test)
@@ -387,14 +413,14 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
         CS = axes.contour(cont2d_1,levels=lvl,extent=[xbins.min(),xbins.max(),ybins.min(),ybins.max()],linewidths=2,cmap="YlGn_r")
         CS_lab = axes.clabel(CS, inline=1, fontsize=10, fmt='%i%%', colors="black")
         #[txt.set_backgroundcolor('white') for txt in CS_lab]
-        [txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.14)) for txt in CS_lab] #pad=0,
+        [txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.71)) for txt in CS_lab] #pad=0,
     axes.set_xlabel(r'Observed TRT Rank difference t$\mathregular{_{+%imin}}$' % pred_dt)
     axes.set_ylabel(r'Predicted TRT Rank difference t$\mathregular{_{+%imin}}$' % pred_dt)
     model_title = "" if mod_name == "" else r" | Mod$\mathregular{_{%s}}$" % mod_name[1:]
     title_str = 'TRT Ranks differences\nTime delta: %imin' % pred_dt
     title_str += model_title
     axes.set_title(title_str)
-    axes.set_aspect('equal'); axes.patch.set_facecolor('0.14')
+    axes.set_aspect('equal'); axes.patch.set_facecolor('0.71')
     str_n_cells  = "Mean Squared Error (MSE): %.2f\n" % (mse_gain)
     str_n_cells += r"Coeff of determination ($R^2$): %.2f" % (r2_gain)
     props = dict(boxstyle='round', facecolor='white')
