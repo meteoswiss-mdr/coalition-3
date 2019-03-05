@@ -9,16 +9,17 @@ import os
 import sys
 
 import pickle
+import sklearn
 import numpy as np
 import pandas as pd
 import xgboost as xgb
 import seaborn as sns
 import datetime as dt
-import sklearn.metrics as met
 import matplotlib.pylab as plt
 import matplotlib.colors as mcolors
 
-from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPRegressor
+from sklearn.model_selection import GridSearchCV
 
 import coalition3.statlearn.inputprep as ipt
 from coalition3.visualisation.TRTcells import contour_of_2dHist
@@ -26,20 +27,46 @@ from coalition3.visualisation.TRTcells import contour_of_2dHist
 ## =============================================================================
 ## FUNCTIONS:
 
+## Get cv MLP model:
+def cv_mlp_model(X_train, y_train, n_feat):
+    alpha_vals = [1e-2, 1e-3, 1e-4]
+    hidden_layer_setup = [(int(np.ceil(n_feat*1.5)),int(np.ceil(n_feat*1.5))),
+                          (n_feat,int(np.ceil(n_feat/2.))),
+                          (int(np.ceil(n_feat*2/3.)),int(np.ceil(n_feat*1/3.)))]
+    param_grid = {'alpha': alpha_vals, 'hidden_layer_sizes': hidden_layer_setup}
+    gs_object = GridSearchCV(MLPRegressor(), param_grid=param_grid)
+    gs_object.fit(X_train.values, y_train.values)
+    return gs_object
+
 ## Get Mean Square Error (MSE) for different number of n features:
-def fit_model_n_feat(X_train, y_train, top_features, n_feat, n_feat_arr):
+def fit_model_n_feat(X_train, y_train, top_features, n_feat, n_feat_arr,
+                     model="xgb", cv=True):
     perc_finished = np.sum(n_feat_arr[:np.where(n_feat_arr==n_feat)[0][0]],
                            dtype=np.float32) / np.sum(n_feat_arr,dtype=np.float32)
     print("    Working on %3i features (~%4.1f%%)" % (n_feat,perc_finished*100),end="\r")
     sys.stdout.flush()
-    model = xgb.XGBRegressor(max_depth=6,silent=True,n_jobs=6,nthreads=6)
-    model.fit(X_train[top_features.index[:n_feat]], y_train)
+    if model=="xgb":
+        model = xgb.XGBRegressor(max_depth=6,silent=True,n_jobs=6,nthreads=6)
+        model.fit(X_train[top_features.index[:n_feat]], y_train)
+    elif model=="mlp":
+        if cv:
+            model = cv_mlp_model(X_train[top_features.index[:n_feat]], y_train, n_feat, cv=3)
+        else:
+            model = MLPRegressor(hidden_layer_sizes=(n_feat,np.ceil(n_feat/2.)))
+            model.fit(X_train[top_features.index[:n_feat]], y_train)
     return(model)
     #return(mean_squared_error(y_test, model.predict(X_test[top_features.index[:n_feat]])))
 
-## Get Mean Square Error (MSE) for different number of n features:
-def mse_n_feat(X_test, y_test, top_features, n_feat, model):
-    return(met.mean_squared_error(y_test, model.predict(X_test[top_features.index[:n_feat]])))
+## Get Mean Square Error (MSE) and R^2 for different number of n features:
+def mse_r2_n_feat(X_test, y_test, top_features, n_feat, model):
+    if isinstance(model, sklearn.model_selection._search.GridSearchCV):
+        model_pred = model.best_estimator_
+    else:
+        model_pred = model
+    prediction = model_pred.predict(X_test[top_features.index[:n_feat]])
+    mse_val    = sklearn.metrics.mean_squared_error(y_test,prediction)
+    r2_val     = sklearn.metrics.r2_score(y_test,prediction)
+    return(mse_val, r2_val)
 
 ## Plotting procedure for feature importance:
 def plot_feature_importance(model,X,delta_t,cfg_tds,mod_name):
@@ -61,9 +88,7 @@ def plot_feature_importance(model,X,delta_t,cfg_tds,mod_name):
     ax2 = fig.add_subplot(2,1,2)
     xgb.plot_importance(model,ax2,max_num_features=20,importance_type="gain",
                         title="Feature importance (Gain) - TRT t+%imin" % delta_t,show_values=False)
-    #ax3 = fig.add_subplot(3,1,3)
-    #plot_importance(model,ax3,max_num_features=20,importance_type="cover")
-    #plt.subplots_adjust(left=0.3,right=0.95)
+
     plt.tight_layout()
     plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Feature_importance_%imin%s.pdf" % (delta_t,mod_name)),orientation="portrait")
 
@@ -95,15 +120,6 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
     print("  Delete rows with TRT Rank close to zero at lead time")
     X, y = ipt.get_model_input(df_nonnan_nonzerot0, del_TRTeqZero_tpred=True,
             split_Xy=True, pred_dt=pred_dt, TRTRankt0_bound=mod_bound)
-    """
-    if mod_bound is not None:
-        df_nonnan_nonzerot0 = df_nonnan_nonzerot0.loc[(df_nonnan_nonzerot0["TRT_Rank|0"]>=mod_bound[0]) & \
-                                                      (df_nonnan_nonzerot0["TRT_Rank|0"]<mod_bound[1])]
-    X = df_nonnan_nonzerot0.loc[df_nonnan_nonzerot0["TRT_Rank|%i" % pred_dt]>=0.15,
-                                [Xcol for Xcol in df_nonnan_nonzerot0.columns if ipt.get_X_col(Xcol)]]
-    y = df_nonnan_nonzerot0.loc[df_nonnan_nonzerot0["TRT_Rank|%i" % pred_dt]>=0.15,
-                                ["TRT_Rank_diff|%i" % pred_dt]]
-    """
     del(df_nonnan_nonzerot0)
 
     ## Setup model:
@@ -149,20 +165,6 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
     X_train, X_test, y_train, y_test = ipt.get_model_input(df_nonnan_nonzerot0,
             del_TRTeqZero_tpred=True, split_Xy_traintest=True,
             pred_dt=pred_dt, TRTRankt0_bound=mod_bound)
-    """
-    if mod_bound is not None:
-        df_nonnan_nonzerot0 = df_nonnan_nonzerot0.loc[(df_nonnan_nonzerot0["TRT_Rank|0"]>=mod_bound[0]) & \
-                                                      (df_nonnan_nonzerot0["TRT_Rank|0"]<mod_bound[1])]
-    X = df_nonnan_nonzerot0.loc[df_nonnan_nonzerot0["TRT_Rank|%i" % pred_dt]>=0.15,
-                                [Xcol for Xcol in df_nonnan_nonzerot0.columns if ipt.get_X_col(Xcol)]]
-    y = df_nonnan_nonzerot0.loc[df_nonnan_nonzerot0["TRT_Rank|%i" % pred_dt]>=0.15,
-                                ["TRT_Rank_diff|%i" % pred_dt]]
-    del(df_nonnan_nonzerot0)
-
-    ## Split training/testing data:
-    print("  Split into training/testing data")
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    """
     del(X,y)
 
     ## Load XGBmodel:
@@ -187,14 +189,14 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
     print("    Save list of models as pickle to disk")
     with open(os.path.join(model_path,"models_%i%s_t0diff_maxdepth6_nfeat.pkl" % (pred_dt,mod_name)),"wb") as file:
         pickle.dump(ls_models, file, protocol=-1)
-    #with open(os.path.join(model_path,"models_%i_t0diff_maxdepth6_nfeat.pkl" % pred_dt),"rb") as file:
-    #    ls_models = pickle.load(file)
 
     ## Get mean square error of models with n features:
     print("  Get mean square error of models with n features")
-    MSE_gain_ls = [mse_n_feat(X_test, y_test, top_features_gain, n_feat, model) for n_feat, model in zip(n_feat_arr,ls_models)]
+    MSE_r2_ls = [mse_r2_n_feat(X_test, y_test, top_features_gain, n_feat, model) \
+                   for n_feat, model in zip(n_feat_arr,ls_models)]
     df_mse_feat_count = pd.DataFrame.from_dict({"Feature Count": n_feat_arr,
-                                                "MSE %imin%s" % (pred_dt,mod_name): MSE_gain_ls})
+        "MSE %imin%s" % (pred_dt,mod_name): [score[0] for score in MSE_r2_ls],
+         "R2 %imin%s" % (pred_dt,mod_name): [score[1] for score in MSE_r2_ls]})
     df_mse_feat_count.set_index("Feature Count",inplace=True)
     print("    Save dataframe with MSE to disk")
     with open(os.path.join(model_path,"MSE_feature_count_gain_%i%s.pkl" % (pred_dt,mod_name)),"wb") as file: pickle.dump(df_mse_feat_count,file,protocol=-1)
@@ -203,12 +205,6 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
     print("  Append MSE values to HDF5 file")
     df_mse_feat_count.to_hdf(os.path.join(model_path,"MSE_feature_count_gain.h5"),
                              key="MSE_%imin%s" % (pred_dt,mod_name), mode="a", format="t", append=True)
-    #if not os.path.exists(os.path.join(model_path,"MSE_feature_count_gain.pkl")):
-    #    df_mse_feat_count.to_hdf(os.path.join(model_path,"MSE_feature_count_gain.pkl"),
-    #                             key="MSE",mode="w",complevel=0,format='table')
-    #else:
-    #    store = pd.HDFStore(os.path.join(model_path,"MSE_feature_count_gain.pkl"))
-    #    store.append(df_mse_feat_count, ohlcv_candle, format='t',  data_columns=True)
 
 ## Plot dependence of MSE on feature number:
 def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_names=[""]):
@@ -376,8 +372,8 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
 
         ## Make prediction and get skill scores:
         pred_gain = model.predict(X_test[features])
-        mse_gain  = met.mean_squared_error(y_test[["TRT_Rank_diff|%i" % pred_dt]], pred_gain)
-        r2_gain   = met.r2_score(y_test[["TRT_Rank_diff|%i" % pred_dt]], pred_gain)
+        mse_gain  = sklearn.metrics.mean_squared_error(y_test[["TRT_Rank_diff|%i" % pred_dt]], pred_gain)
+        r2_gain   = sklearn.metrics.r2_score(y_test[["TRT_Rank_diff|%i" % pred_dt]], pred_gain)
 
         ## Save the model to disk:
         with open(os.path.join(model_path,"model_%i%s_t0diff_maxdepth6_%ifeat_gain.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
@@ -395,8 +391,8 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
     if len(ls_mod_bound)>1:
         y_test_combi = pd.concat(y_test_ls,axis=0)
         pred_gain_combi = np.concatenate(pred_gain_ls)
-        mse_gain  = met.mean_squared_error(y_test_combi[["TRT_Rank_diff|%i" % pred_dt]],pred_gain_combi)
-        r2_gain   = met.r2_score(y_test_combi[["TRT_Rank_diff|%i" % pred_dt]],pred_gain_combi)
+        mse_gain  = sklearn.metrics.mean_squared_error(y_test_combi[["TRT_Rank_diff|%i" % pred_dt]],pred_gain_combi)
+        r2_gain   = sklearn.metrics.r2_score(y_test_combi[["TRT_Rank_diff|%i" % pred_dt]],pred_gain_combi)
         plot_pred_vs_obs_core(y_test_combi, pred_gain_combi,
                               pred_dt,mse_gain,r2_gain,"_%s" % "|".join(ls_model_names),cfg_tds)
 
@@ -405,8 +401,10 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
     print("  Making the plot")
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=[10,8])
     if len(y_test)>1000:
-        counts,ybins,xbins,image = axes.hist2d(y_test[["TRT_Rank_diff|%i" % pred_dt]].values[:,0],pred_gain,
+        counts,ybins,xbins,image = axes.hist2d(y_test.values,pred_gain,
                                                bins=200,range=[[-2.5,2.5],[-2.5,2.5]],cmap="magma",norm=mcolors.LogNorm())
+        #counts,ybins,xbins,image = axes.hist2d(y_test[["TRT_Rank_diff|%i" % pred_dt]].values[:,0],pred_gain,
+        #                                       bins=200,range=[[-2.5,2.5],[-2.5,2.5]],cmap="magma",norm=mcolors.LogNorm())
         cbar = fig.colorbar(image, ax=axes, extend='max')
     else:
         axes.scatter(y_test[["TRT_Rank_diff|%i" % pred_dt]].values[:,0],pred_gain,
