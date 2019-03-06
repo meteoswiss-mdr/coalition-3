@@ -28,29 +28,31 @@ from coalition3.visualisation.TRTcells import contour_of_2dHist
 ## FUNCTIONS:
 
 ## Get cv MLP model:
-def cv_mlp_model(X_train, y_train, n_feat):
+def cv_mlp_model(X_train, y_train, n_feat, verbose_bool=False):
     alpha_vals = [1e-2, 1e-3, 1e-4]
     hidden_layer_setup = [(int(np.ceil(n_feat*1.5)),int(np.ceil(n_feat*1.5))),
                           (n_feat,int(np.ceil(n_feat/2.))),
                           (int(np.ceil(n_feat*2/3.)),int(np.ceil(n_feat*1/3.)))]
     param_grid = {'alpha': alpha_vals, 'hidden_layer_sizes': hidden_layer_setup}
-    gs_object = GridSearchCV(MLPRegressor(), param_grid=param_grid)
+    gs_object = GridSearchCV(MLPRegressor(verbose=verbose_bool), param_grid=param_grid, cv=3)
     gs_object.fit(X_train.values, y_train.values)
     return gs_object
 
 ## Get Mean Square Error (MSE) for different number of n features:
 def fit_model_n_feat(X_train, y_train, top_features, n_feat, n_feat_arr,
-                     model="xgb", cv=True):
+                     model="xgb", cv=True, verbose_bool=False):
     perc_finished = np.sum(n_feat_arr[:np.where(n_feat_arr==n_feat)[0][0]],
                            dtype=np.float32) / np.sum(n_feat_arr,dtype=np.float32)
-    print("    Working on %3i features (~%4.1f%%)" % (n_feat,perc_finished*100),end="\r")
+    ending = "\n" if verbose_bool else "\r"
+    print("    Working on %3i features (~%4.1f%%)" % (n_feat,perc_finished*100),end=ending)
     sys.stdout.flush()
     if model=="xgb":
         model = xgb.XGBRegressor(max_depth=6,silent=True,n_jobs=6,nthreads=6)
         model.fit(X_train[top_features.index[:n_feat]], y_train)
     elif model=="mlp":
         if cv:
-            model = cv_mlp_model(X_train[top_features.index[:n_feat]], y_train, n_feat, cv=3)
+            model = cv_mlp_model(X_train[top_features.index[:n_feat]], y_train,
+                                 n_feat, verbose_bool)
         else:
             model = MLPRegressor(hidden_layer_sizes=(n_feat,np.ceil(n_feat/2.)))
             model.fit(X_train[top_features.index[:n_feat]], y_train)
@@ -68,6 +70,25 @@ def mse_r2_n_feat(X_test, y_test, top_features, n_feat, model):
     r2_val     = sklearn.metrics.r2_score(y_test,prediction)
     return(mse_val, r2_val)
 
+## Get prediction time from user:
+def get_pred_dt_ls(input_str, timestep=None,n_integ=None):
+    ls_pred_dt = [-5]
+    if (timestep is not None and n_integ is not None):
+        poss_fcst_steps = np.arange(timestep,
+                                    timestep*n_integ,
+                                    timestep)
+        print("\nFor which time delta (%i, %i, .., %i) should %s be made?" % \
+              (poss_fcst_steps[0], poss_fcst_steps[1], poss_fcst_steps[-1], input_str))
+    else:
+        poss_fcst_steps = np.arange(-100,100)
+        print("\nFor which time delta should %s be made?" % input_str)
+    
+    while not np.all([pred_dt_i in poss_fcst_steps for pred_dt_i in ls_pred_dt]):
+        ls_pred_dt = raw_input("  Select forecast step (if several, split with comma): ").split(",")
+        ls_pred_dt = [int(pred_dt_i.strip()) for pred_dt_i in ls_pred_dt]
+    print("  Perform %s of lead times %s" % (input_str, ', '.join([str(pred_dt_i) for pred_dt_i in ls_pred_dt])))
+    return ls_pred_dt
+    
 ## Plotting procedure for feature importance:
 def plot_feature_importance(model,X,delta_t,cfg_tds,mod_name):
     sort_ind = np.argsort(model.feature_importances_)[::-1]
