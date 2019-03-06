@@ -108,6 +108,17 @@ def plot_TRT_scatter(df_plot,list_min_plus,path_addon="",contour=False,TRTcol=Fa
                         transform=axes[ax_i].transAxes, fontsize=8,
                         verticalalignment='center', horizontalalignment='center',
                         bbox=props)
+        else:
+            n_samples = np.sum(np.logical_and(df_plot_i["TRT_Rank|0"].values<1.2,
+                                              df_plot_i["TRT_Rank|0"].values>=0))
+            axes[ax_i].arrow(0,2.8,1.2,0,
+                             color="white", length_includes_head=True, head_width=0.07)
+            axes[ax_i].arrow(1.2,2.8,-1.2,0,
+                             color="white", length_includes_head=True, head_width=0.07)
+            axes[ax_i].text(0.6/4, 6.8/8, n_samples,
+                        transform=axes[ax_i].transAxes, fontsize=10,
+                        verticalalignment='center', horizontalalignment='center',
+                        bbox=props)
                         
     plt.tight_layout()
     path_addon_num = "_".join([str(num) for num in list_min_plus])
