@@ -33,16 +33,7 @@ del(df_nonnan)
 
 ## Get feature importance for specified time delta:
 ## Get lead times:
-ls_pred_dt = [-5]
-poss_fcst_steps = np.arange(cfg_op["timestep"],
-                            cfg_op["timestep"]*cfg_op["n_integ"],
-                            cfg_op["timestep"])
-print("\nFor which time delta (%i, %i, .., %i) should the feature selection be made?" % \
-      (poss_fcst_steps[0], poss_fcst_steps[1], poss_fcst_steps[-1]))
-while not np.all([pred_dt_i in poss_fcst_steps for pred_dt_i in ls_pred_dt]):
-    ls_pred_dt = raw_input("  Select forecast step (if several, split with comma): ").split(",")
-    ls_pred_dt = [int(pred_dt_i.strip()) for pred_dt_i in ls_pred_dt]
-print("  Perform feature selection of lead times %s" % ', '.join([str(pred_dt_i) for pred_dt_i in ls_pred_dt]))
+ls_pred_dt = feat.get_pred_dt_ls("the feature selection", cfg_op["timestep"],cfg_op["n_integ"])
 
 ## Get model boundaries:
 ls_model_bound = []; ls_model_names = []
