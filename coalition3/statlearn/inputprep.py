@@ -24,8 +24,8 @@ def get_X_col(colname):
                "-" in colname or "|0" in colname) and \
               ("TRT_Rank_diff" not in colname)
     return(use_col)
-
-## Helper function determining returning data type of function get_model_input()
+    
+## Helper function determining when to return results:
 def return_step(bool_input_ls):
     if not np.any(bool_input_ls):
         return "return_df"
@@ -47,7 +47,7 @@ def get_model_input(df_tds,
                     X_test_size=0.2,
                     verbose=False):
 
-    ## Get step when training dataset should be returned:
+    ## Get step when results should be returned:
     ret_step = return_step([split_Xy,split_Xy_traintest])
 
     ## Delete rows with TRT Rank at t0 outside model bounds:
@@ -100,7 +100,7 @@ def get_model_input(df_tds,
                                             random_state=42)
         del(X,y)
 
-    ## Normalise input data:
+    ## Normalise input data:
     if X_normalise:
         if verbose:
             print("  Normalise input data X")
