@@ -65,7 +65,10 @@ def mse_r2_n_feat(X_test, y_test, top_features, n_feat, model):
         model_pred = model.best_estimator_
     else:
         model_pred = model
-    prediction = model_pred.predict(X_test[top_features.index[:n_feat]])
+    if isinstance(top_features_gain, list):
+        prediction = model_pred.predict(X_test[top_features[:n_feat]])
+    else:
+        prediction = model_pred.predict(X_test[top_features.index[:n_feat]])
     mse_val    = sklearn.metrics.mean_squared_error(y_test,prediction)
     r2_val     = sklearn.metrics.r2_score(y_test,prediction)
     return(mse_val, r2_val)
