@@ -17,6 +17,7 @@ import datetime
 
 import coalition3.inout.readconfig as cfg
 import coalition3.operational.update as upd
+import coalition3.operational.convertds as cds
 import coalition3.operational.processing as prc
 import coalition3.operational.statistics as stat
 
@@ -39,6 +40,9 @@ stat.append_statistics_pixcount(cfg_set,cfg_var,cfg_var_combi,reverse=False)
 
 ## Add auxiliary and derived variables
 stat.add_auxiliary_derived_variables(cfg_set)
+
+## Convert statistics (xarray) dataset into (pandas) dataframe:
+cds.convert_stat_ds_to_df(cfg_set)
 
 ## Delete all .nc files (vararr and disparr files)
 #prc.clean_disparr_vararr_tmp(cfg_set_input)
