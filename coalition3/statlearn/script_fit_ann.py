@@ -90,11 +90,15 @@ for pred_dt in ls_pred_dt:
                                  np.arange(50,100,10),
                                  np.arange(100,520,20)])
     print("  *** Watch out, this takes veeeeeeeeeeeeery long!! ***")
-    ls_models = [feat.fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr, model="mlp", verbose_bool=True) for n_feat in n_feat_arr]
-    
-    with open(os.path.join(model_path,"model_%i%s_t0diff_mlp_nfeat.pkl" % (pred_dt,mod_name)),"wb") as file:
-        pickle.dump(ls_models,file,protocol=-1)
-        
+    ls_models = []
+    for n_feat in n_feat_arr:
+        print("\n   Fitting model for %i features\n" & n_feat)
+        fitted_model = feat.fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr, model="mlp", verbose_bool=True)
+        ls_models.append(fitted_model)
+        if n_feat%20==0:
+            with open(os.path.join(model_path,"model_%i%s_t0diff_mlp_nfeat_%i.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
+                pickle.dump(ls_models,file,protocol=-1)
+      
     ## Make plot showing model architecture:
     best_param_ls = [ele.best_params_ for ele in ls_models]
     model_arch_ls = np.array([ele['hidden_layer_sizes'][0]/float(nfeat) for ele, nfeat in zip(best_param_ls, n_feat_arr)])
