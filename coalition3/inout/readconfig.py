@@ -353,7 +353,8 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
         "save_TRT_domain_map": config_sc["save_TRT_domain_map"]=='True',
         "save_stat_ctrl_imag": config_sc["save_stat_ctrl_imag"]=='True',
         "stat_list":           stat_list,
-        "pixcount_list":       pixcount_list
+        "pixcount_list":       pixcount_list,
+        "opt_stat_past":       config_sc["opt_stat_past"]
     })
 
     ## ===== Add abbreviations, units, source, and min. vals of ================
