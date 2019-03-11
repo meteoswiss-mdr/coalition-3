@@ -105,22 +105,16 @@ for pred_dt in ls_pred_dt:
     model_arch_ls[np.where(model_arch_ls>1.1)[0]] = 3
     model_arch_ls[np.where(np.isclose(model_arch_ls,1))[0]] = 2
     model_arch_ls[np.where(model_arch_ls<0.9)[0]] = 1
-    
+
     learn_rate_ls = np.log10([ele['alpha'] for ele in best_param_ls])
     df_best_model = pd.DataFrame.from_dict({"Model Architecture": model_arch_ls, "Regularisation Exponent": learn_rate_ls})
     df_best_model = df_best_model.set_index(n_feat_arr)
         
-    """
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=[10,8])
-    for ax in axes:
-        ax.grid()
-        ax.set_xlabel("Feature Count")
-    df_best_model.iloc[:,0].plot.scatter(ax=ax[0])
-    df_best_model.iloc[:,1].plot.scatter(ax=ax[1])
-    """
-    axes = df_best_model.plot.line(ylim=(-5,4),sharex=True,grid=True) # subplots=True
-    axes.set_xlabel("Feature Count")       
-    plt.show()
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=[7,5])
+    df_best_model.plot.line(ax=axes, ylim=(-5,4),sharex=True,grid=True) # subplots=True
+    axes.set_xlabel("Feature Count")   
+    axes.set_title(r"Hyperparameters t$\mathregular{_{+%imin}}$" % pred_dt)    
+    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Hyperparameter_%i.pdf" % (pred_dt)), orientation="landscape")
         
         
         
