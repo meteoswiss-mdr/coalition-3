@@ -65,7 +65,7 @@ def mse_r2_n_feat(X_test, y_test, top_features, n_feat, model):
         model_pred = model.best_estimator_
     else:
         model_pred = model
-    if isinstance(top_features_gain, list):
+    if isinstance(top_features, list):
         prediction = model_pred.predict(X_test[top_features[:n_feat]])
     else:
         prediction = model_pred.predict(X_test[top_features.index[:n_feat]])
@@ -89,7 +89,7 @@ def get_pred_dt_ls(input_str, timestep=None,n_integ=None):
     while not np.all([pred_dt_i in poss_fcst_steps for pred_dt_i in ls_pred_dt]):
         ls_pred_dt = raw_input("  Select forecast step (if several, split with comma): ").split(",")
         ls_pred_dt = [int(pred_dt_i.strip()) for pred_dt_i in ls_pred_dt]
-    print("  Perform %s of lead times %s" % (input_str, ', '.join([str(pred_dt_i) for pred_dt_i in ls_pred_dt])))
+    print("  Perform %s at lead times %s min" % (input_str, ', '.join([str(pred_dt_i) for pred_dt_i in ls_pred_dt])))
     return ls_pred_dt
     
 ## Plotting procedure for feature importance:
