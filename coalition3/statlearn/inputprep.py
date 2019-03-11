@@ -45,6 +45,7 @@ def get_model_input(df_tds,
                     TRTRankt0_bound=[0.0, 4.0],
                     X_feature_sel="all",
                     X_test_size=0.2,
+                    traintest_TRTcell_split=True,
                     verbose=False):
 
     ## Get step when results should be returned:
@@ -93,11 +94,22 @@ def get_model_input(df_tds,
 
     ## Split training/testing data:
     if split_Xy_traintest:
-        if verbose:
-            print("  Split into training/testing data")
-        X_train, X_test, y_train, y_test = train_test_split(X, y,
-                                            test_size=X_test_size,
-                                            random_state=42)
+        if traintest_TRTcell_split:
+            if verbose:
+                print("  Split into training/testing data (TRT cell separated)")
+            numpy.random.seed(seed=42)
+            TRT_ID = np.array([dti[13:] for dti in X.index])
+            TRT_ID_test = np.random.choice(np.unique(TRT_ID), int(X_test_size*len(np.unique(TRT_ID))), replace=False)
+            X_train = X.iloc[np.where(~np.in1d(TRT_ID, TRT_ID_test))[0],:]
+            y_train = y.iloc[np.where(~np.in1d(TRT_ID, TRT_ID_test))[0]]
+            X_test  = X.iloc[np.where( np.in1d(TRT_ID, TRT_ID_test))[0],:]
+            y_test  = y.iloc[np.where( np.in1d(TRT_ID, TRT_ID_test))[0]]
+        else:
+            if verbose:
+                print("  Split randomly into training/testing data")
+            X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                test_size=X_test_size,
+                                                random_state=42)
         del(X,y)
 
     ## Normalise input data:
