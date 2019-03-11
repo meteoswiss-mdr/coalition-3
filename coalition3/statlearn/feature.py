@@ -145,6 +145,12 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
     X, y = ipt.get_model_input(df_nonnan_nonzerot0, del_TRTeqZero_tpred=True,
             split_Xy=True, pred_dt=pred_dt, TRTRankt0_bound=mod_bound)
     del(df_nonnan_nonzerot0)
+    if len(X)>80000:
+        print("   *** Warning: Dataframe X probably to big to be converted, reduced to 80'000 rows! ***")
+        X = X.sample(n=80000,random_state=42)
+        y = y.sample(n=80000,random_state=42)
+    #X = X.values
+    #X = X.astype(np.float16, order='C', copy=False)
 
     ## Setup model:
     print("  Setup XGBmodel with max_depth = 6")
@@ -457,3 +463,56 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
     axes.text(-2,2, str_n_cells, bbox=props)
     plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Pred_scatter_%i%s.pdf" % (pred_dt,mod_name.replace("|","-"))), orientation="portrait")
     print("    Saved the plot")
+
+def merge_two_dicts(x, y):
+    z = x.copy()   # start with x's keys and values
+    z.update(y)    # modifies z with y's keys and values & returns None
+    return z
+    
+def plot_feat_source_dt_gainsum(path_xgb, cfg_op):
+    print("Plot feature source and time delta importance")
+    pred_dt_ls  = np.arange(cfg_op["timestep"],cfg_op["n_integ"]*cfg_op["timestep"],cfg_op["timestep"])
+    source_dict = merge_two_dicts(cfg_op["source_dict"], cfg_op["source_dict_combi"])
+
+    score_ls    = []
+    model_ls    = []
+    for i, pred_dt in enumerate(pred_dt_ls):
+        model_path_xgb = os.path.join(model_path_xgb,"model_%i_t0diff_maxdepth6.pkl")
+        with open(model_path_xgb,"rb") as file:
+            xgb_dt = pickle.load(file)
+        score_ls.append(pd.DataFrame.from_dict(xgb_dt.get_booster().get_score(importance_type='gain'),
+                                               orient="index",columns=["F_score_%i" % pred_dt]))
+        model_ls.append(xgb_dt)
+
+    feature_names = model_ls[0].get_booster().feature_names
+    df_gain = pd.concat([pd.DataFrame([],index=feature_names)]+score_ls,axis=1,sort=True).fillna(0, inplace=True)
+
+    feat_ls = list(df_gain.index)
+    feat_var_ls = [feat.split("|")[0] for feat in feat_ls]
+    feat_dt_ls  = [int(feat.split("|")[1]) if "|" in feat else 0 for feat in feat_ls]
+
+    Time_feat      = [u'SOLAR_TIME_COS', u'SOLAR_TIME_SIN']
+    TRT_Rank_feat  = [u'RANK', u'RANKr', u'TRT_Rank']
+    TRT_light_feat = [u'CG', u'CG_minus', u'CG_plus', u'perc_CG_plus']
+    TRT_radar_feat = [u'CZC_lt57dBZ',  u'ET15', u'ET15m', u'ET45', u'ET45m', u'POH', u'VIL',  u'maxH', u'maxHm']
+    TRT_loc_feat   = [u'Border_cell', u'Dvel_x', u'Dvel_y', u'angle', u'area', u'det', u'ell_L', u'ell_S', u'iCH', u'jCH', u'lat', u'lon', u'vel_x', u'vel_y']
+
+    feat_src_ls = [source_dict[feat_var.split("_stat")[0]] if "_stat" in feat_var else feat_var for feat_var in feat_var_ls]
+    feat_src_ls = [source_dict[feat_var.split("_pixc")[0]] if "_pixc" in feat_var else feat_var for feat_var in feat_src_ls]
+    feat_src_ls = ["TRT_Rank" if feat_var in TRT_Rank_feat  else feat_var for feat_var in feat_src_ls]
+    feat_src_ls = ["RADAR"    if feat_var in TRT_radar_feat else feat_var for feat_var in feat_src_ls]
+    feat_src_ls = ["THX"      if feat_var in TRT_light_feat else feat_var for feat_var in feat_src_ls]
+    feat_src_ls = ["LOC_AREA" if feat_var in TRT_loc_feat   else feat_var for feat_var in feat_src_ls]
+    feat_src_ls = ["TIME"     if feat_var in Time_feat      else feat_var for feat_var in feat_src_ls]
+        
+    df_gain = pd.concat([df_gain, pd.DataFrame.from_dict({"TIME_DELTA": feat_dt_ls, "VARIABLE": feat_var_ls, "SOURCE": feat_src_ls}).set_index(df_gain.index)], axis=1)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
