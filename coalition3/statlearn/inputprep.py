@@ -97,7 +97,7 @@ def get_model_input(df_tds,
         if traintest_TRTcell_split:
             if verbose:
                 print("  Split into training/testing data (TRT cell separated)")
-            numpy.random.seed(seed=42)
+            np.random.seed(seed=42)
             TRT_ID = np.array([dti[13:] for dti in X.index])
             TRT_ID_test = np.random.choice(np.unique(TRT_ID), int(X_test_size*len(np.unique(TRT_ID))), replace=False)
             X_train = X.iloc[np.where(~np.in1d(TRT_ID, TRT_ID_test))[0],:]
