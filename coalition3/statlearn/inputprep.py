@@ -50,6 +50,9 @@ def get_model_input(df_tds,
 
     ## Get step when results should be returned:
     ret_step = return_step([split_Xy,split_Xy_traintest])
+    
+    ## Delete any nan-values
+    df_tds = df_tds.dropna(0,'any')
 
     ## Delete rows with TRT Rank at t0 outside model bounds:
     if (TRTRankt0_bound!=[0.0, 4.0] and TRTRankt0_bound is not None):
