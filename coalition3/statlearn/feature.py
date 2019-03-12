@@ -17,6 +17,7 @@ import seaborn as sns
 import datetime as dt
 import matplotlib.pylab as plt
 import matplotlib.colors as mcolors
+from pandas.api.types import CategoricalDtype
 
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
@@ -469,23 +470,28 @@ def merge_two_dicts(x, y):
     z.update(y)    # modifies z with y's keys and values & returns None
     return z
     
-def plot_feat_source_dt_gainsum(path_xgb, cfg_op):
+def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     print("Plot feature source and time delta importance")
-    pred_dt_ls  = np.arange(cfg_op["timestep"],cfg_op["n_integ"]*cfg_op["timestep"],cfg_op["timestep"])
+    if pred_dt_ls is None:
+        pred_dt_ls  = np.arange(cfg_op["timestep"],cfg_op["n_integ"]*cfg_op["timestep"],cfg_op["timestep"])
+        print("  This script assumes that for all future time steps %imin - %imin, " % (pred_dt_ls[0],pred_dt_ls[-1]) +
+              "XGB models with all features have been fitted")
+    else:
+        print("  This script only plot the feature source/time step importance for the time steps:\n    %s" % pred_dt_ls)
     source_dict = merge_two_dicts(cfg_op["source_dict"], cfg_op["source_dict_combi"])
 
     score_ls    = []
     model_ls    = []
     for i, pred_dt in enumerate(pred_dt_ls):
-        model_path_xgb = os.path.join(model_path_xgb,"model_%i_t0diff_maxdepth6.pkl")
+        model_path_xgb = os.path.join(path_xgb,"model_%i_t0diff_maxdepth6.pkl" % pred_dt)
         with open(model_path_xgb,"rb") as file:
             xgb_dt = pickle.load(file)
         score_ls.append(pd.DataFrame.from_dict(xgb_dt.get_booster().get_score(importance_type='gain'),
-                                               orient="index",columns=["F_score_%i" % pred_dt]))
+                                               orient="index",columns=["%imin" % pred_dt]))
         model_ls.append(xgb_dt)
 
     feature_names = model_ls[0].get_booster().feature_names
-    df_gain = pd.concat([pd.DataFrame([],index=feature_names)]+score_ls,axis=1,sort=True).fillna(0, inplace=True)
+    df_gain = pd.concat([pd.DataFrame([],index=feature_names)]+score_ls,axis=1,sort=True).fillna(0, inplace=False).astype(np.float32)
 
     feat_ls = list(df_gain.index)
     feat_var_ls = [feat.split("|")[0] for feat in feat_ls]
@@ -506,12 +512,37 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op):
     feat_src_ls = ["TIME"     if feat_var in Time_feat      else feat_var for feat_var in feat_src_ls]
         
     df_gain = pd.concat([df_gain, pd.DataFrame.from_dict({"TIME_DELTA": feat_dt_ls, "VARIABLE": feat_var_ls, "SOURCE": feat_src_ls}).set_index(df_gain.index)], axis=1)
-    
-    
-    
-    
-    
-    
+    df_gain["SOURCE"]   = df_gain["SOURCE"].astype('category')
+    df_gain["VARIABLE"] = df_gain["VARIABLE"].astype('category')
+
+    df_sum_source      = df_gain.groupby("SOURCE").sum().transpose().drop("TIME_DELTA")
+    df_sum_source_norm = df_sum_source.div(df_sum_source.sum(axis=1), axis=0)
+    df_sum_source_norm = df_sum_source_norm.iloc[:,[3,4,0,5,2,7,1,6]]
+
+    df_sum_dtime       = df_gain.groupby("TIME_DELTA").sum().transpose()
+    df_sum_dtime_norm  = df_sum_dtime.div(df_sum_dtime.sum(axis=1), axis=0)
+    df_sum_dtime_norm.columns = ["%imin" % colname for colname in df_sum_dtime_norm.columns]
+
+    fig = plt.figure(figsize = [10,13])
+    ax1 = fig.add_subplot(2,1,1)
+    ax2 = fig.add_subplot(2,1,2)
+    df_sum_source_norm.plot.line(ax=ax1, cmap="Set1", linewidth=2)
+    df_sum_dtime_norm.plot.line(ax=ax2, cmap="viridis_r", linewidth=2) 
+    for title,ax in zip(["Feature source","Past time step"],[ax1,ax2]):
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, # + box.height * 0.1,
+                         box.width, box.height * 0.8])
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25),
+                  fancybox=True, shadow=True, ncol=5,title=title,fontsize="medium")
+        ax.set_xlabel("Lead time")
+        ax.grid()
+    ax1.set_ylabel("Relative feature source importance")
+    ax2.set_ylabel("Relative time step importance")
+    #plt.tight_layout()
+    plt_saving_location = os.path.join(cfg_tds["fig_output_path"],"Feature_source_time_step_importance.pdf")
+    plt.savefig(plt_saving_location,orientation="portrait")
+    print("  Plot saved in:\n    %s" % plt_saving_location)
+        
     
     
     

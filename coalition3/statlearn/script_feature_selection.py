@@ -105,7 +105,8 @@ feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=ls_n_feat_dt_
 for i_dt, pred_dt in enumerate(ls_pred_dt):
     feat.plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,ls_n_feat_dt[i_dt],cfg_tds,model_path,ls_model_bound,ls_model_names)
 
-
+## Plot relative feature source and past time step importance:
+feat.plot_feat_source_dt_gainsum(model_path, cfg_op, cfg_tds, ls_pred_dt)
 
 
 
