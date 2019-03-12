@@ -48,6 +48,66 @@ def get_model_input(df_tds,
                     traintest_TRTcell_split=True,
                     verbose=False):
 
+    """ This function is used to prepare the full 2D training dataframe into 
+        objects which can be used for the model training and testing.
+        
+    Parameters:
+    -----------
+    
+    df_tds : pandas dataframe
+        Full training dataframe with all the features (roughly 10100), including
+        all TRT Ranks of the future time steps.
+        
+    del_TRTeqZero_tpred : boolean
+        If true, samples where the TRT Ranks drops (close) to zero at the prediction
+        time pred_dt. This is the default, such that the models are not confused
+        by the TRT Rank jump caused by the (dis)apperance of pixels with EchoTop > 45dBZ.
+        Parameter 'pred_dt' has to be provided. As minimum TRT Rank, 0.15 at prediction
+        time delta 0.15 is used as default (see parameter 'TRTRank_gap_thresh').
+        
+    split_Xy : boolean
+        If true, split the dataframe into a dataframe X with only predictors (up to t0)
+        and a dataframe y with only predictants (TRT Rank at prediction time pred_dt).
+        
+    split_Xy_traintest : boolean
+        If true, split the predictor/predictant dataframes X & y further into training
+        and testig dataframes X_train/X_test & y_train/y_test. By default, training and
+        testing splits are done such that no TRT Cell (according to the TRT ID) is both
+        in the training and the testing dataset (see parameter 'traintest_TRTcell_split').
+        Furthermore, the training dataframes are 4x larger than the testing dataframes
+        (see parameter 'X_test_size')
+        
+    X_normalise : boolean
+        If true, normalise the predictor dataframes X_train and X_test (subtract mean and
+        devide by standard deviation). This is necessary before training an ANN.
+        
+    pred_dt : int
+        Prediction time delta (e.g. 30 for 30min). This has to be provided, since the number
+        of samples where the TRT Rank drops to zero changes depending on the lead time
+        (see parameter 'del_TRTeqZero_tpred').
+        
+    TRTRank_gap_thresh : float
+        Threshold below which samples are deleted if the TRT Rank falls at prediction time
+        delta below this threshold.
+        
+    TRTRankt0_bound : list of two floats
+        Model bounds in terms of TRT Ranks at t0. E.g. by setting it to [1.2, 2.3], only
+        samples are selected where the TRT Rank at t0 is between these two model bounds.
+    
+    X_feature_sel : list of strings
+        For the predictor dataframe X, only these features are selected. Default is "all",
+        such that all features are selected.
+        
+    X_test_size : float
+        Float between 0 and 1, stating the fraction of samples going into the test
+        dataframes X_test and y_test.
+        
+    traintest_TRTcell_split : bool
+        If true, when splitting the predictor dataframe X and the predictant dataframe y
+        into training and testing dataframes, it is assured that no TRT cell both occurs
+        in the training and the testing dataframes. If false, samples a selected randomly.
+    """
+                    
     ## Get step when results should be returned:
     ret_step = return_step([split_Xy,split_Xy_traintest])
     
