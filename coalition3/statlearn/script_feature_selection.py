@@ -113,7 +113,7 @@ for pred_dt in ls_pred_dt:
         fitted_model = feat.fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr, model="mlp", verbose_bool=False)
         ls_models.append(fitted_model)
         if n_feat%1==0:
-            print("\n     Save list of models to disk")
+            print("     Save list of models to disk")
             with open(os.path.join(model_path,"model_%i%s_t0diff_mlp_nfeat_%i.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
                 pickle.dump(ls_models,file,protocol=-1)
        
