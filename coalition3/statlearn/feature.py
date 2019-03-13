@@ -214,7 +214,6 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
     X_train, X_test, y_train, y_test = ipt.get_model_input(df_nonnan_nonzerot0,
             del_TRTeqZero_tpred=True, split_Xy_traintest=True,
             pred_dt=pred_dt, TRTRankt0_bound=mod_bound)
-    del(X,y)
 
     ## Load XGBmodel:
     print("  Load XGBmodel")
