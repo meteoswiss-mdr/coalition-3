@@ -30,9 +30,8 @@ from coalition3.visualisation.TRTcells import contour_of_2dHist
 
 ## Get cv MLP model:
 def cv_mlp_model(X_train, y_train, n_feat, verbose_bool=False):
-    alpha_vals = [1e-2, 1e-3, 1e-4]
-    hidden_layer_setup = [(int(np.ceil(n_feat*1.5)),int(np.ceil(n_feat*1.5))),
-                          (n_feat,int(np.ceil(n_feat/2.))),
+    alpha_vals = [1e+0, 1e-3, 1e-6]
+    hidden_layer_setup = [(int(np.ceil(n_feat*1.5)),int(np.ceil(n_feat*1.5))), # (n_feat,int(np.ceil(n_feat/2.))),
                           (int(np.ceil(n_feat*2/3.)),int(np.ceil(n_feat*1/3.)))]
     param_grid = {'alpha': alpha_vals, 'hidden_layer_sizes': hidden_layer_setup}
     gs_object = GridSearchCV(MLPRegressor(verbose=verbose_bool), param_grid=param_grid, cv=3)
@@ -143,7 +142,12 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
 
     ## Delete rows with TRT Rank close to zero at lead time:
     print("  Delete rows with TRT Rank close to zero at lead time")
-    X_feature_sel = "no_radar_t0" if delete_RADAR_t0 else "all"
+    if delete_RADAR_t0:
+        print("  Get predictor matrix X without RADAR variables at t0")
+        X_feature_sel = "no_radar_t0" 
+    else:
+        print("  Get predictor matrix X with RADAR variables at t0")
+        X_feature_sel = "all" 
     X, y = ipt.get_model_input(df_nonnan_nonzerot0, del_TRTeqZero_tpred=True,
             split_Xy=True, pred_dt=pred_dt, TRTRankt0_bound=mod_bound, X_feature_sel=X_feature_sel)
     del(df_nonnan_nonzerot0)
@@ -173,6 +177,19 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
     print("  Plot feature importance")
     plot_feature_importance(xgb_model,X,pred_dt,cfg_tds,mod_name)
 
+def get_n_feat_arr(model):
+    n_feat_arr = np.concatenate([np.arange(10)+1,
+                                 np.arange(12,40,2),
+                                 np.arange(40,100,20),
+                                 np.arange(100,200,25),
+                                 np.arange(200,300,50),
+                                 np.arange(300,500,100),
+                                 np.arange(500,1250,250)])
+    if model == "xgb":
+        return n_feat_arr
+    elif model in ["ann","mlp"]:
+        return n_feat_arr[9:]
+    
 ## Get Mean Square Error depending on number of features:
 def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,mod_name=""):
     print("Get dependence of MSE on n features for lead time t0 + %imin" % pred_dt, end="")
@@ -210,10 +227,7 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
                                                ascending=False)
 
     ## Create list of number of features to select for the fitting:
-    n_feat_arr = np.concatenate([np.arange(10)+1,
-                                 np.arange(12,50,2),
-                                 np.arange(50,100,10),
-                                 np.arange(100,520,20)])
+    n_feat_arr = get_n_feat_arr(model="xgb")
 
     ## Get models fitted with n top features:
     print("  Get models fitted with n top features")
@@ -256,7 +270,18 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
     print("  Plotting the figure")
     col10 = '#E69F00'
     col30 = '#D55E00'
-    if (len(ls_pred_dt) == 2 and ls_model_names == [""]):
+    if (len(ls_pred_dt) == 3 and ls_model_names == [""]):
+        fig = plt.figure(figsize = [10,5])
+        ax = fig.add_subplot(1,1,1)
+        df_mse_feat_count_norm = df_mse_feat_count/df_mse_feat_count.mean()
+        df_mse_feat_count_norm
+        df_mse_feat_count_norm.plot(ax = ax, linestyle="-", cmap="Set1")
+        ax.set_ylabel("Normalised MSE")
+        ax.set_xlabel("Number of features")
+        ax.set_title("Normalised mean square error (MSE) as function of feature count")
+        ax.grid()
+        plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count.pdf"), orientation="portrait")
+    elif (len(ls_pred_dt) == 2 and ls_model_names == [""]):
         fig = plt.figure(figsize = [10,5])
         ax1 = fig.add_subplot(1,1,1)
         ax2 = ax1.twinx()
@@ -341,7 +366,7 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
             plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count.pdf"), orientation="portrait")
     else:
         df_mse_feat_count.plot.line()
-        plt.show()
+        plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count.pdf"), orientation="portrait")
 
 ## Fit model with threshold number of features (selected by the user):
 def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
