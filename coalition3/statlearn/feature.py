@@ -118,7 +118,7 @@ def plot_feature_importance(model,X,delta_t,cfg_tds,mod_name):
     plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Feature_importance_%imin%s.pdf" % (delta_t,mod_name)),orientation="portrait")
 
 ## Get feature ranking for the complete dataset:
-def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,mod_name=""):
+def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,mod_name="",delete_RADAR_t0=False):
     print("Get features for lead time t0 + %imin" % pred_dt, end="")
     if mod_bound is not None:
         if mod_name=="":
@@ -143,8 +143,9 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
 
     ## Delete rows with TRT Rank close to zero at lead time:
     print("  Delete rows with TRT Rank close to zero at lead time")
+    X_feature_sel = "no_radar_t0" if delete_RADAR_t0 else "all"
     X, y = ipt.get_model_input(df_nonnan_nonzerot0, del_TRTeqZero_tpred=True,
-            split_Xy=True, pred_dt=pred_dt, TRTRankt0_bound=mod_bound)
+            split_Xy=True, pred_dt=pred_dt, TRTRankt0_bound=mod_bound, X_feature_sel=X_feature_sel)
     del(df_nonnan_nonzerot0)
     if len(X)>80000:
         print("   *** Warning: Dataframe X probably to big to be converted, reduced to 80'000 rows! ***")
