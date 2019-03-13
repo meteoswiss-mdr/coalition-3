@@ -13,6 +13,14 @@ import pandas as pd
 import coalition3.inout.paths as pth
 import coalition3.inout.readconfig as cfg
 import coalition3.statlearn.feature as feat
+
+import pickle
+import datetime as dt
+import coalition3.statlearn.inputprep as ipt
+    
+import sklearn.metrics as met
+from sklearn.neural_network import MLPRegressor
+from sklearn.model_selection import GridSearchCV
     
 ## ============================================================================
 ## Get config info:
@@ -82,9 +90,9 @@ feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
 model_path = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/ANN_models/models/diam_23km/without_radar_t0" #pth.file_path_reader("model saving location")
 for pred_dt in ls_pred_dt:
     ## Get normalised training and testing data:
-    X_train, X_test, y_train, y_test, scaler = ipt.get_model_input(df_nonnan,
+    X_train, X_test, y_train, y_test, scaler = ipt.get_model_input(df_nonnan_nonzerot0,
         del_TRTeqZero_tpred=True, split_Xy_traintest=True, X_normalise=True,
-        pred_dt=pred_dt)
+        pred_dt=pred_dt, check_for_nans=False)
         
     ## Fit ANN models with 10 - 1000 selected features with grid-search over hyperparameters:
     print("Fit ANN models to 10 - 1000 features with grid-search over hyper-parameters")
@@ -95,6 +103,7 @@ for pred_dt in ls_pred_dt:
     top_features_gain = pd.DataFrame.from_dict(xgb_model.get_booster().get_score(importance_type='gain'),
                                                orient="index",columns=["F_score"]).sort_values(by=['F_score'],
                                                ascending=False)
+    print("There are the top features:\n  %s" % top_features_gain[:10])
     n_feat_arr = feat.get_n_feat_arr("mlp")
     print("  *** Watch out, this takes veeeeeeeeeeeeery long!! ***")
     ls_models = []
