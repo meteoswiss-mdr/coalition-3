@@ -35,7 +35,8 @@ def get_radar_t0_vars(TRT_Rank_vars = None):
     vars_stat  = [var+"_stat|0|" for var in radar_vars]
     vars_stat += [var+"_stat_nonmin|0|" for var in radar_vars]
     vars_stat += [var+"_pixc|0|" for var in radar_vars]
-    vars_stat += [var+"_pixc_nonmin|0|" for var in radar_vars]
+    vars_stat += [var+"_pixc_NONMIN|0|" for var in radar_vars]
+    vars_stat += [var+"_pixc_NONNAN|0|" for var in radar_vars]
     radar_t0_vars = [var+stat for var in vars_stat for stat in radar_stats]
     radar_t0_vars += ["CZC_lt57dBZ|0|SUM","RANKr","RANK","ET15","ET15m",
                    "ET45","ET45m","VIL","area"]
