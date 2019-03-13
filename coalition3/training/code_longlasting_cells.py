@@ -38,16 +38,15 @@ def shift_values_to_timestep(df, var_name, TRT_var=None):
 
 path_to_df = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/training_dataset/stat_output_20190214/diam_23km/nc/Combined_stat_pixcount_df_t0diff_nonnan.h5"
 df_nonnan  = pd.read_hdf(path_to_df,key="df_nonnan")
-pred_dt = 20
+pred_dt = 30
 X_train, X_test, y_train, y_test, scaler = ipt.get_model_input(df_nonnan,
     del_TRTeqZero_tpred=True, split_Xy_traintest=True, X_normalise=True,
-    pred_dt=pred_dt)
+    pred_dt=pred_dt, check_for_nans=False, X_feature_sel="no_radar_t0",verbose=True)
 TRT_ID = X_test.index
 
 
 TRT_ID = [TRT_ID_i[13:] for TRT_ID_i in TRT_ID.values] 
 
-len(np.unique(TRT_ID))
 TRT_ID_count = Counter(TRT_ID)
 TRT_ID_count_sort = [(key,value) for key, value in sorted(TRT_ID_count.iteritems(), key=lambda (k,v): (v,k))]
 
@@ -56,7 +55,7 @@ TRT_ID_count_sort_pd["Count"] = TRT_ID_count_sort_pd["Count"].astype(np.uint16,i
 TRT_ID_count_sort_pd.info()
 
 TRT_ID_long = TRT_ID_count_sort_pd.loc[TRT_ID_count_sort_pd["Count"]>30]
-for i in [8,10]: #range(len(TRT_ID_long)): #[12]: #
+for i in range(len(TRT_ID_long)): #[12]: #
     TRT_ID_sel  = TRT_ID_long.iloc[-i,:]
 
 
