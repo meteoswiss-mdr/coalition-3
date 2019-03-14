@@ -51,14 +51,12 @@ xgb_500  = ls_models_xgb[-1]
 mlp_500  = ls_models_mlp[-1].best_estimator_
 
 ## Get scores for the following number of features:
-n_feat_arr = np.concatenate([np.arange(10)+1,
-                             np.arange(12,50,2),
-                             np.arange(50,100,10),
-                             np.arange(100,520,20)])
+n_feat_arr = feat.get_n_feat_arr("xgb")
 
 ## Get training and testing data (non-normalised for XGBoost model) and the scores:
 X_train_nonnorm, X_test_nonnorm, y_train_nonnorm, \
-        y_test_nonnorm = ipt.get_model_input(df_nonnan, del_TRTeqZero_tpred=True, split_Xy_traintest=True, pred_dt = pred_dt, X_normalise=False)
+        y_test_nonnorm = ipt.get_model_input(df_nonnan, del_TRTeqZero_tpred=True, split_Xy_traintest=True,
+                                             pred_dt = pred_dt, X_normalise=False,check_for_nans=False,verbose=True)
 pred_xgb_500 = xgb_500.predict(X_test_nonnorm[features])
 mse_xgb_500  = sklearn.metrics.mean_squared_error(y_test_nonnorm, pred_xgb_500)
 r2_xgb_500   = sklearn.metrics.r2_score(y_test_nonnorm, pred_xgb_500)
@@ -68,7 +66,8 @@ del(X_train_nonnorm, X_test_nonnorm, y_train_nonnorm, y_test_nonnorm)
 
 ## Get training and testing data (normalised for ANN model) and the scores:
 X_train_norm, X_test_norm, y_train_norm, \
-    y_test_norm, scaler = ipt.get_model_input(df_nonnan, del_TRTeqZero_tpred=True, split_Xy_traintest=True, pred_dt = pred_dt, X_normalise=True)
+    y_test_norm, scaler = ipt.get_model_input(df_nonnan, del_TRTeqZero_tpred=True, split_Xy_traintest=True,
+                                              pred_dt = pred_dt, X_normalise=True,check_for_nans=False,verbose=True)
 pred_mlp_500 = mlp_500.predict(X_test_norm[features])
 mse_mlp_500  = sklearn.metrics.mean_squared_error(y_test_norm, pred_mlp_500)
 r2_mlp_500   = sklearn.metrics.r2_score(y_test_norm, pred_mlp_500)
