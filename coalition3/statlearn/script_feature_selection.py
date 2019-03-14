@@ -109,8 +109,8 @@ for pred_dt in ls_pred_dt:
     ls_models = []
     time_start = dt.datetime.now()
     for n_feat in n_feat_arr:
-        print("\n     Current time: %s / elapsed time %s" % (dt.datetime.now(), dt.datetime.now()-time_start))
         fitted_model = feat.fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr, model="mlp", verbose_bool=False)
+        print("     Current time: %s / elapsed time %s" % (dt.datetime.now(), dt.datetime.now()-time_start))
         ls_models.append(fitted_model)
         if n_feat%1==0:
             print("     Save list of models to disk")
