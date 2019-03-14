@@ -87,7 +87,7 @@ feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
 """
 
 mod_name = ""
-model_path = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/ANN_models/models/diam_23km/without_radar_t0" #pth.file_path_reader("model saving location")
+mlp_model_path = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/ANN_models/models/diam_23km/without_radar_t0" #pth.file_path_reader("model saving location")
 for pred_dt in ls_pred_dt:
     ## Get normalised training and testing data:
     X_train, X_test, y_train, y_test, scaler = ipt.get_model_input(df_nonnan_nonzerot0,
@@ -114,7 +114,7 @@ for pred_dt in ls_pred_dt:
         ls_models.append(fitted_model)
         if n_feat%1==0:
             print("     Save list of models to disk")
-            with open(os.path.join(model_path,"model_%i%s_t0diff_mlp_nfeat_%i.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
+            with open(os.path.join(mlp_model_path,"model_%i%s_t0diff_mlp_nfeat_%i.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
                 pickle.dump(ls_models,file,protocol=-1)
        
 
