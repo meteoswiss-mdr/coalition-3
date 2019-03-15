@@ -85,13 +85,13 @@ def get_pred_dt_ls(input_str, timestep=None,n_integ=None):
     else:
         poss_fcst_steps = np.arange(-100,100)
         print("\nFor which time delta should %s be made?" % input_str)
-    
+
     while not np.all([pred_dt_i in poss_fcst_steps for pred_dt_i in ls_pred_dt]):
         ls_pred_dt = raw_input("  Select forecast step (if several, split with comma): ").split(",")
         ls_pred_dt = [int(pred_dt_i.strip()) for pred_dt_i in ls_pred_dt]
     print("  Perform %s at lead times %s min" % (input_str, ', '.join([str(pred_dt_i) for pred_dt_i in ls_pred_dt])))
     return ls_pred_dt
-    
+
 ## Plotting procedure for feature importance:
 def plot_feature_importance(model,X,delta_t,cfg_tds,mod_name):
     sort_ind = np.argsort(model.feature_importances_)[::-1]
@@ -120,7 +120,7 @@ def plot_feature_importance(model,X,delta_t,cfg_tds,mod_name):
 def calc_sample_weight(TRT_Rank0, TRT_Rank_diff):
     s_weight = np.exp(TRT_Rank0) * np.exp(TRT_Rank0+TRT_Rank_diff)
     return s_weight
-    
+
 ## Get feature ranking for the complete dataset:
 def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,
                            mod_name="",delete_RADAR_t0=False,set_log_weight=False):
@@ -150,36 +150,36 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
     if set_log_weight:
         df_nonnan_nonzerot0["s_weight"] = calc_sample_weight(df_nonnan_nonzerot0["TRT_Rank|0"],
                                                              df_nonnan_nonzerot0["TRT_Rank_diff|%i" % pred_dt])
-            
+
     ## Delete rows with TRT Rank close to zero at lead time:
     print("  Delete rows with TRT Rank close to zero at lead time")
     if delete_RADAR_t0:
         print("  Get predictor matrix X without RADAR variables at t0")
-        X_feature_sel = "no_radar_t0" 
+        X_feature_sel = "no_radar_t0"
     else:
         print("  Get predictor matrix X with RADAR variables at t0")
-        X_feature_sel = "all" 
+        X_feature_sel = "all"
     X, y = ipt.get_model_input(df_nonnan_nonzerot0, del_TRTeqZero_tpred=True,
             split_Xy=True, pred_dt=pred_dt, TRTRankt0_bound=mod_bound, X_feature_sel=X_feature_sel)
     del(df_nonnan_nonzerot0)
-    if len(X)>80000:
+    if len(X)>150000:
         print("   *** Warning: Dataframe X probably to big to be converted, reduced to 80'000 rows! ***")
-        X = X.sample(n=80000,random_state=42)
-        y = y.sample(n=80000,random_state=42)
+        X = X.sample(n=150000,random_state=42)
+        y = y.sample(n=150000,random_state=42)
     #X = X.values
     #X = X.astype(np.float16, order='C', copy=False)
 
     ## Setup model:
     print("  Setup XGBmodel with max_depth = 6")
     xgb_model = xgb.XGBRegressor(max_depth=6,silent=False,n_jobs=6,nthreads=6)
-    
+
     ## Calculate sample weights for XGB fitting:
     if set_log_weight:
         s_weights = X["s_weight"].values
         X.drop(labels="s_weight", axis=1)
     else:
         s_weights = None
-    
+
     ## Train model:
     print("  Train XGBmodel")
     d_start = dt.datetime.now()
@@ -189,7 +189,7 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
     ## Save model to disk:
     print("  Save XGBmodel to disk")
     with open(os.path.join(model_path,"model_%i%s_t0diff_maxdepth6.pkl" % (pred_dt,mod_name)),"wb") as file:
-        pickle.dump(xgb_model,file,protocol=-1)
+        pickle.dump(xgb_model,file,protocol=2)
 
     ## Plot feature importance:
     print("  Plot feature importance")
@@ -207,7 +207,7 @@ def get_n_feat_arr(model):
         return n_feat_arr
     elif model in ["ann","mlp"]:
         return n_feat_arr[9:]
-    
+
 ## Get Mean Square Error depending on number of features:
 def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,mod_name=""):
     print("Get dependence of MSE on n features for lead time t0 + %imin" % pred_dt, end="")
@@ -252,12 +252,12 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
         ls_models = [fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr) for n_feat in n_feat_arr]
         print("    Save list of models as pickle to disk")
         with open(os.path.join(model_path,"models_%i%s_t0diff_maxdepth6_nfeat.pkl" % (pred_dt,mod_name)),"wb") as file:
-            pickle.dump(ls_models, file, protocol=-1)
+            pickle.dump(ls_models, file, protocol=2)
     else:
         print("  Load existing models fitted with n top features")
         with open(os.path.join(model_path,"models_%i%s_t0diff_maxdepth6_nfeat.pkl" % (pred_dt,mod_name)),"rb") as file:
-            ls_models = pickle.load(ls_models, file, protocol=-1)
-        
+            ls_models = pickle.load(ls_models, file, protocol=2)
+
     ## Get mean square error of models with n features:
     print("  Get mean square error of models with n features")
     MSE_r2_ls = [mse_r2_n_feat(X_test, y_test, top_features_gain, n_feat, model) \
@@ -267,7 +267,8 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
          "R2 %imin%s" % (pred_dt,mod_name): [score[1] for score in MSE_r2_ls]})
     df_mse_feat_count.set_index("Feature Count",inplace=True)
     print("    Save dataframe with MSE to disk")
-    with open(os.path.join(model_path,"MSE_feature_count_gain_%i%s.pkl" % (pred_dt,mod_name)),"wb") as file: pickle.dump(df_mse_feat_count,file,protocol=-1)
+    with open(os.path.join(model_path,"MSE_feature_count_gain_%i%s.pkl" % (pred_dt,mod_name)),"wb") as file:
+        pickle.dump(df_mse_feat_count,file,protocol=2)
 
     ## Append MSE values to existing HDF5 file (if existing):
     print("  Append MSE values to HDF5 file")
@@ -456,7 +457,7 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
 
         ## Save the model to disk:
         with open(os.path.join(model_path,"model_%i%s_t0diff_maxdepth6_%ifeat_gain.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
-            pickle.dump(model,file,protocol=-1)
+            pickle.dump(model,file,protocol=2)
 
         ## Make the plot:
         plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg_tds)
@@ -517,7 +518,7 @@ def merge_two_dicts(x, y):
     z = x.copy()   # start with x's keys and values
     z.update(y)    # modifies z with y's keys and values & returns None
     return z
-    
+
 def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     print("Plot feature source and time delta importance")
     if pred_dt_ls is None:
@@ -558,7 +559,7 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     feat_src_ls = ["THX"      if feat_var in TRT_light_feat else feat_var for feat_var in feat_src_ls]
     feat_src_ls = ["LOC_AREA" if feat_var in TRT_loc_feat   else feat_var for feat_var in feat_src_ls]
     feat_src_ls = ["TIME"     if feat_var in Time_feat      else feat_var for feat_var in feat_src_ls]
-        
+
     df_gain = pd.concat([df_gain, pd.DataFrame.from_dict({"TIME_DELTA": feat_dt_ls, "VARIABLE": feat_var_ls, "SOURCE": feat_src_ls}).set_index(df_gain.index)], axis=1)
     df_gain["SOURCE"]   = df_gain["SOURCE"].astype('category')
     df_gain["VARIABLE"] = df_gain["VARIABLE"].astype('category')
@@ -575,7 +576,7 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     ax1 = fig.add_subplot(2,1,1)
     ax2 = fig.add_subplot(2,1,2)
     df_sum_source_norm.plot.line(ax=ax1, cmap="Set1", linewidth=2)
-    df_sum_dtime_norm.plot.line(ax=ax2, cmap="viridis_r", linewidth=2) 
+    df_sum_dtime_norm.plot.line(ax=ax2, cmap="viridis_r", linewidth=2)
     for title,ax in zip(["Feature source","Past time step"],[ax1,ax2]):
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, # + box.height * 0.1,
@@ -590,8 +591,3 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     plt_saving_location = os.path.join(cfg_tds["fig_output_path"],"Feature_source_time_step_importance.pdf")
     plt.savefig(plt_saving_location,orientation="portrait")
     print("  Plot saved in:\n    %s" % plt_saving_location)
-        
-    
-    
-    
-    
