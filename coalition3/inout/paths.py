@@ -203,7 +203,7 @@ def path_creator(t, var, source, cfg_set):
         fn_ext          = config_ds["fn_ext"]
 
         ## Input 2 after MSG due to satellite change before March 20, 2018
-        if t < datetime.datetime(2018,03,20): fn_pattern = fn_pattern[:3]+"2"+fn_pattern[4:]
+        if t < datetime.datetime(2018,3,20): fn_pattern = fn_pattern[:3]+"2"+fn_pattern[4:]
 
         file_paths = st.io.find_by_date(t, var_path, path_fmt, fn_pattern,
                                        fn_ext, cfg_set["timestep"], 0)
