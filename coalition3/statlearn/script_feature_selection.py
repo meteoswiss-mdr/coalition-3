@@ -1,6 +1,6 @@
 # coding: utf-8
 """ [COALITION3] This script contains code for the selection of features using XGBoost"""
-    
+
 ## Import packages and define functions:
 from __future__ import division
 from __future__ import print_function
@@ -17,11 +17,13 @@ import coalition3.statlearn.feature as feat
 import pickle
 import datetime as dt
 import coalition3.statlearn.inputprep as ipt
-    
+
 import sklearn.metrics as met
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
-    
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 ## ============================================================================
 ## Get config info:
 cfg_tds = cfg.get_config_info_tds()
@@ -81,7 +83,7 @@ for pred_dt in ls_pred_dt:
                                     delete_RADAR_t0=True, set_log_weight=True)
         #feat.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
         #                         mod_bound=bounds,mod_name=name)
-"""      
+"""
 ## Plot MSE as function of number of features:
 feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
                           ls_model_names=ls_model_names)
@@ -94,7 +96,7 @@ for pred_dt in ls_pred_dt:
     X_train, X_test, y_train, y_test, scaler = ipt.get_model_input(df_nonnan_nonzerot0,
         del_TRTeqZero_tpred=True, split_Xy_traintest=True, X_normalise=True,
         pred_dt=pred_dt, check_for_nans=False)
-        
+
     ## Fit ANN models with 10 - 1000 selected features with grid-search over hyperparameters:
     print("Fit ANN models to 10 - 1000 features with grid-search over hyper-parameters")
     xgb_model_path_all = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/feature_selection/models/diam_23km/without_radar_t0/all_samples/model_%i_t0diff_maxdepth6.pkl" % pred_dt #pth.file_path_reader("all-feature XGB model location (for feature selection)")
@@ -117,7 +119,7 @@ for pred_dt in ls_pred_dt:
             print("     Save list of models to disk")
             with open(os.path.join(mlp_model_path,"model_%i%s_t0diff_mlp_nfeat_%i.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
                 pickle.dump(ls_models,file,protocol=-1)
-       
+
 
 
 ## Fit model with optimal number of features:
@@ -151,9 +153,3 @@ for i_dt, pred_dt in enumerate(ls_pred_dt):
 ## Plot relative feature source and past time step importance:
 feat.plot_feat_source_dt_gainsum(model_path, cfg_op, cfg_tds, ls_pred_dt)
 """
-
-
-
-
-
-
