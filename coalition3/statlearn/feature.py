@@ -477,33 +477,42 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
                               pred_dt,mse_gain,r2_gain,"_%s" % "|".join(ls_model_names),cfg_tds)
 
 
-def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg_tds):
+def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg_tds,outtype="TRT_Rank_diff"):
     print("  Making the plot")
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=[10,8])
+    if outtype=="TRT_Rank_diff":
+        fig_range = [-2.5,2.5]
+        print_str = "difference "
+        save_str = "_diff"
+    elif outtype="TRT_Rank":
+        fig_range = [0,4]
+        print_str = ""
+        save_str = "_rank"
+
     if len(y_test)>1000:
         counts,ybins,xbins,image = axes.hist2d(y_test.values,pred_gain,
-                                               bins=200,range=[[-2.5,2.5],[-2.5,2.5]],cmap="magma",norm=mcolors.LogNorm())
+                                               bins=200,range=[fig_range,fig_range],cmap="magma",norm=mcolors.LogNorm())
         #counts,ybins,xbins,image = axes.hist2d(y_test[["TRT_Rank_diff|%i" % pred_dt]].values[:,0],pred_gain,
         #                                       bins=200,range=[[-2.5,2.5],[-2.5,2.5]],cmap="magma",norm=mcolors.LogNorm())
         cbar = fig.colorbar(image, ax=axes, extend='max')
     else:
-        axes.scatter(y_test[["TRT_Rank_diff|%i" % pred_dt]].values[:,0],pred_gain,
+        axes.scatter(y_test[["%s|%i" % (outtype,pred_dt)]].values[:,0],pred_gain,
                      marker="+", color="black", s=8)
-    axes.set_xlim([-2.5,2.5]); axes.set_ylim([-2.5,2.5])
+    axes.set_xlim(fig_range); axes.set_ylim(fig_range)
     #cbar.set_label('Number of cells per bin of size [0.02, 0.02]', rotation=90)
     axes.grid()
     #axes.fill_between([-0.2,0.2],y1=[-1.5,-1.5], y2=[1.5,1.5], facecolor="none", hatch="X", edgecolor="darkred", linewidth=0.5)
-    axes.plot([-4,4],[-4,4],'w--',linewidth=2) #,facecolor="w",linewidth=2,linestyle='--')
+    axes.plot(fig_range,fig_range,'w--',linewidth=2) #,facecolor="w",linewidth=2,linestyle='--')
     if len(y_test)>1000:
         cont2d_1, lvl = contour_of_2dHist(counts,smooth=True)
         CS = axes.contour(cont2d_1,levels=lvl,extent=[xbins.min(),xbins.max(),ybins.min(),ybins.max()],linewidths=2,cmap="YlGn_r")
         CS_lab = axes.clabel(CS, inline=1, fontsize=10, fmt='%i%%', colors="black")
         #[txt.set_backgroundcolor('white') for txt in CS_lab]
         [txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.71)) for txt in CS_lab] #pad=0,
-    axes.set_xlabel(r'Observed TRT Rank difference t$\mathregular{_{+%imin}}$' % pred_dt)
-    axes.set_ylabel(r'Predicted TRT Rank difference t$\mathregular{_{+%imin}}$' % pred_dt)
+    axes.set_xlabel(r'Observed TRT Rank %st$\mathregular{_{+%imin}}$' % (pred_dt,print_str))
+    axes.set_ylabel(r'Predicted TRT Rank %st$\mathregular{_{+%imin}}$' % (pred_dt,print_str))
     model_title = "" if mod_name == "" else r" | Mod$\mathregular{_{%s}}$" % mod_name[1:]
-    title_str = 'TRT Ranks differences\nTime delta: %imin' % pred_dt
+    title_str = 'TRT Ranks %s\nTime delta: %imin' % (pred_dt,print_str))
     title_str += model_title
     axes.set_title(title_str)
     axes.set_aspect('equal'); axes.patch.set_facecolor('0.71')
@@ -511,7 +520,7 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
     str_n_cells += r"Coeff of determination ($R^2$): %.2f" % (r2_gain)
     props = dict(boxstyle='round', facecolor='white')
     axes.text(-2,2, str_n_cells, bbox=props)
-    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Pred_scatter_%i%s.pdf" % (pred_dt,mod_name.replace("|","-"))), orientation="portrait")
+    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Pred_scatter%s_%i%s.pdf" % (save_str,pred_dt,mod_name.replace("|","-"))), orientation="portrait")
     print("    Saved the plot")
 
 def merge_two_dicts(x, y):
