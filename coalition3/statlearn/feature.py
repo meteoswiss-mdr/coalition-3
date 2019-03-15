@@ -116,8 +116,14 @@ def plot_feature_importance(model,X,delta_t,cfg_tds,mod_name):
     plt.tight_layout()
     plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Feature_importance_%imin%s.pdf" % (delta_t,mod_name)),orientation="portrait")
 
+## Get sample weight for Training dataset:
+def calc_sample_weight(TRT_Rank0, TRT_Rank_diff):
+    s_weight = np.exp(TRT_Rank0) * np.exp(TRT_Rank0+TRT_Rank_diff)
+    return s_weight
+    
 ## Get feature ranking for the complete dataset:
-def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,mod_name="",delete_RADAR_t0=False):
+def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,
+                           mod_name="",delete_RADAR_t0=False,set_log_weight=False):
     print("Get features for lead time t0 + %imin" % pred_dt, end="")
     if mod_bound is not None:
         if mod_name=="":
@@ -140,6 +146,11 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
             print("  Use existing one, return from this function")
             return
 
+    ## Calculate sample weights for XGB fitting:
+    if set_log_weight:
+        df_nonnan_nonzerot0["s_weight"] = calc_sample_weight(df_nonnan_nonzerot0["TRT_Rank|0"],
+                                                             df_nonnan_nonzerot0["TRT_Rank_diff|%i" % pred_dt])
+            
     ## Delete rows with TRT Rank close to zero at lead time:
     print("  Delete rows with TRT Rank close to zero at lead time")
     if delete_RADAR_t0:
@@ -161,11 +172,18 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
     ## Setup model:
     print("  Setup XGBmodel with max_depth = 6")
     xgb_model = xgb.XGBRegressor(max_depth=6,silent=False,n_jobs=6,nthreads=6)
-
+    
+    ## Calculate sample weights for XGB fitting:
+    if set_log_weight:
+        s_weights = X["s_weight"].values
+        X.drop(labels="s_weight", axis=1)
+    else:
+        s_weights = None
+    
     ## Train model:
     print("  Train XGBmodel")
     d_start = dt.datetime.now()
-    xgb_model.fit(X, y, verbose=True)
+    xgb_model.fit(X, y, verbose=True, sample_weight=s_weights)
     print("    Elapsed time for XGBoost model fitting: %s" % (dt.datetime.now()-d_start))
 
     ## Save model to disk:
@@ -202,18 +220,18 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
 
     ## Check whether data on MSE already exists:
     if os.path.exists(os.path.join(model_path,"MSE_feature_count_gain_%i%s.pkl" % (pred_dt,mod_name))):
-        use_existing = ""
-        while (use_existing!="y" and use_existing!="n"):
-            use_existing = raw_input("  MSE data exists alreay, get new one? [y/n] ")
-        if use_existing=="n":
-            print("  Use existing one, return from this function")
-            return
+        calc_new_model = ""
+        while (calc_new_model!="y" and calc_new_model!="n"):
+            calc_new_model = raw_input("  MSE data exists alreay, get new one? [y/n] ")
+        #if calc_new_model=="n":
+        #    print("  Use existing one, return from this function")
+        #    return
 
     ## Delete rows with TRT Rank close to zero at lead time:
     print("  Delete rows with TRT Rank close to zero at lead time")
     X_train, X_test, y_train, y_test = ipt.get_model_input(df_nonnan_nonzerot0,
             del_TRTeqZero_tpred=True, split_Xy_traintest=True,
-            pred_dt=pred_dt, TRTRankt0_bound=mod_bound)
+            pred_dt=pred_dt, TRTRankt0_bound=mod_bound,check_for_nans=False)
 
     ## Load XGBmodel:
     print("  Load XGBmodel")
@@ -229,12 +247,17 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
     n_feat_arr = get_n_feat_arr(model="xgb")
 
     ## Get models fitted with n top features:
-    print("  Get models fitted with n top features")
-    ls_models = [fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr) for n_feat in n_feat_arr]
-    print("    Save list of models as pickle to disk")
-    with open(os.path.join(model_path,"models_%i%s_t0diff_maxdepth6_nfeat.pkl" % (pred_dt,mod_name)),"wb") as file:
-        pickle.dump(ls_models, file, protocol=-1)
-
+    if calc_new_model:
+        print("  Get models fitted with n top features")
+        ls_models = [fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr) for n_feat in n_feat_arr]
+        print("    Save list of models as pickle to disk")
+        with open(os.path.join(model_path,"models_%i%s_t0diff_maxdepth6_nfeat.pkl" % (pred_dt,mod_name)),"wb") as file:
+            pickle.dump(ls_models, file, protocol=-1)
+    else:
+        print("  Load existing models fitted with n top features")
+        with open(os.path.join(model_path,"models_%i%s_t0diff_maxdepth6_nfeat.pkl" % (pred_dt,mod_name)),"rb") as file:
+            ls_models = pickle.load(ls_models, file, protocol=-1)
+        
     ## Get mean square error of models with n features:
     print("  Get mean square error of models with n features")
     MSE_r2_ls = [mse_r2_n_feat(X_test, y_test, top_features_gain, n_feat, model) \
@@ -309,7 +332,7 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
             plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count_thresh.pdf"), orientation="portrait")
         else:
             plt.pause(8)
-            plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count.pdf"), orientation="portrait")
+            plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count_%i.pdf"), orientation="portrait")
             plt.close()
     elif (len(ls_pred_dt) == 2 and ls_model_names != [""]):
         df_mse_feat_count_norm = df_mse_feat_count/df_mse_feat_count.mean()
@@ -542,7 +565,7 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
 
     df_sum_source      = df_gain.groupby("SOURCE").sum().transpose().drop("TIME_DELTA")
     df_sum_source_norm = df_sum_source.div(df_sum_source.sum(axis=1), axis=0)
-    df_sum_source_norm = df_sum_source_norm.iloc[:,[3,4,0,5,2,7,1,6]]
+    #df_sum_source_norm = df_sum_source_norm.iloc[:,[3,4,0,5,2,7,1,6]]
 
     df_sum_dtime       = df_gain.groupby("TIME_DELTA").sum().transpose()
     df_sum_dtime_norm  = df_sum_dtime.div(df_sum_dtime.sum(axis=1), axis=0)
