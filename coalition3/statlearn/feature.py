@@ -116,8 +116,14 @@ def plot_feature_importance(model,X,delta_t,cfg_tds,mod_name):
     plt.tight_layout()
     plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Feature_importance_%imin%s.pdf" % (delta_t,mod_name)),orientation="portrait")
 
+## Get sample weight for Training dataset:
+def calc_sample_weight(TRT_Rank0, TRT_Rank_diff):
+    s_weight = np.exp(TRT_Rank0) * np.exp(TRT_Rank0+TRT_Rank_diff)
+    return s_weight
+    
 ## Get feature ranking for the complete dataset:
-def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,mod_name="",delete_RADAR_t0=False):
+def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,
+                           mod_name="",delete_RADAR_t0=False,set_log_weight=False):
     print("Get features for lead time t0 + %imin" % pred_dt, end="")
     if mod_bound is not None:
         if mod_name=="":
@@ -140,6 +146,11 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
             print("  Use existing one, return from this function")
             return
 
+    ## Calculate sample weights for XGB fitting:
+    if set_log_weight:
+        df_nonnan_nonzerot0["s_weight"] = calc_sample_weight(df_nonnan_nonzerot0["TRT_Rank|0"],
+                                                             df_nonnan_nonzerot0["TRT_Rank_diff|%i" % pred_dt])
+            
     ## Delete rows with TRT Rank close to zero at lead time:
     print("  Delete rows with TRT Rank close to zero at lead time")
     if delete_RADAR_t0:
@@ -161,11 +172,18 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
     ## Setup model:
     print("  Setup XGBmodel with max_depth = 6")
     xgb_model = xgb.XGBRegressor(max_depth=6,silent=False,n_jobs=6,nthreads=6)
-
+    
+    ## Calculate sample weights for XGB fitting:
+    if set_log_weight:
+        s_weights = X["s_weight"].values
+        X.drop(labels="s_weight", axis=1)
+    else:
+        s_weights = None
+    
     ## Train model:
     print("  Train XGBmodel")
     d_start = dt.datetime.now()
-    xgb_model.fit(X, y, verbose=True)
+    xgb_model.fit(X, y, verbose=True, sample_weight=s_weights)
     print("    Elapsed time for XGBoost model fitting: %s" % (dt.datetime.now()-d_start))
 
     ## Save model to disk:
