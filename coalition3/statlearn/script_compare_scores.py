@@ -77,11 +77,11 @@ del(X_train_norm, X_test_norm, y_train_norm, y_test_norm)
 
 ## Get scores into dataframe:
 df_mse_r2_feat_count_mlp = pd.DataFrame.from_dict({"Feature Count": n_feat_arr[9:],
-    "MSE %imin%s" % (pred_dt,"_mlp"): [score[0] for score in MSE_r2_ls_mlp],
-     "R2 %imin%s" % (pred_dt,"_mlp"): [score[1] for score in MSE_r2_ls_mlp]}).set_index("Feature Count")
+    "MSE %imin%s" % (pred_dt,"_MLP"): [score[0] for score in MSE_r2_ls_mlp],
+     "R2 %imin%s" % (pred_dt,"_MLP"): [score[1] for score in MSE_r2_ls_mlp]}).set_index("Feature Count")
 df_mse_r2_feat_count_xgb = pd.DataFrame.from_dict({"Feature Count": n_feat_arr[9:],
-     "MSE %imin%s" % (pred_dt,"_xgb"): [score[0] for score in MSE_r2_ls_xgb],
-      "R2 %imin%s" % (pred_dt,"_xgb"): [score[1] for score in MSE_r2_ls_xgb]}).set_index("Feature Count")
+     "MSE %imin%s" % (pred_dt,"_XGB"): [score[0] for score in MSE_r2_ls_xgb],
+      "R2 %imin%s" % (pred_dt,"_XGB"): [score[1] for score in MSE_r2_ls_xgb]}).set_index("Feature Count")
 df_mse_r2_feat_count = pd.concat([df_mse_r2_feat_count_mlp,df_mse_r2_feat_count_xgb],
                                  axis=1)
 df_mse_r2_feat_count.columns = [colname.replace("_"," (")+")" for colname in df_mse_r2_feat_count.columns]
@@ -96,7 +96,7 @@ for ax in [ax1, ax2]:
     ax.grid()
     ax.set_xlabel("Feature Count")
 ax1.set_ylabel(r"MSE (Mean Square Error)")
-ax2.set_ylabel(r"Coeff of determination R$^2$")
+ax2.set_ylabel(r"Coeff of determination R$^\mathregular{2}$")
 plt.tight_layout()
 plt.tight_layout()
 plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Score_comparison_ANN_XGB_%imin.pdf" % (pred_dt)),orientation="portrait")
