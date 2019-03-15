@@ -76,15 +76,16 @@ else:
 print("\nLoop over different lead times to get feature importance")
 for pred_dt in ls_pred_dt:
     for bounds, name in zip(ls_model_bound, ls_model_names):
-        feat.get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
-                                    mod_bound=bounds,mod_name=name,delete_RADAR_t0=True)
-        feat.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
-                                 mod_bound=bounds,mod_name=name)
-"""        
+        feat.get_feature_importance(df_nonnan_nonzerot0, pred_dt, cfg_tds,model_path,
+                                    mod_bound=bounds, mod_name=name,
+                                    delete_RADAR_t0=True, set_log_weight=True)
+        #feat.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
+        #                         mod_bound=bounds,mod_name=name)
+"""      
 ## Plot MSE as function of number of features:
 feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
                           ls_model_names=ls_model_names)
-"""
+
 
 mod_name = ""
 mlp_model_path = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/ANN_models/models/diam_23km/without_radar_t0" #pth.file_path_reader("model saving location")
@@ -118,7 +119,7 @@ for pred_dt in ls_pred_dt:
                 pickle.dump(ls_models,file,protocol=-1)
        
 
-"""
+
 ## Fit model with optimal number of features:
 poss_n_feat = np.arange(1,501)
 ls_n_feat_dt = []
@@ -150,8 +151,6 @@ for i_dt, pred_dt in enumerate(ls_pred_dt):
 ## Plot relative feature source and past time step importance:
 feat.plot_feat_source_dt_gainsum(model_path, cfg_op, cfg_tds, ls_pred_dt)
 """
-
-
 
 
 
