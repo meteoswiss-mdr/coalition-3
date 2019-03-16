@@ -40,15 +40,21 @@ def cv_mlp_model(X_train, y_train, n_feat, verbose_bool=False):
 
 ## Get Mean Square Error (MSE) for different number of n features:
 def fit_model_n_feat(X_train, y_train, top_features, n_feat, n_feat_arr,
-                     model="xgb", cv=True, verbose_bool=False):
+                     model="xgb", cv=True, verbose_bool=False, set_log_weight=False):
     perc_finished = np.sum(n_feat_arr[:np.where(n_feat_arr==n_feat)[0][0]],
                            dtype=np.float32) / np.sum(n_feat_arr,dtype=np.float32)
     ending = "\n" if verbose_bool else "\r"
     print("    Working on %3i features (~%4.1f%%)" % (n_feat,perc_finished*100),end=ending)
     sys.stdout.flush()
     if model=="xgb":
+        if set_log_weight:
+            s_weights = X_train["s_weight"].values
+            X = X_train.drop(labels="s_weight", axis=1)
+        else:
+            s_weights = None
         model = xgb.XGBRegressor(max_depth=6,silent=True,n_jobs=6,nthreads=6)
-        model.fit(X_train[top_features.index[:n_feat]], y_train)
+        model.fit(X_train[top_features.index[:n_feat]], y_train,
+                  sample_weight=s_weights)
     elif model=="mlp":
         if cv:
             model = cv_mlp_model(X_train[top_features.index[:n_feat]], y_train,
@@ -176,7 +182,7 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
     ## Calculate sample weights for XGB fitting:
     if set_log_weight:
         s_weights = X["s_weight"].values
-        X.drop(labels="s_weight", axis=1)
+        X = X.drop(labels="s_weight", axis=1)
     else:
         s_weights = None
 
@@ -209,7 +215,9 @@ def get_n_feat_arr(model):
         return n_feat_arr[9:]
 
 ## Get Mean Square Error depending on number of features:
-def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,mod_name=""):
+def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
+                        mod_bound=None,mod_name="",delete_RADAR_t0=False,
+                        set_log_weight=False):
     print("Get dependence of MSE on n features for lead time t0 + %imin" % pred_dt, end="")
     if mod_bound is not None:
         print(" (for %s)" % mod_name)
@@ -219,6 +227,7 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
     sys.stdout.flush()
 
     ## Check whether data on MSE already exists:
+    calc_new_model = "y"
     if os.path.exists(os.path.join(model_path,"MSE_feature_count_gain_%i%s.pkl" % (pred_dt,mod_name))):
         calc_new_model = ""
         while (calc_new_model!="y" and calc_new_model!="n"):
@@ -227,11 +236,23 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
         #    print("  Use existing one, return from this function")
         #    return
 
+    ## Calculate sample weights for XGB fitting:
+    if set_log_weight:
+        df_nonnan_nonzerot0["s_weight"] = calc_sample_weight(df_nonnan_nonzerot0["TRT_Rank|0"],
+                                                             df_nonnan_nonzerot0["TRT_Rank_diff|%i" % pred_dt])
+
     ## Delete rows with TRT Rank close to zero at lead time:
     print("  Delete rows with TRT Rank close to zero at lead time")
+    if delete_RADAR_t0:
+        print("  Get predictor matrix X without RADAR variables at t0")
+        X_feature_sel = "no_radar_t0"
+    else:
+        print("  Get predictor matrix X with RADAR variables at t0")
+        X_feature_sel = "all"
     X_train, X_test, y_train, y_test = ipt.get_model_input(df_nonnan_nonzerot0,
             del_TRTeqZero_tpred=True, split_Xy_traintest=True,
-            pred_dt=pred_dt, TRTRankt0_bound=mod_bound,check_for_nans=False)
+            pred_dt=pred_dt, TRTRankt0_bound=mod_bound,check_for_nans=False,
+            X_feature_sel=X_feature_sel)
 
     ## Load XGBmodel:
     print("  Load XGBmodel")
@@ -247,7 +268,7 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound
     n_feat_arr = get_n_feat_arr(model="xgb")
 
     ## Get models fitted with n top features:
-    if calc_new_model:
+    if calc_new_model=="y":
         print("  Get models fitted with n top features")
         ls_models = [fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr) for n_feat in n_feat_arr]
         print("    Save list of models as pickle to disk")
@@ -293,6 +314,26 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
     print("  Plotting the figure")
     col10 = '#E69F00'
     col30 = '#D55E00'
+
+if (len(ls_pred_dt)>3 and ls_model_names == [""]):
+    #df_mse_feat_count_norm = df_mse_feat_count/df_mse_feat_count.mean()
+    df_mse = df_mse_feat_count[[MSE_col for MSE_col in df_mse_feat_count.columns if "MSE" in MSE_col]]
+    df_r2  = df_mse_feat_count[[R2_col  for R2_col  in df_mse_feat_count.columns if "R2"  in R2_col]]
+    df_mse.columns = [colname[3:] for colname in df_mse.columns]
+    df_r2.columns  = [colname[3:] for colname in df_r2.columns]
+    fig, axes = plt.subplots(1, 2, figsize = (8,6))
+    df_mse.plot(ax = axes[0], linestyle="-", cmap="viridis",legend=False)
+    axes[0].set_ylabel(r'Mean square error MSE')
+    df_r2.plot(ax = axes[1], linestyle="-", cmap="viridis")
+    axes[1].set_ylabel(r'Coeff of determination $\mathregular{R^2}$')
+    plt.tight_layout()
+    for ax in axes:
+        ax.grid()
+    plt.savefig(os.path.join(cfg_tds["fig_output_path"],
+                                     "MSE_feature_count_%i.pdf"),
+                orientation="portrait")
+
+
     if (len(ls_pred_dt) == 3 and ls_model_names == [""]):
         fig = plt.figure(figsize = [10,5])
         ax = fig.add_subplot(1,1,1)
@@ -484,7 +525,7 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
         fig_range = [-2.5,2.5]
         print_str = "difference "
         save_str = "_diff"
-    elif outtype="TRT_Rank":
+    elif outtype=="TRT_Rank":
         fig_range = [0,4]
         print_str = ""
         save_str = "_rank"
@@ -512,7 +553,7 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
     axes.set_xlabel(r'Observed TRT Rank %st$\mathregular{_{+%imin}}$' % (pred_dt,print_str))
     axes.set_ylabel(r'Predicted TRT Rank %st$\mathregular{_{+%imin}}$' % (pred_dt,print_str))
     model_title = "" if mod_name == "" else r" | Mod$\mathregular{_{%s}}$" % mod_name[1:]
-    title_str = 'TRT Ranks %s\nTime delta: %imin' % (pred_dt,print_str))
+    title_str = 'TRT Ranks %s\nTime delta: %imin' % (pred_dt,print_str)
     title_str += model_title
     axes.set_title(title_str)
     axes.set_aspect('equal'); axes.patch.set_facecolor('0.71')
@@ -584,8 +625,8 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     fig = plt.figure(figsize = [10,13])
     ax1 = fig.add_subplot(2,1,1)
     ax2 = fig.add_subplot(2,1,2)
-    df_sum_source_norm.plot.line(ax=ax1, cmap="Set1", linewidth=2)
-    df_sum_dtime_norm.plot.line(ax=ax2, cmap="viridis_r", linewidth=2)
+    df_sum_source_norm.plot.line(ax=ax1, cmap="Set1", linewidth=1.5)
+    df_sum_dtime_norm.plot.line(ax=ax2, cmap="viridis_r", linewidth=1.5)
     for title,ax in zip(["Feature source","Past time step"],[ax1,ax2]):
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, # + box.height * 0.1,
