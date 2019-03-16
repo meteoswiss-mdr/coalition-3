@@ -315,23 +315,23 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
     col10 = '#E69F00'
     col30 = '#D55E00'
 
-if (len(ls_pred_dt)>3 and ls_model_names == [""]):
-    #df_mse_feat_count_norm = df_mse_feat_count/df_mse_feat_count.mean()
-    df_mse = df_mse_feat_count[[MSE_col for MSE_col in df_mse_feat_count.columns if "MSE" in MSE_col]]
-    df_r2  = df_mse_feat_count[[R2_col  for R2_col  in df_mse_feat_count.columns if "R2"  in R2_col]]
-    df_mse.columns = [colname[3:] for colname in df_mse.columns]
-    df_r2.columns  = [colname[3:] for colname in df_r2.columns]
-    fig, axes = plt.subplots(1, 2, figsize = (8,6))
-    df_mse.plot(ax = axes[0], linestyle="-", cmap="viridis",legend=False)
-    axes[0].set_ylabel(r'Mean square error MSE')
-    df_r2.plot(ax = axes[1], linestyle="-", cmap="viridis")
-    axes[1].set_ylabel(r'Coeff of determination $\mathregular{R^2}$')
-    plt.tight_layout()
-    for ax in axes:
-        ax.grid()
-    plt.savefig(os.path.join(cfg_tds["fig_output_path"],
-                                     "MSE_feature_count_%i.pdf"),
-                orientation="portrait")
+    if (len(ls_pred_dt)>3 and ls_model_names == [""]):
+        #df_mse_feat_count_norm = df_mse_feat_count/df_mse_feat_count.mean()
+        df_mse = df_mse_feat_count[[MSE_col for MSE_col in df_mse_feat_count.columns if "MSE" in MSE_col]]
+        df_r2  = df_mse_feat_count[[R2_col  for R2_col  in df_mse_feat_count.columns if "R2"  in R2_col]]
+        df_mse.columns = [colname[3:] for colname in df_mse.columns]
+        df_r2.columns  = [colname[3:] for colname in df_r2.columns]
+        fig, axes = plt.subplots(1, 2, figsize = (8,6))
+        df_mse.plot(ax = axes[0], linestyle="-", cmap="viridis",legend=False)
+        axes[0].set_ylabel(r'Mean square error MSE')
+        df_r2.plot(ax = axes[1], linestyle="-", cmap="viridis")
+        axes[1].set_ylabel(r'Coeff of determination $\mathregular{R^2}$')
+        plt.tight_layout()
+        for ax in axes:
+            ax.grid()
+        plt.savefig(os.path.join(cfg_tds["fig_output_path"],
+                                         "MSE_feature_count.pdf"),
+                    orientation="portrait")
 
 
     if (len(ls_pred_dt) == 3 and ls_model_names == [""]):
@@ -445,7 +445,7 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
             print(" (%i features for model '%s')" % (n_feat,mod_name))
             mod_name = "_%s" % mod_name
         else:
-            print(" (%i features for all samples)" & n_feat)
+            print(" (%i features for all samples)" % n_feat)
         sys.stdout.flush()
 
         ## Delete rows with TRT Rank close to zero at lead time:
@@ -453,20 +453,6 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
         X_train, X_test, y_train, y_test = ipt.get_model_input(df_nonnan_nonzerot0,
                 del_TRTeqZero_tpred=True, split_Xy_traintest=True,
                 pred_dt=pred_dt, TRTRankt0_bound=mod_bound)
-        """
-        if mod_bound is not None:
-            df_nonnan_nonzerot0_mod = df_nonnan_nonzerot0.loc[(df_nonnan_nonzerot0["TRT_Rank|0"]>=mod_bound[0]) & \
-                                                              (df_nonnan_nonzerot0["TRT_Rank|0"]<mod_bound[1])]
-        X = df_nonnan_nonzerot0_mod.loc[df_nonnan_nonzerot0_mod["TRT_Rank|%i" % pred_dt]>=0.15,
-                                    [Xcol for Xcol in df_nonnan_nonzerot0_mod.columns if ipt.get_X_col(Xcol)]]
-        y = df_nonnan_nonzerot0_mod.loc[df_nonnan_nonzerot0_mod["TRT_Rank|%i" % pred_dt]>=0.15,
-                                    ["TRT_Rank_diff|%i" % pred_dt]]
-        del(df_nonnan_nonzerot0_mod)
-
-        ## Split training/testing data:
-        print("  Split into training/testing data")
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        """
         del(X,y)
 
         precalc_n_feat = np.concatenate([np.arange(10)+1, np.arange(12,50,2),
@@ -501,7 +487,10 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
             pickle.dump(model,file,protocol=2)
 
         ## Make the plot:
-        plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg_tds)
+        plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,
+                              mod_name,cfg_tds,outtype="TRT_Rank_diff")
+        plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,
+                              mod_name,cfg_tds,outtype="TRT_Rank")
 
         ## Append to list of results for combined plot:
         if len(ls_mod_bound)>1:
