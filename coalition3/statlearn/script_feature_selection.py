@@ -81,8 +81,10 @@ for pred_dt in ls_pred_dt:
         feat.get_feature_importance(df_nonnan_nonzerot0, pred_dt, cfg_tds,model_path,
                                     mod_bound=bounds, mod_name=name,
                                     delete_RADAR_t0=True, set_log_weight=True)
-        #feat.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
-        #                         mod_bound=bounds,mod_name=name)
+        feat.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
+                                 mod_bound=bounds,mod_name=name,
+                                 delete_RADAR_t0=True,
+                                 set_log_weight=True)
 """
 ## Plot MSE as function of number of features:
 feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
