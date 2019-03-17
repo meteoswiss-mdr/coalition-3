@@ -43,7 +43,8 @@ del(df_nonnan)
 
 ## Get feature importance for specified time delta:
 ## Get lead times:
-ls_pred_dt = feat.get_pred_dt_ls("the feature selection", cfg_op["timestep"],cfg_op["n_integ"])
+ls_pred_dt = feat.get_pred_dt_ls("the feature selection",
+                                 cfg_op["timestep"],cfg_op["n_integ"])
 
 ## Get model boundaries:
 ls_model_bound = []; ls_model_names = []
@@ -125,7 +126,7 @@ for pred_dt in ls_pred_dt:
 
 
 ## Fit model with optimal number of features:
-poss_n_feat = np.arange(1,501)
+poss_n_feat = np.arange(1,1001)
 ls_n_feat_dt = []
 for pred_dt in ls_pred_dt:
     ls_n_feat = [-5]
@@ -137,7 +138,7 @@ for pred_dt in ls_pred_dt:
           (poss_n_feat[0], poss_n_feat[1], poss_n_feat[-1],pred_dt))
     while not (np.all([n_feat_i in poss_n_feat for n_feat_i in ls_n_feat]) and \
                len(ls_n_feat)==len(ls_model_names)):
-        ls_n_feat = raw_input("  Select n-feature thresholds%s (split with comma): " % model_name).split(",")
+        ls_n_feat = input("  Select n-feature thresholds%s (split with comma): " % model_name).split(",")
         if len(ls_n_feat)!=len(ls_model_bound):
             print("    Must choose as many %i n-feature thresholds" % (len(ls_model_bound)))
         ls_n_feat = [int(n_feat_i.strip()) for n_feat_i in ls_n_feat]

@@ -452,11 +452,11 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
         print("  Delete rows with TRT Rank close to zero at lead time")
         X_train, X_test, y_train, y_test = ipt.get_model_input(df_nonnan_nonzerot0,
                 del_TRTeqZero_tpred=True, split_Xy_traintest=True,
-                pred_dt=pred_dt, TRTRankt0_bound=mod_bound)
-        del(X,y)
+                pred_dt=pred_dt, TRTRankt0_bound=mod_bound,check_for_nans=False,
+                )
 
-        precalc_n_feat = np.concatenate([np.arange(10)+1, np.arange(12,50,2),
-                                         np.arange(50,100,10), np.arange(100,520,20)])
+        precalc_n_feat = get_n_feat_arr("xgb")
+
         if n_feat not in precalc_n_feat:
             ## Load XGBmodel:
             print("  Load XGBmodel")
@@ -479,8 +479,8 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
 
         ## Make prediction and get skill scores:
         pred_gain = model.predict(X_test[features])
-        mse_gain  = sklearn.metrics.mean_squared_error(y_test[["TRT_Rank_diff|%i" % pred_dt]], pred_gain)
-        r2_gain   = sklearn.metrics.r2_score(y_test[["TRT_Rank_diff|%i" % pred_dt]], pred_gain)
+        mse_gain  = sklearn.metrics.mean_squared_error(y_test, pred_gain)
+        r2_gain   = sklearn.metrics.r2_score(y_test, pred_gain)
 
         ## Save the model to disk:
         with open(os.path.join(model_path,"model_%i%s_t0diff_maxdepth6_%ifeat_gain.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
@@ -489,7 +489,13 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
         ## Make the plot:
         plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,
                               mod_name,cfg_tds,outtype="TRT_Rank_diff")
-        plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,
+
+        mse_gain  = sklearn.metrics.mean_squared_error(X_test["TRT_Rank|0"]+y_test, X_test["TRT_Rank|0"]+pred_gain)
+        r2_gain   = sklearn.metrics.r2_score(X_test["TRT_Rank|0"]+y_test, X_test["TRT_Rank|0"]+pred_gain)
+
+        plot_pred_vs_obs_core(X_test["TRT_Rank|0"]+y_test,
+                              X_test["TRT_Rank|0"]+pred_gain,pred_dt,
+                              mse_gain,r2_gain,
                               mod_name,cfg_tds,outtype="TRT_Rank")
 
         ## Append to list of results for combined plot:
@@ -501,8 +507,8 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
     if len(ls_mod_bound)>1:
         y_test_combi = pd.concat(y_test_ls,axis=0)
         pred_gain_combi = np.concatenate(pred_gain_ls)
-        mse_gain  = sklearn.metrics.mean_squared_error(y_test_combi[["TRT_Rank_diff|%i" % pred_dt]],pred_gain_combi)
-        r2_gain   = sklearn.metrics.r2_score(y_test_combi[["TRT_Rank_diff|%i" % pred_dt]],pred_gain_combi)
+        mse_gain  = sklearn.metrics.mean_squared_error(y_test_combi,pred_gain_combi)
+        r2_gain   = sklearn.metrics.r2_score(y_test_combi,pred_gain_combi)
         plot_pred_vs_obs_core(y_test_combi, pred_gain_combi,
                               pred_dt,mse_gain,r2_gain,"_%s" % "|".join(ls_model_names),cfg_tds)
 
@@ -539,17 +545,17 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
         CS_lab = axes.clabel(CS, inline=1, fontsize=10, fmt='%i%%', colors="black")
         #[txt.set_backgroundcolor('white') for txt in CS_lab]
         [txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.71)) for txt in CS_lab] #pad=0,
-    axes.set_xlabel(r'Observed TRT Rank %st$\mathregular{_{+%imin}}$' % (pred_dt,print_str))
-    axes.set_ylabel(r'Predicted TRT Rank %st$\mathregular{_{+%imin}}$' % (pred_dt,print_str))
+    axes.set_xlabel(r'Observed TRT Rank %st$\mathregular{_{+%imin}}$' % (print_str,pred_dt))
+    axes.set_ylabel(r'Predicted TRT Rank %st$\mathregular{_{+%imin}}$' % (print_str,pred_dt))
     model_title = "" if mod_name == "" else r" | Mod$\mathregular{_{%s}}$" % mod_name[1:]
-    title_str = 'TRT Ranks %s\nTime delta: %imin' % (pred_dt,print_str)
+    title_str = 'TRT Ranks %s\nTime delta: %imin' % (print_str,pred_dt)
     title_str += model_title
     axes.set_title(title_str)
     axes.set_aspect('equal'); axes.patch.set_facecolor('0.71')
     str_n_cells  = "Mean Squared Error (MSE): %.2f\n" % (mse_gain)
     str_n_cells += r"Coeff of determination ($R^2$): %.2f" % (r2_gain)
     props = dict(boxstyle='round', facecolor='white')
-    axes.text(-2,2, str_n_cells, bbox=props)
+    axes.text(fig_range[0]+0.5, fig_range[1]-0.5, str_n_cells, bbox=props)
     plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Pred_scatter%s_%i%s.pdf" % (save_str,pred_dt,mod_name.replace("|","-"))), orientation="portrait")
     print("    Saved the plot")
 
