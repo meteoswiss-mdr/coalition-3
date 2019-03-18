@@ -48,6 +48,8 @@ def fit_model_n_feat(X_train, y_train, top_features, n_feat, n_feat_arr,
     sys.stdout.flush()
     if model=="xgb":
         if set_log_weight:
+            if np.where(n_feat_arr==n_feat)[0][0] == 0:
+                print("\n      Using log weights for XGB model fitting")
             s_weights = X_train["s_weight"].values
             X = X_train.drop(labels="s_weight", axis=1)
         else:
@@ -270,7 +272,7 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
     ## Get models fitted with n top features:
     if calc_new_model=="y":
         print("  Get models fitted with n top features")
-        ls_models = [fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr) for n_feat in n_feat_arr]
+        ls_models = [fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr, set_log_weight=set_log_weight) for n_feat in n_feat_arr]
         print("    Save list of models as pickle to disk")
         with open(os.path.join(model_path,"models_%i%s_t0diff_maxdepth6_nfeat.pkl" % (pred_dt,mod_name)),"wb") as file:
             pickle.dump(ls_models, file, protocol=2)
