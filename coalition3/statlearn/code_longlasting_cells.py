@@ -1,5 +1,5 @@
 """ [COALITION3] Code to get long lasting TRT cells """
-
+import os
 import pickle
 import xarray as xr
 import numpy as np
@@ -10,17 +10,19 @@ from collections import Counter
 import coalition3.statlearn.inputprep as ipt
 from sklearn.neural_network import MLPRegressor
 
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 def shift_values_to_timestep(df, var_name, TRT_var=None):
     all_timesteps = pd.date_range(start = df.index[ 0] - dt.timedelta(minutes=45),
                                   end   = df.index[-1] + dt.timedelta(minutes=45),
                                   freq = '5min')
     df = pd.concat([pd.DataFrame([], index = all_timesteps),df], axis=1, sort=True)
-    
+
     df_var = df[[colname_var for colname_var in df.columns if var_name+"|" in colname_var]]
     if df_var.shape[1]==0:
         print("   *** Warning: No variable %s found in column names, returning empty df ***" % var_name)
         return df_var
-    
+
     ls_var_new = []
     if TRT_var is not None:
         ls_var_new.append(df[TRT_var])
@@ -37,25 +39,38 @@ def shift_values_to_timestep(df, var_name, TRT_var=None):
 #TRT_ID = xr_loc.DATE_TRT_ID
 
 path_to_df = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/training_dataset/stat_output_20190214/diam_23km/nc/Combined_stat_pixcount_df_t0diff_nonnan.h5"
+path_to_df = "Combined_stat_pixcount_df_t0diff_nonnan.h5"
 df_nonnan  = pd.read_hdf(path_to_df,key="df_nonnan")
-pred_dt = 30
-X_train, X_test, y_train, y_test, scaler = ipt.get_model_input(df_nonnan,
-    del_TRTeqZero_tpred=True, split_Xy_traintest=True, X_normalise=True,
+pred_dt = 10
+X_train, X_test, y_train, y_test = ipt.get_model_input(df_nonnan,
+    del_TRTeqZero_tpred=True, split_Xy_traintest=True, X_normalise=False,
     pred_dt=pred_dt, check_for_nans=False, X_feature_sel="no_radar_t0",verbose=True)
 TRT_ID = X_test.index
 
 
-TRT_ID = [TRT_ID_i[13:] for TRT_ID_i in TRT_ID.values] 
+TRT_ID = [TRT_ID_i[13:] for TRT_ID_i in TRT_ID.values]
 
 TRT_ID_count = Counter(TRT_ID)
-TRT_ID_count_sort = [(key,value) for key, value in sorted(TRT_ID_count.iteritems(), key=lambda (k,v): (v,k))]
-
+#TRT_ID_count_sort = [(key,value) for key, value in sorted(TRT_ID_count.iteritems(), key=lambda(k,v): (v,k))]
+TRT_ID_count_sort = [(k, TRT_ID_count[k]) for k in sorted(TRT_ID_count, key=TRT_ID_count.get, reverse=True)]
 TRT_ID_count_sort_pd = pd.DataFrame(np.array(TRT_ID_count_sort),columns=["TRT_ID","Count"])
 TRT_ID_count_sort_pd["Count"] = TRT_ID_count_sort_pd["Count"].astype(np.uint16,inplace=True)
 TRT_ID_count_sort_pd.info()
 
-TRT_ID_long = TRT_ID_count_sort_pd.loc[TRT_ID_count_sort_pd["Count"]>30]
-for i in range(len(TRT_ID_long)): #[12]: #
+
+xgb_model_path = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/feature_selection/models/diam_23km/all_samples/model_10_t0diff_maxdepth6.pkl"
+with open(xgb_model_path,"rb") as file:
+    xgb_model = pickle.load(file)
+mlp_model_path_nfeat = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/ANN_models/models/diam_23km/model_10_t0diff_mlp_500feat.pkl"
+with open(mlp_model_path_nfeat,"rb") as file:
+    mlp_model = pickle.load(file) #[-1].best_estimator_
+
+top_features_gain = pd.DataFrame.from_dict(xgb_model.get_booster().get_score(importance_type='gain'),
+                                           orient="index",columns=["F_score"]).sort_values(by=['F_score'],
+                                           ascending=False)
+
+TRT_ID_long = TRT_ID_count_sort_pd.loc[TRT_ID_count_sort_pd["Count"]>25]
+for i in range(len(TRT_ID_long)): #[len(TRT_ID_long)-11]: #range(len(TRT_ID_long)): #[12]: #
     TRT_ID_sel  = TRT_ID_long.iloc[-i,:]
 
 
@@ -76,38 +91,46 @@ for i in range(len(TRT_ID_long)): #[12]: #
     df_TRT_shift = shift_values_to_timestep(cell_sel,"TRT_Rank","RANKr")
     df_TRT_shift["RANKr"]/=10.
     print(np.mean(cell_sel["RANKr"]), np.max(cell_sel["RANKr"]), i)
-    fig = plt.figure(figsize = [14,9])
+    fig = plt.figure(figsize = [10,5])
     ax = fig.add_subplot(1,1,1)
     df_TRT_shift[[col for col in df_TRT_shift.columns if "TRT" in col]].plot.line(ax = ax, cmap="Spectral",linewidth=1)#; plt.show()
     df_TRT_shift["RANKr"].plot.line(ax=ax, color="black",linestyle="--",linewidth=2)
     #df_TRT_pred_shift.plot.line(ax=ax, color="red",linestyle="-.",linewidth=2)
     plt.grid()
-    plt.pause(4)
+    plt.pause(2)
     plt.close()
 
-xgb_model_path = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/feature_selection/models/diam_23km/all_samples/model_20_t0diff_maxdepth6.pkl"
-with open(xgb_model_path,"rb") as file:
-    xgb_model = pickle.load(file)
-mlp_model_path_nfeat = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/ANN_models/models/diam_23km/model_20_t0diff_mlp_500feat.pkl"
-with open(mlp_model_path_nfeat,"rb") as file:
-    mlp_model = pickle.load(file) #[-1].best_estimator_
-    
-top_features_gain = pd.DataFrame.from_dict(xgb_model.get_booster().get_score(importance_type='gain'),
-                                           orient="index",columns=["F_score"]).sort_values(by=['F_score'],
-                                           ascending=False)
+    X_test_sel = X_test.loc[DTI_sel]
+    y_test_sel = y_test.loc[DTI_sel]
+    pred_sel = mlp_model.predict(X_test_sel[xgb_model.get_booster().feature_names[:750]])
+    cell_sel["TRT_Rank_pred|%i" % pred_dt] = cell_sel["TRT_Rank|0"]+pred_sel
+    df_TRT_pred_shift = shift_values_to_timestep(cell_sel,"TRT_Rank_pred")
 
-X_test_sel = X_test.loc[DTI_sel]
-y_test_sel = y_test.loc[DTI_sel]
-pred_sel = mlp_model.predict(X_test_sel[top_features_gain.index[:500]])
-cell_sel["TRT_Rank_pred|%i" % pred_dt] = cell_sel["TRT_Rank|0"]+pred_sel
-df_TRT_pred_shift = shift_values_to_timestep(cell_sel,"TRT_Rank_pred")
+    import matplotlib.dates as mdates
+    fig = plt.figure(figsize = [10,5])
+    ax = fig.add_subplot(1,1,1)
+    df_TRT_shift[[col for col in df_TRT_shift.columns if "TRT" in col]].plot(ax=ax,cmap="RdYlBu",linewidth=1,style='.-',alpha=0.3,legend=False)
 
+    for i in range(df_TRT_shift.shape[0]-2):
+        t0 = df_TRT_shift.index[i]
+        t_pred = df_TRT_shift.index[i+2]
+        TRT_0 = df_TRT_shift["TRT_Rank|0"].iloc[i]
+        TRT_pred = pd.concat([df_TRT_shift["TRT_Rank|0"],
+                              df_TRT_pred_shift],axis=1)
+        TRT_pred = TRT_pred["TRT_Rank_pred|10"][i+2]
+        df_line = pd.DataFrame([TRT_0,TRT_pred],
+                               index=pd.DatetimeIndex([t0,t_pred],freq='10T'))
+        df_line.plot.line(ax=ax,color="green",linewidth=0.5,legend=False)
+    plt.grid()
+    #ax.annotate("",
+    #            (mdates.date2num(df_TRT_shift.index[40]),1.5),
+    #             xytext=(mdates.date2num(df_TRT_shift.index[45]),2.5),
+    #             arrowprops=dict(arrowstyle='-|>'))
+    df_TRT_shift["RANKr"].plot(ax=ax, color="black",style='.-',linewidth=2)
+    df_TRT_pred_shift.plot(ax=ax, color="red",style='.-',linewidth=2)
 
-ax = df_TRT_shift[[col for col in df_TRT_shift.columns if "TRT" in col]].plot.line(cmap="Spectral",linewidth=1)#; plt.show()
-df_TRT_shift["RANKr"].plot.line(ax=ax, color="black",linestyle="--",linewidth=2)
-df_TRT_pred_shift.plot.line(ax=ax, color="red",linestyle="-.",linewidth=2)
-plt.grid()
-plt.show()
+    plt.pause(2)
+    plt.close()
 
 #DTI_eq_TRTRank = [dti for dti in DTI_long if len(np.unique(xr_loc["TRT_Rank"].sel(DATE_TRT_ID=dti)))<10]
 #TRT_Ranks = [np.float(xr_loc["TRT_Rank"].sel(DATE_TRT_ID=dti, time_delta=0).values) for dti in DTI_eq_TRTRank]
