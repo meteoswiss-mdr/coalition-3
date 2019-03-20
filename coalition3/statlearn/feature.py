@@ -19,6 +19,7 @@ import matplotlib.pylab as plt
 import matplotlib.colors as mcolors
 from pandas.api.types import CategoricalDtype
 
+from scipy import stats
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
 
@@ -324,19 +325,17 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
         df_mse.columns = [colname[3:] for colname in df_mse.columns]
         df_r2.columns  = [colname[3:] for colname in df_r2.columns]
         fig, axes = plt.subplots(1, 2, figsize = (8,6))
-        df_mse.plot(ax = axes[0], linestyle="-", cmap="viridis",legend=False)
+        df_mse.plot(ax = axes[0], linestyle="-", cmap="viridis_r",legend=False)
         axes[0].set_ylabel(r'Mean square error MSE')
-        df_r2.plot(ax = axes[1], linestyle="-", cmap="viridis")
+        df_r2.plot(ax = axes[1], linestyle="-", cmap="viridis_r")
         axes[1].set_ylabel(r'Coeff of determination $\mathregular{R^2}$')
         plt.tight_layout()
         for ax in axes:
             ax.grid()
         plt.savefig(os.path.join(cfg_tds["fig_output_path"],
-                                         "MSE_feature_count.pdf"),
+                                         "MSE_R2_feature_count.pdf"),
                     orientation="portrait")
-
-
-    if (len(ls_pred_dt) == 3 and ls_model_names == [""]):
+    elif (len(ls_pred_dt) == 3 and ls_model_names == [""]):
         fig = plt.figure(figsize = [10,5])
         ax = fig.add_subplot(1,1,1)
         df_mse_feat_count_norm = df_mse_feat_count/df_mse_feat_count.mean()
@@ -489,15 +488,11 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
             pickle.dump(model,file,protocol=2)
 
         ## Make the plot:
-        plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,
+        plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,
                               mod_name,cfg_tds,outtype="TRT_Rank_diff")
-
-        mse_gain  = sklearn.metrics.mean_squared_error(X_test["TRT_Rank|0"]+y_test, X_test["TRT_Rank|0"]+pred_gain)
-        r2_gain   = sklearn.metrics.r2_score(X_test["TRT_Rank|0"]+y_test, X_test["TRT_Rank|0"]+pred_gain)
 
         plot_pred_vs_obs_core(X_test["TRT_Rank|0"]+y_test,
                               X_test["TRT_Rank|0"]+pred_gain,pred_dt,
-                              mse_gain,r2_gain,
                               mod_name,cfg_tds,outtype="TRT_Rank")
 
         ## Append to list of results for combined plot:
@@ -512,10 +507,10 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
         mse_gain  = sklearn.metrics.mean_squared_error(y_test_combi,pred_gain_combi)
         r2_gain   = sklearn.metrics.r2_score(y_test_combi,pred_gain_combi)
         plot_pred_vs_obs_core(y_test_combi, pred_gain_combi,
-                              pred_dt,mse_gain,r2_gain,"_%s" % "|".join(ls_model_names),cfg_tds)
+                              pred_dt,"_%s" % "|".join(ls_model_names),cfg_tds)
 
 
-def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg_tds,outtype="TRT_Rank_diff"):
+def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mod_name,cfg_tds,outtype="TRT_Rank_diff"):
     print("  Making the plot")
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=[10,8])
     if outtype=="TRT_Rank_diff":
@@ -547,6 +542,10 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
         CS_lab = axes.clabel(CS, inline=1, fontsize=10, fmt='%i%%', colors="black")
         #[txt.set_backgroundcolor('white') for txt in CS_lab]
         [txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.71)) for txt in CS_lab] #pad=0,
+    
+    slope, intercept, r_value, p_value, std_err = stats.linregress(y_test.values,pred_gain)
+    axes.plot(fig_range,np.array(fig_range)*slope+intercept,'darkred',linewidth=2)
+    
     axes.set_xlabel(r'Observed TRT Rank %st$\mathregular{_{+%imin}}$' % (print_str,pred_dt))
     axes.set_ylabel(r'Predicted TRT Rank %st$\mathregular{_{+%imin}}$' % (print_str,pred_dt))
     model_title = "" if mod_name == "" else r" | Mod$\mathregular{_{%s}}$" % mod_name[1:]
@@ -554,12 +553,19 @@ def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mse_gain,r2_gain,mod_name,cfg
     title_str += model_title
     axes.set_title(title_str)
     axes.set_aspect('equal'); axes.patch.set_facecolor('0.71')
+    
+    mse_gain = sklearn.metrics.mean_squared_error(y_test.values,pred_gain)
+    r2_gain  = sklearn.metrics.r2_score(y_test.values,pred_gain)
     str_n_cells  = "Mean Squared Error (MSE): %.2f\n" % (mse_gain)
-    str_n_cells += r"Coeff of determination ($R^2$): %.2f" % (r2_gain)
+    str_n_cells += r"Coeff of determination (R$\mathregular{^2}$): %.2f" % (r2_gain); str_n_cells += "\n"
+    str_n_cells += r"Regression intercept ($\mathregular{\beta_0}$): %.2f" % (intercept); str_n_cells += "\n"
+    str_n_cells += r"Regression slope ($\mathregular{\beta_1}$): %.2f" % (slope)
     props = dict(boxstyle='round', facecolor='white')
-    axes.text(fig_range[0]+0.5, fig_range[1]-0.5, str_n_cells, bbox=props)
+    axes.text(fig_range[0]+0.25, fig_range[1]-0.25, str_n_cells, bbox=props,
+              horizontalalignment='left',verticalalignment='top')
     plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Pred_scatter%s_%i%s.pdf" % (save_str,pred_dt,mod_name.replace("|","-"))), orientation="portrait")
     print("    Saved the plot")
+    plt.close()
 
 def merge_two_dicts(x, y):
     z = x.copy()   # start with x's keys and values
@@ -623,15 +629,25 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     ax1 = fig.add_subplot(2,1,1)
     ax2 = fig.add_subplot(2,1,2)
     df_sum_source_norm.plot.line(ax=ax1, cmap="Set1", linewidth=1.5)
-    df_sum_dtime_norm.plot.line(ax=ax2, cmap="viridis_r", linewidth=1.5)
+    df_sum_dtime_norm.plot.line(ax=ax2, cmap="inferno", linewidth=1.5)
     for title,ax in zip(["Feature source","Past time step"],[ax1,ax2]):
         box = ax.get_position()
+        ax.patch.set_facecolor((0.9,0.9,0.9))
         ax.set_position([box.x0, box.y0, # + box.height * 0.1,
                          box.width, box.height * 0.8])
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25),
-                  fancybox=True, shadow=True, ncol=5,title=title,fontsize="medium")
+                  fancybox=True, shadow=True, ncol=5, title=title, fontsize="medium")
         ax.set_xlabel("Lead time")
         ax.grid()
+        ax.grid(axis='x',linewidth=4,alpha=0.5)
+        #ax.tick_params(axis='y', colors = "viridis_r") #, grid_color = "viridis_r")
+        cmap = plt.cm.get_cmap('viridis_r')
+        n_xticks = range(len(ax.get_xticklines()))
+        for i, tick, label, gridl in zip(n_xticks, ax.get_xticklines(), ax.get_xticklabels(), ax.get_xgridlines()):
+            col_tick = cmap(i/len(ax.get_xticklines()))
+            tick.set_color(col_tick)
+            label.set_color(col_tick)
+            gridl.set_color(col_tick)
     ax1.set_ylabel("Relative feature source importance")
     ax2.set_ylabel("Relative time step importance")
     #plt.tight_layout()
