@@ -86,7 +86,7 @@ for pred_dt in ls_pred_dt:
                                  mod_bound=bounds,mod_name=name,
                                  delete_RADAR_t0=True,
                                  set_log_weight=True)
-"""
+
 ## Plot MSE as function of number of features:
 feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
                           ls_model_names=ls_model_names)
@@ -138,7 +138,7 @@ for pred_dt in ls_pred_dt:
           (poss_n_feat[0], poss_n_feat[1], poss_n_feat[-1],pred_dt))
     while not (np.all([n_feat_i in poss_n_feat for n_feat_i in ls_n_feat]) and \
                len(ls_n_feat)==len(ls_model_names)):
-        ls_n_feat = input("  Select n-feature thresholds%s (split with comma): " % model_name).split(",")
+        ls_n_feat = raw_input("  Select n-feature thresholds%s (split with comma): " % model_name).split(",")
         if len(ls_n_feat)!=len(ls_model_bound):
             print("    Must choose as many %i n-feature thresholds" % (len(ls_model_bound)))
         ls_n_feat = [int(n_feat_i.strip()) for n_feat_i in ls_n_feat]
@@ -155,4 +155,4 @@ for i_dt, pred_dt in enumerate(ls_pred_dt):
 
 ## Plot relative feature source and past time step importance:
 feat.plot_feat_source_dt_gainsum(model_path, cfg_op, cfg_tds, ls_pred_dt)
-"""
+
