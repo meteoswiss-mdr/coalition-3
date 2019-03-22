@@ -87,7 +87,6 @@ def convert_ds2df(ds, outpath, diff_option=None):
     del(ds_drop)
 
     ## Decide between deltas between time steps to delta to t0:
-    if diff_option is None:
     print_text = """
         \nHow should variables be treated over time:
           Option 1 -> Keep the absolute values of the statistics [path addon 'nodiff']
@@ -96,7 +95,8 @@ def convert_ds2df(ds, outpath, diff_option=None):
                       (e.g. MaxRZC(t0)-MaxRZC(t-45min), MaxRZC(t0)-MaxRZC(t-40min), .. , MaxRZC(t0))
           Option 3 -> Between each time step (and keep absolute value at t0) [path addon 'dtdiff']
                       (e.g. MaxRZC(t0-40min)-MaxRZC(t0-45min), MaxRZC(t0-35min)-MaxRZC(t0-40min), .. , MaxRZC(t0))
-        """
+    """
+    if diff_option is None:
         print(print_text)
     while (diff_option!="1" and diff_option != "2" and diff_option != "3"):
         diff_option = str(raw_input("Which option do you choose? [1/2/3] "))
