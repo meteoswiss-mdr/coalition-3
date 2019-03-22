@@ -12,6 +12,7 @@ import matplotlib.patheffects as pe
 import matplotlib.patches as patches
 import matplotlib.ticker as ticker
 from matplotlib.colors import LightSource
+import matplotlib.colors as colors
 from scipy import ndimage
 from PIL import Image
 import shapefile
@@ -20,7 +21,14 @@ import scipy.ndimage.morphology as morph
 
 ## =============================================================================
 ## FUNCTIONS:
-             
+
+## Function that trunctates cmap to a certain range:
+def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+    new_cmap = colors.LinearSegmentedColormap.from_list(
+        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+        cmap(np.linspace(minval, maxval, n)))
+    return new_cmap
+
 ## Plot contour lines in 2D histogram, showing the fraction of points within contour line:
 def contour_of_2dHist(hist2d_1_data,percentiles=[0,40,60,80,95,100],smooth=True):
     if True:
