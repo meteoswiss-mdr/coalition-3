@@ -58,9 +58,7 @@ X_train_nonnorm, X_test_nonnorm, y_train_nonnorm, \
         y_test_nonnorm = ipt.get_model_input(df_nonnan, del_TRTeqZero_tpred=True, split_Xy_traintest=True,
                                              pred_dt = pred_dt, X_normalise=False,check_for_nans=False,verbose=True)
 pred_xgb_500 = xgb_500.predict(X_test_nonnorm[features])
-mse_xgb_500  = sklearn.metrics.mean_squared_error(y_test_nonnorm, pred_xgb_500)
-r2_xgb_500   = sklearn.metrics.r2_score(y_test_nonnorm, pred_xgb_500)
-feat.plot_pred_vs_obs_core(y_test_nonnorm,pred_xgb_500,pred_dt,mse_xgb_500,r2_xgb_500,"_xgb500",cfg_tds)
+feat.plot_pred_vs_obs_core(y_test_nonnorm,pred_xgb_500,pred_dt,"_xgb1000",cfg_tds)
 MSE_r2_ls_xgb = [feat.mse_r2_n_feat(X_test_nonnorm, y_test_nonnorm, top_features_gain, n_feat, model) for n_feat, model in zip(n_feat_arr[9:],ls_models_xgb[9:])]
 del(X_train_nonnorm, X_test_nonnorm, y_train_nonnorm, y_test_nonnorm)
 
@@ -69,9 +67,7 @@ X_train_norm, X_test_norm, y_train_norm, \
     y_test_norm, scaler = ipt.get_model_input(df_nonnan, del_TRTeqZero_tpred=True, split_Xy_traintest=True,
                                               pred_dt = pred_dt, X_normalise=True,check_for_nans=False,verbose=True)
 pred_mlp_500 = mlp_500.predict(X_test_norm[features])
-mse_mlp_500  = sklearn.metrics.mean_squared_error(y_test_norm, pred_mlp_500)
-r2_mlp_500   = sklearn.metrics.r2_score(y_test_norm, pred_mlp_500)
-feat.plot_pred_vs_obs_core(y_test_norm,pred_mlp_500,pred_dt,mse_mlp_500,r2_mlp_500,"_mlp500",cfg_tds)
+feat.plot_pred_vs_obs_core(y_test_norm,pred_mlp_500,pred_dt,"_mlp1000",cfg_tds)
 MSE_r2_ls_mlp = [feat.mse_r2_n_feat(X_test_norm, y_test_norm, top_features_gain, n_feat, model) for n_feat, model in zip(n_feat_arr[9:],ls_models_mlp)]
 del(X_train_norm, X_test_norm, y_train_norm, y_test_norm)
 
@@ -87,6 +83,7 @@ df_mse_r2_feat_count = pd.concat([df_mse_r2_feat_count_mlp,df_mse_r2_feat_count_
 df_mse_r2_feat_count.columns = [colname.replace("_"," (")+")" for colname in df_mse_r2_feat_count.columns]
 
 ## Plot scores side-by-side:
+cmap = plt.cm.get_cmap('viridis_r')
 fig = plt.figure(figsize = [10,7])
 ax1 = fig.add_subplot(2,1,1)
 ax2 = fig.add_subplot(2,1,2)
@@ -97,7 +94,6 @@ for ax in [ax1, ax2]:
     ax.set_xlabel("Feature Count")
 ax1.set_ylabel(r"MSE (Mean Square Error)")
 ax2.set_ylabel(r"Coeff of determination R$^\mathregular{2}$")
-plt.tight_layout()
 plt.tight_layout()
 plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Score_comparison_ANN_XGB_%imin.pdf" % (pred_dt)),orientation="portrait")
 
