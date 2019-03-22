@@ -644,7 +644,7 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
         cmap = plt.cm.get_cmap('viridis_r')
         n_xticks = range(len(ax.get_xticklines()))
         for i, tick, label, gridl in zip(n_xticks, ax.get_xticklines(), ax.get_xticklabels(), ax.get_xgridlines()):
-            col_tick = cmap(i/len(ax.get_xticklines()))
+            col_tick = cmap(float(i)/len(ax.get_xticklines()))
             tick.set_color(col_tick)
             label.set_color(col_tick)
             gridl.set_color(col_tick)
