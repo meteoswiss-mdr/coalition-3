@@ -302,7 +302,7 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True,radar_loc=True
         ticker.FuncFormatter(lambda x, p: format(int(x), ",").replace(',', "'")))
     axes.get_yaxis().set_major_formatter( \
         ticker.FuncFormatter(lambda x, p: format(int(x), ",").replace(',', "'")))
-    plt.yticks(rotation=90)
+    plt.yticks(rotation=90, verticalalignment="center")
     return fig, axes, fig_extent
 
 ## Convert lat/lon-values in decimals to values in seconds:
