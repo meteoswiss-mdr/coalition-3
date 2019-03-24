@@ -10,6 +10,7 @@ import os
 import sys
 import dask
 import pickle
+import datetime
 import numpy as np
 import xarray as xr
 import pandas as pd
@@ -19,6 +20,7 @@ import coalition3.inout.readconfig as cfg
 ## ============================================================================
 ## Wrapper function for operational handling of statistics dataset:
 def convert_stat_ds_to_df(cfg_set):
+    t1 = datetime.datetime.now()
     print("Converting xarray dataset into 2D pandas dataframe")
     
     ## Get xarray dataset from tmp/ directory:
@@ -30,6 +32,8 @@ def convert_stat_ds_to_df(cfg_set):
 
     ## Convert dataset to dataframe:
     convert_ds2df(ds, outpath=filename_df, diff_option=cfg_set["opt_stat_past"])
+    t2 = datetime.datetime.now()
+    print("  Elapsed time for converting the dataset to a dataframe: "+str(t2-t1)+"\n")
     
 ## Function to convert one 3D dataarray (not dataset) into dataframe:
 def da2df(da,data_vars=None):
