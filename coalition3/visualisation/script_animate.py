@@ -18,7 +18,7 @@ vars = [sys.argv[2]]
 if len(sys.argv)==4: future = True if sys.argv[3]=="future" else False
 else: future = False
 
-if vars[0] == "selection": vars =["RZC","BZC","IR_108","THX_dens","CAPE_MU","EZC45",]
+if vars[0] == "selection": vars =["RZC","BZC","IR_108","THX_dens","CAPE_ML","EZC45",]
 
 ## Do the plots
 for var in vars: dpl.plot_displaced_fields(var,cfg_set,future=future,animation=False,TRT_form=True)
