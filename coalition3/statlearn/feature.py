@@ -25,6 +25,7 @@ from sklearn.model_selection import GridSearchCV
 
 import coalition3.statlearn.inputprep as ipt
 from coalition3.visualisation.TRTcells import contour_of_2dHist
+from coalition3.visualisation.TRTcells import truncate_colormap
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -628,11 +629,13 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     fig = plt.figure(figsize = [10,13])
     ax1 = fig.add_subplot(2,1,1)
     ax2 = fig.add_subplot(2,1,2)
+    cmap = plt.get_cmap('inferno')
+    past_dt_cmap = truncate_colormap(cmap, 0.0, 0.8)
     df_sum_source_norm.plot.line(ax=ax1, cmap="Set1", linewidth=1.5)
-    df_sum_dtime_norm.plot.line(ax=ax2, cmap="inferno", linewidth=1.5)
+    df_sum_dtime_norm.plot.line(ax=ax2, cmap=past_dt_cmap, linewidth=1.5)
     for title,ax in zip(["Feature source","Past time step"],[ax1,ax2]):
         box = ax.get_position()
-        ax.patch.set_facecolor((0.9,0.9,0.9))
+        #ax.patch.set_facecolor((0.9,0.9,0.9))
         ax.set_position([box.x0, box.y0, # + box.height * 0.1,
                          box.width, box.height * 0.8])
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.25),

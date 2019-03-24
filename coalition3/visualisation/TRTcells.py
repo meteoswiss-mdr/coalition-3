@@ -6,24 +6,23 @@ from __future__ import print_function
 
 import os
 import datetime
+import shapefile
 import numpy as np
 import matplotlib.pylab as plt
-import matplotlib.patheffects as pe
-import matplotlib.patches as patches
 import matplotlib.ticker as ticker
-from matplotlib.colors import LightSource
 import matplotlib.colors as colors
-from scipy import ndimage
-from PIL import Image
-import shapefile
+import matplotlib.patches as patches
+import matplotlib.patheffects as pe
 import scipy.ndimage.morphology as morph
 
+from PIL import Image
+from scipy import ndimage
 
 ## =============================================================================
 ## FUNCTIONS:
 
 ## Function that trunctates cmap to a certain range:
-def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+def truncate_cmap(cmap, minval=0.0, maxval=1.0, n=100):
     new_cmap = colors.LinearSegmentedColormap.from_list(
         'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
         cmap(np.linspace(minval, maxval, n)))
@@ -183,7 +182,7 @@ def ccs4_map(cfg_set_tds,figsize_x=12,figsize_y=12,hillshade=True,radar_loc=True
     
     ## Plot altitude / hillshading
     if hillshade:
-        ls = LightSource(azdeg=315, altdeg=45)
+        ls = colors.LightSource(azdeg=315, altdeg=45)
         axes.imshow(ls.hillshade(-dem, vert_exag=0.05),
                     extent=fig_extent, cmap='gray', alpha=0.5)
     else:
