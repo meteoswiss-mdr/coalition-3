@@ -14,8 +14,6 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 
-import matplotlib.pylab as plt
-
 import coalition3.inout.readconfig as cfg
 
 ## ============================================================================
