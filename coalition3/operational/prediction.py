@@ -1,5 +1,5 @@
 """ [COALITION3] From the statistic in 2D dataframe, predict TRT Rank at
-    different lead times."""
+    different lead times with XGB models."""
 
 from __future__ import division
 from __future__ import print_function
@@ -18,13 +18,12 @@ from coalition3.inout.paths import path_creator_vararr, path_creator_UV_disparr
 ## FUNCTIONS:
 
 ## ============================================================================
-## Make prediction in operational context:
-probability_matching = True
 
 def perform_prob_matching(value,test_TRT_rank,diff_prob_match):
     idx = (np.abs(test_TRT_rank - value)).idxmin()
     return diff_prob_match[idx]
 
+## Make prediction in operational context:
 def predict_TRT_Rank(cfg_set):
     t1 = datetime.datetime.now()
     str_addon = "probability matched " if probability_matching else ""
@@ -54,7 +53,7 @@ def predict_TRT_Rank(cfg_set):
         TRT_Rank_pred = stat_df["TRT_Rank|0"] + pred_ls[dt_i].predict(stat_df[top_features.index[:750]])
         TRT_Rank_df["TRT_Rank_pred|%i" % pred_dt] = TRT_Rank_pred
 
-        if probability_matching:
+        if cfg_set["probability_matching"]:
             test_TRT_rank   = TRT_Rank_obs_pred["TRT_Rank_pred|%i" % pred_dt]
             diff_prob_match = TRT_Rank_obs_pred["TRT_Rank_pred_PM|%i" % pred_dt] - test_TRT_rank
             TRT_Rank_df["TRT_Rank_pred_PM|%i" % pred_dt] = TRT_Rank_df["TRT_Rank_pred|%i" % pred_dt] + \

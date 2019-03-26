@@ -333,7 +333,7 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     cfg_set["file_ext_verif"] = file_ext_verif
 
     ## ===== Read settings on the domain statistics to be calculated: ================
-    config.read(os.path.join(CONFIG_PATH,"domain_statistics.cfg"))
+    config.read(os.path.join(CONFIG_PATH,"statistics_prediction.cfg"))
     config_sc = config["statistics_calculation"]
     stat_list           = cfg_var.columns[np.where(cfg_var.columns=="SUM")[0][0] : \
                                           np.where(cfg_var.columns=="MAX")[0][0]+1]
@@ -357,6 +357,14 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
         "opt_stat_past":       config_sc["opt_stat_past"]
     })
 
+    ## ===== Read settings on the prediction of TRT Ranks: =====================
+    config_pr = config["TRT_Rank_prediction"]
+    
+    ## Fill up cfg_set dictionary:
+    cfg_set.update({
+        "probability_matching": config_pr["save_TRT_domain_map"]=='True'
+    })
+    
     ## ===== Add abbreviations, units, source, and min. vals of ================
     ## ===== of different variables to the cfg_set: ============================
     ## Static abbreviations:
