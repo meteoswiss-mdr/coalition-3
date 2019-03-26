@@ -216,14 +216,14 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
         tmp_output_path = os.path.join(coalition3_path,u"tmp/")
     else:
         tmp_output_path = config_sp["tmp_output_path"]
-    UV_precalc_path = config_sp["UV_precalc_path"]
 
     cfg_set.update({
         "root_path":           root_path,
         "output_path":         fig_output_path,
         "tmp_output_path":     tmp_output_path,
         "fig_output_path":     fig_output_path,
-        "UV_precalc_path":     UV_precalc_path
+        "UV_precalc_path":     config_sp["UV_precalc_path"]
+        "XGB_model_path":      config_sp["XGB_model_path"]
     })
     
     ## Add tmp/ and figure/ paths if not yet existant (not in git repo)
