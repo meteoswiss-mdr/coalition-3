@@ -22,7 +22,8 @@ import sklearn.metrics as met
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
 
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+## Uncomment when running on Mac OS:
+#os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 ## ============================================================================
 ## Get config info:
