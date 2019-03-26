@@ -28,7 +28,7 @@ def perform_prob_matching(value,test_TRT_rank,diff_prob_match):
 ## Make prediction in operational context:
 def predict_TRT_Rank(cfg_set):
     t1 = datetime.datetime.now()
-    str_addon = "probability matched " if probability_matching else ""
+    str_addon = "probability matched " if cfg_set["probability_matching"] else ""
     print("Predict %sTRT Ranks for future time steps" % str_addon)
 
     ## Get pandas dataframes from tmp/ directory:
