@@ -490,6 +490,10 @@ def check_create_tmpdir(cfg_set):
         if not os.path.exists(cfg_set["fig_output_path"]):
             os.makedirs(cfg_set["fig_output_path"])
             print("  Created figures/ directory: %s" % cfg_set["fig_output_path"])
+    if "pred_output_path" in cfg_set:
+        if not os.path.exists(cfg_set["pred_output_path"]):
+            os.makedirs(cfg_set["pred_output_path"])
+            print("  Created figures/ directory: %s" % cfg_set["pred_output_path"])
 
 ## Get size of the domain form chosen (from where the stats are read):
 def form_size(stat_sel_form_width,stat_sel_form):

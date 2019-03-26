@@ -5,6 +5,7 @@
 /tmp
 /figures
 /training
+/predictions
 #*_old/
 nohup*
 /output_data
