@@ -53,11 +53,11 @@ def predict_TRT_Rank(cfg_set):
             TRT_Rank_obs_pred = pickle.load(TRT_Rank_obs_pred_file)
 
     ## Loop over lead-time to make prediction:
-    for dt_i, pred_dt in enumerate(np.arange(cfg_op["timestep"],
-                                             cfg_op["timestep"]*cfg_op["n_integ"],
-                                             cfg_op["timestep"])):
+    for dt_i, pred_dt in enumerate(np.arange(cfg_set["timestep"],
+                                             cfg_set["timestep"]*cfg_set["n_integ"],
+                                             cfg_set["timestep"])):
         ## Read top features from models fitted with all features (deprecated)
-        #top_features = pd.DataFrame.from_dict(feat_ls[dt_i].get_booster().get_score(importance_type=cfg_op["feature_imp_measure"]),
+        #top_features = pd.DataFrame.from_dict(feat_ls[dt_i].get_booster().get_score(importance_type=cfg_set["feature_imp_measure"]),
         #                                      orient="index",columns=["F_score"]).sort_values(by=['F_score'],
         #                                      ascending=False)
         #TRT_Rank_pred2 = stat_df["TRT_Rank|0"] + pred_ls[dt_i].predict(stat_df[top_features.index[:750]])
