@@ -367,7 +367,7 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     
     ## Fill up cfg_set dictionary:
     cfg_set.update({
-        "probability_matching": config_pr["probability_matching"]=='True'
+        "probability_matching": config_pr["probability_matching"]=='True',
         "feature_imp_measure":  config_pr["feature_imp_measure"]
     })
     
