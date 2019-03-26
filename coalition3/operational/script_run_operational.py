@@ -69,8 +69,6 @@ pred.predict_TRT_Rank(cfg_set)
 t2 = datetime.datetime.now()
 line_str = 103*"-"
 print("\n%s\n  Elapsed time for processing: " % line_str +str(t2-t1)+"\n%s" % line_str)
-        
-        
 
 
 
