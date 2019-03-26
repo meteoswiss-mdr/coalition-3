@@ -216,13 +216,18 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
         tmp_output_path = os.path.join(coalition3_path,u"tmp/")
     else:
         tmp_output_path = config_sp["tmp_output_path"]
+    if config_sp["pred_output_path"]=="":
+        pred_output_path = os.path.join(coalition3_path,u"predictions/")
+    else:
+        pred_output_path = config_sp["pred_output_path"]
 
     cfg_set.update({
         "root_path":           root_path,
         "output_path":         fig_output_path,
         "tmp_output_path":     tmp_output_path,
         "fig_output_path":     fig_output_path,
-        "UV_precalc_path":     config_sp["UV_precalc_path"]
+        "pred_output_path":    pred_output_path,
+        "UV_precalc_path":     config_sp["UV_precalc_path"],
         "XGB_model_path":      config_sp["XGB_model_path"]
     })
     
@@ -362,7 +367,8 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     
     ## Fill up cfg_set dictionary:
     cfg_set.update({
-        "probability_matching": config_pr["save_TRT_domain_map"]=='True'
+        "probability_matching": config_pr["probability_matching"]=='True'
+        "feature_imp_measure":  config_pr["feature_imp_measure"]
     })
     
     ## ===== Add abbreviations, units, source, and min. vals of ================
