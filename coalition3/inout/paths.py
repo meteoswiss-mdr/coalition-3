@@ -133,6 +133,9 @@ def path_creator(t, var, source, cfg_set):
                                             fn_ext, cfg_set["timestep"],
                                             num_next_files=cfg_set["n_past_frames"])
             file_paths = (filenames[::-1],timestamps[::-1]) #(filenames,timestamps)
+        if None in file_paths[0]:
+            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
+            exit()
         return file_paths
 
     elif source == "THX":
@@ -145,6 +148,9 @@ def path_creator(t, var, source, cfg_set):
         if t.hour==0 and t.minute==0: t = t-datetime.timedelta(minutes=cfg_set["timestep"])
         file_paths = st.io.find_by_date(t, var_path, path_fmt, fn_pattern,
                                         fn_ext, cfg_set["timestep"], 0)
+        if None in file_paths[0]:
+            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
+            exit()
         return file_paths
 
     elif source == "TRT":
@@ -155,6 +161,9 @@ def path_creator(t, var, source, cfg_set):
         fn_ext          = config_ds["fn_ext"]
         file_paths = st.io.find_by_date(t, var_path, path_fmt, fn_pattern,
                                         fn_ext, cfg_set["timestep"], 0)
+        if None in file_paths[0]:
+            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
+            exit()
         return file_paths
 
     elif source == "COSMO_WIND":
@@ -168,7 +177,10 @@ def path_creator(t, var, source, cfg_set):
         t_fcst_model     = '%02d' % (t.hour%3)
         file_path = str(datetime.datetime.strftime(t, var_path+path_fmt+'/'+fn_pattern) + t_last_model_run + '_' +
                         t_fcst_model + '_cosmo-1_UV_swissXXL.' + fn_ext)
-
+        if None in file_paths[0]:
+            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
+            exit()
+        
         timestamp = t.replace(minute=0)
         return (file_path, timestamp)
 
@@ -191,6 +203,9 @@ def path_creator(t, var, source, cfg_set):
 
         file_path = str(datetime.datetime.strftime(t, var_path+path_fmt+'/'+fn_pattern) + t_last_model_run + '_' +
                         t_fcst_model + '_cosmo-1_convection_swiss.' + fn_ext)
+        if None in file_paths[0]:
+            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
+            exit()
 
         timestamp = t.replace(minute=0)
         return (file_path, timestamp)
@@ -207,6 +222,9 @@ def path_creator(t, var, source, cfg_set):
 
         file_paths = st.io.find_by_date(t, var_path, path_fmt, fn_pattern,
                                        fn_ext, cfg_set["timestep"], 0)
+        if None in file_paths[0]:
+            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
+            exit()
         return file_paths
 
     else:
