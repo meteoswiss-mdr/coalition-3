@@ -262,7 +262,7 @@ def plot_XGB_model_weights(df_nonnan_nonzerot0t10, cfg_tds):
         ax.patch.set_facecolor('0.7')
         ax.grid()
     plt.tight_layout()
-    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Model_weights.pdf"), orientation="portrait")
+    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Model_weights.png"), orientation="portrait")
 
 
 
