@@ -15,6 +15,7 @@ import datetime as dt
 
 import coalition3.inout.paths as pth
 import coalition3.inout.readconfig as cfg
+import coalition3.statlearn.fitting as fit
 import coalition3.statlearn.feature as feat
 import coalition3.statlearn.inputprep as ipt
 
@@ -109,13 +110,13 @@ for pred_dt in ls_pred_dt:
         feat.get_feature_importance(df_nonnan_nonzerot0, pred_dt, cfg_tds,model_path,
                                     mod_bound=bounds, mod_name=name,
                                     delete_RADAR_t0=delete_RADAR_t0, set_log_weight=XGB_mod_weight)
-        feat.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
+        fit.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
                                  mod_bound=bounds,mod_name=name,
                                  delete_RADAR_t0=delete_RADAR_t0,
                                  set_log_weight=XGB_mod_weight)
 
 ## Plot MSE as function of number of features:
-feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
+fit.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
                           ls_model_names=ls_model_names)
 
 
@@ -142,10 +143,10 @@ for pred_dt in ls_pred_dt:
     ls_n_feat_dt.append(ls_n_feat)
 
 ls_n_feat_dt_flat = [item for sublist in ls_n_feat_dt for item in sublist]
-feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=ls_n_feat_dt_flat,
+fit.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=ls_n_feat_dt_flat,
                           ls_model_names=ls_model_names)
 for i_dt, pred_dt in enumerate(ls_pred_dt):
-    feat.plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,ls_n_feat_dt[i_dt],cfg_tds,model_path,ls_model_bound,ls_model_names)
+    fit.plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,ls_n_feat_dt[i_dt],cfg_tds,model_path,ls_model_bound,ls_model_names)
 
 ## Plot relative feature source and past time step importance:
 feat.plot_feat_source_dt_gainsum(model_path, cfg_op, cfg_tds, ls_pred_dt)
