@@ -18,6 +18,7 @@ import coalition3.inout.readconfig as cfg
 import coalition3.statlearn.fitting as fit
 import coalition3.statlearn.feature as feat
 import coalition3.statlearn.inputprep as ipt
+import coalition3.statlearn.modeleval as mev
 
 ## Uncomment when running on Mac OS:
 #os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -115,12 +116,15 @@ for pred_dt in ls_pred_dt:
                                  delete_RADAR_t0=delete_RADAR_t0,
                                  set_log_weight=XGB_mod_weight)
 
+## Plot relative feature source and past time step importance:
+feat.plot_feat_source_dt_gainsum(model_path, cfg_op, cfg_tds, ls_pred_dt)
+
 ## Plot MSE as function of number of features:
 fit.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
                           ls_model_names=ls_model_names)
 
 
-## Fit model with optimal number of features:
+## Ask user for optimal number of features:
 poss_n_feat = np.arange(1,1001)
 ls_n_feat_dt = []
 for pred_dt in ls_pred_dt:
@@ -142,11 +146,34 @@ for pred_dt in ls_pred_dt:
         print("    %s -> %i" % (model_name,n_feat))
     ls_n_feat_dt.append(ls_n_feat)
 
+## Fit model with optimal number of features:
 ls_n_feat_dt_flat = [item for sublist in ls_n_feat_dt for item in sublist]
 fit.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=ls_n_feat_dt_flat,
                           ls_model_names=ls_model_names)
+dict_sel_model = {}
 for i_dt, pred_dt in enumerate(ls_pred_dt):
-    fit.plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,ls_n_feat_dt[i_dt],cfg_tds,model_path,ls_model_bound,ls_model_names)
+    model = fit.selected_model_fit(df_nonnan_nonzerot0,pred_dt,ls_n_feat_dt[i_dt],
+                                   cfg_tds,model_path,ls_model_bound,ls_model_names)
+    dict_sel_model["pred_mod_%i" % pred_dt] = model
+    
+## Save dictionary with selected models to disk:
+fit.save_selected_models(dict_sel_model, model_path, cfg_op)
 
-## Plot relative feature source and past time step importance:
-feat.plot_feat_source_dt_gainsum(model_path, cfg_op, cfg_tds, ls_pred_dt)
+## Make make model skill evaluation and produce comparison dataframe with
+## observed, predicted, and predicted & PM TRT Ranks for operational PM:
+mev.make_model_evaluation(df_nonnan_nonzerot0, model_path, ls_pred_dt, cfg_tds, cfg_op)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
