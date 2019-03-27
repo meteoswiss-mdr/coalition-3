@@ -8,6 +8,7 @@ import os
 import datetime
 import shapefile
 import numpy as np
+import pandas as pd
 import matplotlib.pylab as plt
 import matplotlib.ticker as ticker
 import matplotlib.colors as colors
