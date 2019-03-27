@@ -2,6 +2,9 @@
 
     This script is repeatedly called by the shell script precalcUV_loop.sh,
     where it generates the UV field for the respective date.
+
+    example call:
+    python script_precalcUV.py 2019-03-01 training
     """
 
 # ===============================================================================
@@ -19,8 +22,10 @@ import coalition3.inout.readconfig as cfg
 ## ===============================================================================
 ## Make static setting
 
-## Input basics
+## Interpreting command line arguments
+# first argument is date in %Y-%m-%d
 t0_str = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d").strftime("%Y%m%d%H%M")
+# second [optional] arguement: "training" do another run with revered time (foreward tracking)
 type   = sys.argv[2]
 
 ## Generate config dictionary
