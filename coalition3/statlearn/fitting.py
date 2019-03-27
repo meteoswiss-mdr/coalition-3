@@ -16,17 +16,14 @@ import xgboost as xgb
 import seaborn as sns
 import datetime as dt
 import matplotlib.pylab as plt
-import matplotlib.colors as mcolors
-from pandas.api.types import CategoricalDtype
 
 from scipy import stats
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
+from pysteps.postprocessing.probmatching import nonparam_match_empirical_cdf
 
-import coalition3.statlearn.inputprep as ipt
 import coalition3.statlearn.feature as feat
-from coalition3.visualisation.TRTcells import contour_of_2dHist
-from coalition3.visualisation.TRTcells import truncate_cmap
+import coalition3.statlearn.inputprep as ipt
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -161,7 +158,7 @@ def get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
     else:
         print("  Load existing models fitted with n top features")
         with open(os.path.join(model_path,"models_%i%s_t0diff_maxdepth6_nfeat.pkl" % (pred_dt,mod_name)),"rb") as file:
-            ls_models = pickle.load(ls_models, file, protocol=2)
+            ls_models = pickle.load(file)
 
     ## Get mean square error of models with n features:
     print("  Get mean square error of models with n features")
@@ -314,15 +311,37 @@ def plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,ls_model_
         df_mse_feat_count.plot.line()
         plt.savefig(os.path.join(cfg_tds["fig_output_path"],"MSE_feature_count.pdf"), orientation="portrait")
 
-## Fit model with threshold number of features (selected by the user):
-def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
-                     ls_mod_bound=[None],ls_model_names=[""]):
+## Get observed and forecasted TRT Ranks in different files:
+def get_obs_fcst_TRT_Rank(TRT_t0, TRT_diff_pred, TRT_diff_obs, TRT_tneg5):
+    obs           = TRT_t0 + TRT_diff_obs
+    pred_mod      = TRT_t0 + TRT_diff_pred
+    pred_mod.name = "Rank model prediction"
+    
+    pred_mod_PM = pd.Series(nonparam_match_empirical_cdf(pred_mod.values,obs.values),
+                            index=pred_mod.index, name="Rank model prediction (PM)")
+
+    pred_pers      = TRT_t0.copy()
+    pred_pers.name = "Rank persistency prediction"
+    pred_pers_PM   = pd.Series(nonparam_match_empirical_cdf(pred_pers.values,obs.values),
+                               index=pred_pers.index, name="Rank persistency prediction (PM)")
+    
+    pred_diff      = TRT_t0 + (TRT_t0-TRT_tneg5)
+    pred_diff.name = "Rank constant gradient prediction"
+    
+    diff_pred      = pd.Series(TRT_diff_pred, index=TRT_t0.index, name="TRT rank difference model prediction")
+    return(obs, pred_mod, pred_mod_PM, pred_pers, pred_pers_PM, pred_diff, diff_pred)
+    
+        
+## Fit model with threshold number of features (selected by the user), 
+## save to disk and make a plot:
+def selected_model_fit(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,
+                       model_path,ls_mod_bound=[None],ls_model_names=[""]):
     if len(ls_mod_bound)>1:
         y_test_ls = []
-        pred_gain_ls = []
+        TRT_diff_pred_ls = []
 
     for mod_bound, n_feat, mod_name in zip(ls_mod_bound,n_feat_ls,ls_model_names):
-        print("\nPlot predicted vs. observed testing samples for time delta %imin" % (pred_dt),end="")
+        print("\nGet selected XGB model for prediction of lead time %imin" % (pred_dt),end="")
         if mod_bound is not None:
             print(" (%i features for model '%s')" % (n_feat,mod_name))
             mod_name = "_%s" % mod_name
@@ -356,113 +375,59 @@ def plot_pred_vs_obs(df_nonnan_nonzerot0,pred_dt,n_feat_ls,cfg_tds,model_path,
             with open(os.path.join(model_path,"models_%i%s_t0diff_maxdepth6_nfeat.pkl" % (pred_dt,mod_name)),"rb") as file:
                 model = pickle.load(file)[np.where(precalc_n_feat==n_feat)[0][0]]
 
+        ## Save the model to disk:
+        model_saving_name = "model_%i%s_t0diff_maxdepth6_%ifeat_gain.pkl" % (pred_dt,mod_name,n_feat)
+        with open(os.path.join(model_path,model_saving_name),"wb") as file:
+            pickle.dump(model,file,protocol=2)
+            
         ## Get features:
         features  = model.get_booster().feature_names
 
         ## Make prediction and get skill scores:
-        pred_gain = model.predict(X_test[features])
-        mse_gain  = sklearn.metrics.mean_squared_error(y_test, pred_gain)
-        r2_gain   = sklearn.metrics.r2_score(y_test, pred_gain)
-
-        ## Save the model to disk:
-        with open(os.path.join(model_path,"model_%i%s_t0diff_maxdepth6_%ifeat_gain.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
-            pickle.dump(model,file,protocol=2)
-
-        ## Make the plot:
-        plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,
-                              mod_name,cfg_tds,outtype="TRT_Rank_diff")
-
-        plot_pred_vs_obs_core(X_test["TRT_Rank|0"]+y_test,
-                              X_test["TRT_Rank|0"]+pred_gain,pred_dt,
-                              mod_name,cfg_tds,outtype="TRT_Rank")
-
+        TRT_diff_pred = model.predict(X_test[features])
+        
         ## Append to list of results for combined plot:
         if len(ls_mod_bound)>1:
             y_test_ls.append(y_test)
-            pred_gain_ls.append(pred_gain)
+            TRT_diff_pred_ls.append(TRT_diff_pred)
 
     ## Make combined plot:
     if len(ls_mod_bound)>1:
         y_test_combi = pd.concat(y_test_ls,axis=0)
-        pred_gain_combi = np.concatenate(pred_gain_ls)
+        pred_gain_combi = np.concatenate(TRT_diff_pred_ls)
         mse_gain  = sklearn.metrics.mean_squared_error(y_test_combi,pred_gain_combi)
         r2_gain   = sklearn.metrics.r2_score(y_test_combi,pred_gain_combi)
         plot_pred_vs_obs_core(y_test_combi, pred_gain_combi,
                               pred_dt,"_%s" % "|".join(ls_model_names),cfg_tds)
-
-
-def plot_pred_vs_obs_core(y_test,pred_gain,pred_dt,mod_name,cfg_tds,outtype="TRT_Rank_diff"):
-    print("  Making the plot")
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=[10,8])
-    if outtype=="TRT_Rank_diff":
-        fig_range = [-2.5,2.5]
-        print_str = "difference "
-        save_str = "_diff"
-    elif outtype=="TRT_Rank":
-        fig_range = [0,4]
-        print_str = ""
-        save_str = "_rank"
-
-    if len(y_test)>1000:
-        counts,ybins,xbins,image = axes.hist2d(y_test.values,pred_gain,
-                                               bins=200,range=[fig_range,fig_range],cmap="magma",norm=mcolors.LogNorm())
-        #counts,ybins,xbins,image = axes.hist2d(y_test[["TRT_Rank_diff|%i" % pred_dt]].values[:,0],pred_gain,
-        #                                       bins=200,range=[[-2.5,2.5],[-2.5,2.5]],cmap="magma",norm=mcolors.LogNorm())
-        cbar = fig.colorbar(image, ax=axes, extend='max')
+    
+    ## Return model for and put into dictionary:
+    if len(ls_mod_bound)>1:
+        raise ImplementationError("Not yet implemented to used models fitted with" + \
+                                  "TRT Rank subset for prediction, not returned")
     else:
-        axes.scatter(y_test[["%s|%i" % (outtype,pred_dt)]].values[:,0],pred_gain,
-                     marker="+", color="black", s=8)
-    axes.set_xlim(fig_range); axes.set_ylim(fig_range)
-    #cbar.set_label('Number of cells per bin of size [0.02, 0.02]', rotation=90)
-    axes.grid()
-    #axes.fill_between([-0.2,0.2],y1=[-1.5,-1.5], y2=[1.5,1.5], facecolor="none", hatch="X", edgecolor="darkred", linewidth=0.5)
-    axes.plot(fig_range,fig_range,'w--',linewidth=2) #,facecolor="w",linewidth=2,linestyle='--')
-    if len(y_test)>1000:
-        cont2d_1, lvl = contour_of_2dHist(counts,smooth=True)
-        CS = axes.contour(cont2d_1,levels=lvl,extent=[xbins.min(),xbins.max(),ybins.min(),ybins.max()],linewidths=2,cmap="YlGn_r")
-        CS_lab = axes.clabel(CS, inline=1, fontsize=10, fmt='%i%%', colors="black")
-        #[txt.set_backgroundcolor('white') for txt in CS_lab]
-        [txt.set_bbox(dict(facecolor='white', edgecolor='none', pad=0.3, boxstyle='round', alpha=0.71)) for txt in CS_lab] #pad=0,
-    
-    slope, intercept, r_value, p_value, std_err = stats.linregress(y_test.values,pred_gain)
-    axes.plot(fig_range,np.array(fig_range)*slope+intercept,'darkred',linewidth=2)
-    
-    axes.set_xlabel(r'Observed TRT Rank %st$\mathregular{_{+%imin}}$' % (print_str,pred_dt))
-    axes.set_ylabel(r'Predicted TRT Rank %st$\mathregular{_{+%imin}}$' % (print_str,pred_dt))
-    model_title = "" if mod_name == "" else r" | Mod$\mathregular{_{%s}}$" % mod_name[1:]
-    title_str = 'TRT Ranks %s\nTime delta: %imin' % (print_str,pred_dt)
-    title_str += model_title
-    axes.set_title(title_str)
-    axes.set_aspect('equal'); axes.patch.set_facecolor('0.71')
-    
-    mse_gain = sklearn.metrics.mean_squared_error(y_test.values,pred_gain)
-    r2_gain  = sklearn.metrics.r2_score(y_test.values,pred_gain)
-    str_n_cells  = "Mean Squared Error (MSE): %.2f\n" % (mse_gain)
-    str_n_cells += r"Coeff of determination (R$\mathregular{^2}$): %.2f" % (r2_gain); str_n_cells += "\n"
-    str_n_cells += r"Regression intercept ($\mathregular{\beta_0}$): %.2f" % (intercept); str_n_cells += "\n"
-    str_n_cells += r"Regression slope ($\mathregular{\beta_1}$): %.2f" % (slope)
-    props = dict(boxstyle='round', facecolor='white')
-    axes.text(fig_range[0]+0.25, fig_range[1]-0.25, str_n_cells, bbox=props,
-              horizontalalignment='left',verticalalignment='top')
-    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Pred_scatter%s_%i%s.pdf" % (save_str,pred_dt,mod_name.replace("|","-"))), orientation="portrait")
-    print("    Saved the plot")
-    plt.close()
+        return model
 
-    fig, axes = plt.subplots(1,2)
-    fig.set_size_inches(8,4)
-    weights_df.plot.scatter(ax=axes[0],x="TRT_Rank|0",y="TRT_Rank_diff|10",c="Weight",marker="D", s=1, cmap="plasma")
-    axes[0].set_title("Model Weights\n ")
-    weights_df.plot.scatter(ax=axes[1],x="TRT_Rank|0",y="TRT_Rank_diff|10",c="Weight",marker="D", s=1, cmap="plasma",norm=mcolors.LogNorm())
-    axes[1].set_title("Model Weights\n (logarithmic)")
-
-    for ax in axes:
-        ax.set_ylabel(r"TRT Rank change t$\mathregular{_{+10min}}$") #; axes.set_title('TRT Ranks (16km diameter)')
-        ax.set_xlabel(r"TRT Rank  $\mathregular{t_0}$")
-        ax.set_aspect('equal')
-        ax.patch.set_facecolor('0.7')
-        ax.grid()
-    plt.tight_layout()
-    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Model_weights.pdf"), orientation="portrait")
+## Save dictionary with selected models to disk:
+def save_selected_models(dict_sel_model, model_path, cfg_op):
+    print("\nSave dictionary with selected models to the disk.")
+    train_path_name = os.path.join(model_path,"model_dict_t0diff_maxdepth6_selfeat_gain.pkl")
+    with open(train_path_name,"wb") as file:
+        pickle.dump(dict_sel_model,file,protocol=2)
+    print("  saved dict to 'model_path' location:\n    %s" % train_path_name)
+    op_path_name = os.path.join(cfg_op["XGB_model_path"],
+                                       "model_dict_t0diff_maxdepth6_selfeat_gain.pkl")
+    with open(op_path_name,"wb") as file:
+        pickle.dump(dict_sel_model,file,protocol=2)
+    print("  saved dict to 'XGB_model_path' location:\n    %s" % op_path_name)
+    prt_txt = """
+    ---------------------------------------------------------------------------------
+        Now it is YOUR responsibility to set the soft link 'pred_model_ls' in the
+        directory '%s'
+        to the new collection of models 'model_dict_t0diff_maxdepth6_selfeat_gain.pkl'
+        if these should be used for prediction!
+    ---------------------------------------------------------------------------------\n""" % (cfg_op["XGB_model_path"])
+    print(prt_txt)
+    
 
 
 
