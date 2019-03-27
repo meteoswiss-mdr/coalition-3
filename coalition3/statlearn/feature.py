@@ -80,7 +80,7 @@ def calc_sample_weight(TRT_Rank0, TRT_Rank_diff):
 
 ## Get feature ranking for the complete dataset:
 def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,
-                           mod_name="",delete_RADAR_t0=False,set_log_weight=False,max_n_feat=80000):
+                           mod_name="",delete_RADAR_t0=False,set_log_weight=False,max_n_feat=60000):
     print("Get features for lead time t0 + %imin" % pred_dt, end="")
     if mod_bound is not None:
         if mod_name=="":
@@ -214,7 +214,7 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     ax1 = fig.add_subplot(2,1,1)
     ax2 = fig.add_subplot(2,1,2)
     cmap = plt.get_cmap('inferno')
-    past_dt_cmap = truncate_colormap(cmap, 0.0, 0.8)
+    past_dt_cmap = truncate_cmap(cmap, 0.0, 0.8)
     df_sum_source_norm.plot.line(ax=ax1, cmap="Set1", linewidth=1.5)
     df_sum_dtime_norm.plot.line(ax=ax2, cmap=past_dt_cmap, linewidth=1.5)
     for title,ax in zip(["Feature source","Past time step"],[ax1,ax2]):
