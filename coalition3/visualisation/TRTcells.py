@@ -361,6 +361,132 @@ def lonlat2xy(s_lon, s_lat): # x: easting, y: northing
 
     return s_x, s_y
 
+## Plot key Radar, SEVIRI, COSMO and THX variables for specific TRT ID:
+def plot_var_time_series_dt0_multiquant(TRT_ID_sel, df_nonnan, cfg_tds):
+    """ Plot different Radar, SEVIRI.. variables (several quantiles) of specific TRT ID.
     
+    TRT_ID_sel : pandas dataframe
+        Pandas dataframe with TRT IDs in 1st column and count how often it appears in df_nonnan in 2nd.
+    df_nonnan : pandas dataframe
+        2D pandas Dataframe with training data.
+    """
     
+    date_of_cell = dt.datetime.strptime(TRT_ID_sel["TRT_ID"][:12], "%Y%m%d%H%M")
+    
+    ## Find cells where the there are loads of similar TRT Ranks:
+    DTI_sel  = [dti for dti in df_nonnan.index.values if dti[13:] in TRT_ID_sel["TRT_ID"]]
+    cell_sel = df_nonnan.loc[DTI_sel]
+    cell_sel.set_index(pd.to_datetime([dt.datetime.strptime(date[:12],"%Y%m%d%H%M") for date in cell_sel.index]),
+                       drop=True,append=False,inplace=True)
+                   
+    fig, axes = plt.subplots(2,2)
+    fig.set_size_inches(10,8)   
+    cmap_3_quant = truncate_cmap(plt.get_cmap('afmhot'), 0.2, 0.6)
+    legend_entries = []
+    cell_sel[["IR_108_stat|0|MIN","IR_108_stat|0|PERC05","IR_108_stat|0|PERC25"]].plot(ax=axes[0,0],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    axes[0,0].set_title(r"Brightness Temperatures T$_B$")
+    axes[0,0].set_ylabel(r"IR 10.8$\mu$m [K]")
+    legend_entries.append(["Min","5%", "25%"])
+
+    cell_sel[["CG3_stat|0|PERC99","CG3_stat|0|PERC95","CG3_stat|0|PERC75"]].plot(ax=axes[0,1],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    axes[0,1].set_title("Glaciation indicator (GI)")
+    axes[0,1].set_ylabel(r"IR 12.0$\mu$m - IR 10.8$\mu$m [K]")
+    legend_entries.append(["99%","95%", "75%"])
+
+    cell_sel[["CD5_stat|0|MAX","CD5_stat|0|PERC95","CD5_stat|0|PERC75"]].plot(ax=axes[1,0],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    axes[1,0].set_title("Cloud optical depth indicator (COD)")
+    axes[1,0].set_ylabel(r"WV 6.2$\mu$m - IR 10.8$\mu$m [K]")
+    legend_entries.append(["Max","95%", "75%"])
+
+    cell_sel[["IR_108_stat|-15|PERC25","IR_108_stat|-15|PERC50","IR_108_stat|-15|PERC75"]].plot(ax=axes[1,1],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    axes[1,1].set_title(r"Updraft strength indicator ($w_{T}$)")
+    axes[1,1].set_ylabel(r"IR 10.8$\mu$m (t$_0$) - IR 10.8$\mu$m (t$_{-15}$) [K]")
+    legend_entries.append(["25%","50%", "75%"])
+    for ax, leg_ent in zip(axes.flat,legend_entries):
+        ax.grid()
+        ax.legend(leg_ent, fontsize="small", loc="upper right") #, title_fontsize="small", title ="Quantiles"
+    plt.tight_layout()
+    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"SEVIRI_series_%s.pdf" % (TRT_ID_sel["TRT_ID"])))
+    plt.close()
+
+    fig, axes = plt.subplots(3,2)
+    fig.set_size_inches(10,8)     
+    legend_entries = []
+    cell_sel[["RZC_stat_nonmin|0|PERC50","RZC_stat_nonmin|0|PERC75","RZC_stat_nonmin|0|MAX"]].plot(ax=axes[0,0],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    ax_pixc=(100-cell_sel[["RZC_pixc_NONMIN|0|SUM"]]/4.21).plot(ax=axes[0,0],color="black",linewidth=0.5,style='--',alpha=0.8, secondary_y=True)
+    axes[0,0].set_title(r"Rain Rate (RR)")
+    axes[0,0].set_ylabel(r"Rain Rate [mm h$^{-1}$]")
+    ax_pixc.set_ylabel("Covered areal fraction [%]")
+    legend_entries.append(["50%","75%", "MAX"])
+
+    cell_sel[["LZC_stat_nonmin|0|PERC50","LZC_stat_nonmin|0|PERC75","LZC_stat_nonmin|0|MAX"]].plot(ax=axes[0,1],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    ax_pixc=(100-cell_sel[["LZC_pixc_NONMIN|0|SUM"]]/4.21).plot(ax=axes[0,1],color="black",linewidth=0.5,style='--',alpha=0.8, secondary_y=True)
+    axes[0,1].set_title("Vertically Integrated Liquid (VIL)")
+    axes[0,1].set_ylabel(r"VIL [kg m$^{-2}$]")
+    ax_pixc.set_ylabel("Covered areal fraction [%]")
+    legend_entries.append(["50%","95%", "MAX"])
+
+    cell_sel[["MZC_stat_nonmin|0|PERC50","MZC_stat_nonmin|0|PERC75","MZC_stat_nonmin|0|MAX"]].plot(ax=axes[1,0],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    ax_pixc=(100-cell_sel[["MZC_pixc_NONMIN|0|SUM"]]/4.21).plot(ax=axes[1,0],color="black",linewidth=0.5,style='--',alpha=0.8, secondary_y=True)
+    axes[1,0].set_title("Maximum Expected Severe Hail Size (MESHS)")
+    axes[1,0].set_ylabel("MESHS [cm]")
+    ax_pixc.set_ylabel("Covered areal fraction [%]")
+    legend_entries.append(["25%","50%", "75%"])
+
+    cell_sel[["BZC_stat_nonmin|0|PERC50","BZC_stat_nonmin|0|PERC75","BZC_stat_nonmin|0|MAX"]].plot(ax=axes[1,1],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    ax_pixc=(100-cell_sel[["BZC_pixc_NONMIN|0|SUM"]]/4.21).plot(ax=axes[1,1],color="black",linewidth=0.5,style='--',alpha=0.8, secondary_y=True)
+    axes[1,1].set_title("Probability of Hail (POH)")
+    axes[1,1].set_ylabel(r"POH [%]")
+    ax_pixc.set_ylabel("Covered areal fraction [%]")
+    legend_entries.append(["50%","75%", "MAX"])
+
+    cell_sel[["EZC15_stat_nonmin|0|PERC75","EZC15_stat_nonmin|0|MAX","EZC45_stat_nonmin|0|PERC75","EZC45_stat_nonmin|0|MAX"]].plot(ax=axes[2,0],color=["#fdbf6f","#ff7f00","#fb9a99","#e31a1c"],linewidth=1,style='-',alpha=0.8)
+    ax_pixc=(100-cell_sel[["EZC45_pixc_NONMIN|0|SUM"]]/4.21).plot(ax=axes[2,0],color="black",linewidth=0.5,style='--',alpha=0.8, secondary_y=True)
+    axes[2,0].set_title("Echo Top (ET)")
+    axes[2,0].set_ylabel("Altitude a.s.l. [km]")
+    ax_pixc.set_ylabel("Pixel count")
+    legend_entries.append(["75% (15dBZ)","Max (15dBZ)", "75% (45dBZ)", "Max (45dBZ)"])
+
+    cell_sel[["THX_dens_stat|0|MEAN","THX_densIC_stat|0|MEAN","THX_densCG_stat|0|MEAN"]].plot(ax=axes[2,1],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    axes[2,1].set_title("Mean lightning Density (THX)")
+    axes[2,1].set_ylabel("Lightning density [km$^{-2}$]")
+    ax_pixc.set_ylabel("Pixel count")
+    legend_entries.append(["Total","IC", "CG"])
+    for ax, leg_ent in zip(axes.flat,legend_entries):
+        ax.grid()
+        ax.legend(leg_ent, fontsize="small", loc="upper left") #) #, title_fontsize="small", title ="Quantiles"
+    plt.tight_layout()
+    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"RADAR_series_%s.pdf" % (TRT_ID_sel["TRT_ID"])))
+    plt.close()
+
+    fig, axes = plt.subplots(2,2)
+    fig.set_size_inches(10,8)     
+    legend_entries = []
+    cell_sel[["CAPE_ML_stat|0|PERC50","CAPE_ML_stat|0|MAX"]].plot(ax=axes[0,0],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    axes[0,0].set_title(r"CAPE (mean surface layer parcel)")
+    axes[0,0].set_ylabel(r"CAPE [J kg$^{-1}$]")
+    legend_entries.append(["75%", "MAX"])
+
+    cell_sel[["CIN_ML_stat|0|PERC50","CIN_ML_stat|0|MAX"]].plot(ax=axes[0,1],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    axes[0,1].set_title(r"CIN (mean surface layer parcel)")
+    axes[0,1].set_ylabel(r"CIN [J kg$^{-1}$]")
+    legend_entries.append(["75%", "MAX"])
+
+    cell_sel[["WSHEAR_0-3km_stat|0|PERC50","WSHEAR_0-3km_stat|0|MAX"]].plot(ax=axes[1,0],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    axes[1,0].set_title(r"Wind shear (0km - 3km)")
+    axes[1,0].set_ylabel(r"Wind shear [m s$^{-1}$]")
+    legend_entries.append(["75%", "MAX"])
+
+    cell_sel[["POT_VORTIC_30000_stat|0|PERC50","POT_VORTIC_30000_stat|0|MAX"]].plot(ax=axes[1,1],cmap=cmap_3_quant,linewidth=1,style='-',alpha=0.8)
+    axes[1,1].set_title(r"Potential vorticity (300hPa)")
+    axes[1,1].set_ylabel(r"PV [K m$^{2}$ kg$^{-1}$ s$^{-1}$]")
+    legend_entries.append(["75%", "MAX"])
+
+    for ax, leg_ent in zip(axes.flat,legend_entries):
+        ax.grid()
+        ax.legend(leg_ent, fontsize="small", loc="upper left") #) #, title_fontsize="small", title ="Quantiles"
+    plt.tight_layout()
+    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"COSMO_THX_series_%s.pdf" % (TRT_ID_sel["TRT_ID"])))
+    plt.close()
+
     
