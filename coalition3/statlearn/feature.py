@@ -25,7 +25,7 @@ from sklearn.model_selection import GridSearchCV
 
 import coalition3.statlearn.inputprep as ipt
 from coalition3.visualisation.TRTcells import contour_of_2dHist
-from coalition3.visualisation.TRTcells import truncate_colormap
+from coalition3.visualisation.TRTcells import truncate_cmap
 
 ## =============================================================================
 ## FUNCTIONS:
