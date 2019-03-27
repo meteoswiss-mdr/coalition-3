@@ -23,33 +23,6 @@ import coalition3.inout.readconfig as cfg
 import coalition3.training.preparation as prep
 import coalition3.visualisation.TRTcells as visTRT
 
-def plot_XGB_model_weights(df_nonnan_nonzerot0t10):
-    weights_df = df_nonnan_nonzerot0t10[["TRT_Rank|0","TRT_Rank_diff|10"]]
-    weights_df["Weight"] = np.exp(weights_df["TRT_Rank|0"]) * np.exp(weights_df["TRT_Rank|0"]+weights_df["TRT_Rank_diff|10"])
-    weights_df.plot.scatter(x="TRT_Rank|0",y="TRT_Rank_diff|10",c="Weight",marker="D", s=1, cmap="plasma")
-
-    fig, axes = plt.subplots(1,2)
-    fig.set_size_inches(8,4)
-    weights_df.plot.scatter(ax=axes[0],x="TRT_Rank|0",y="TRT_Rank_diff|10",c="Weight",marker="D", s=1, cmap="plasma")
-    axes[0].set_title("Model Weights\n ")
-    weights_df.plot.scatter(ax=axes[1],x="TRT_Rank|0",y="TRT_Rank_diff|10",c="Weight",marker="D", s=1, cmap="plasma",norm=mcolors.LogNorm())
-    axes[1].set_title("Model Weights\n (logarithmic)")
-
-    for ax in axes:
-        ax.set_ylabel(r"TRT Rank change t$\mathregular{_{+10min}}$") #; axes.set_title('TRT Ranks (16km diameter)')
-        ax.set_xlabel(r"TRT Rank  $\mathregular{t_0}$")
-        ax.set_aspect('equal')
-        ax.patch.set_facecolor('0.7')
-        ax.grid()
-    plt.tight_layout()
-    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Model_weights.pdf"), orientation="portrait")
-
-def get_X_col(colname):
-    ## No future TRT observations in input:
-    use_col = ("TRT" not in colname or \
-               "-" in colname or "|0" in colname) and \
-              ("TRT_Rank_diff" not in colname)
-    return(use_col)
 
 def plot_hist_TRT_Ranks(df_plot,cfg_tds):
     fig_hist, axes = plt.subplots(1, 1)
@@ -167,7 +140,6 @@ if os.path.exists("%s_nonnan.h5" % os.path.splitext(path_to_df)[0]):
 if not import_nonnan:
     df = pd.read_hdf(path_to_df,key="df")
 
-"""
 ## Make analysis of how many values are missing per column:
 df_nan_count_sort = df.isna().sum().sort_values(ascending=False)
 df_nan_count_sort[:6].plot(drawstyle="steps", linewidth=2)
@@ -175,8 +147,7 @@ plt.grid(); plt.ylabel("NaN count"); plt.xlabel("Features (sorted)")
 plt.title("Number of missing values per feature")
 plt.xticks(rotation=20)
 plt.tight_layout()
-plt.show()
-"""
+plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Top_missing_features.pdf"), orientation="portrait")
 
 ## Analyse pearson correlation between features (VERY TIME CONSUMING!):
 """
@@ -229,7 +200,6 @@ df_nonnan["RANKr"] = df_nonnan["RANKr"]*10
 
 ## Construct selection criteria for input dataset:
 print("Split in 10min and 30min forcast")
-X = df_nonnan[[Xcol for Xcol in df_nonnan.columns if get_X_col(Xcol)]]
 y_10 = df_nonnan[["TRT_Rank_diff|10"]]
 y_30 = df_nonnan[["TRT_Rank_diff|30"]]
 
@@ -270,8 +240,6 @@ plot_TRT_scatter(df_nonnan_nonzerot0,[10,30],"nonzerot0")
 df_nonnan_nonzerot0t10 = df_nonnan.loc[(df_nonnan["TRT_Rank|10"]>=0.15) & (df_nonnan["TRT_Rank|0"]>=0.15)]
 df_nonnan_nonzerot0t30 = df_nonnan.loc[(df_nonnan["TRT_Rank|30"]>=0.15) & (df_nonnan["TRT_Rank|0"]>=0.15)]
 plot_TRT_scatter([df_nonnan_nonzerot0t10,df_nonnan_nonzerot0t30],[10,30],path_addon="nonzerot0t10t30",contour=True,TRTcol=True,model_borders_ls=[1.2,2.3])
-
-
 
 
 
