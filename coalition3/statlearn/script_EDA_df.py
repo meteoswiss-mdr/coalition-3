@@ -271,8 +271,6 @@ df_nonnan_nonzerot0t10 = df_nonnan.loc[(df_nonnan["TRT_Rank|10"]>=0.15) & (df_no
 df_nonnan_nonzerot0t30 = df_nonnan.loc[(df_nonnan["TRT_Rank|30"]>=0.15) & (df_nonnan["TRT_Rank|0"]>=0.15)]
 plot_TRT_scatter([df_nonnan_nonzerot0t10,df_nonnan_nonzerot0t30],[10,30],path_addon="nonzerot0t10t30",contour=True,TRTcol=True,model_borders_ls=[1.2,2.3])
 
-plot_XGB_model_weights(df_nonnan_nonzerot0t10)
-
 
 
 

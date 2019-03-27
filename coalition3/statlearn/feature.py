@@ -657,3 +657,43 @@ def plot_feat_source_dt_gainsum(path_xgb, cfg_op, cfg_tds, pred_dt_ls = None):
     plt_saving_location = os.path.join(cfg_tds["fig_output_path"],"Feature_source_time_step_importance.pdf")
     plt.savefig(plt_saving_location,orientation="portrait")
     print("  Plot saved in:\n    %s" % plt_saving_location)
+
+## Plot XGB model weights (to push importance of strong TRT cells which are not decreasing):
+def plot_XGB_model_weights(df_nonnan_nonzerot0t10, cfg_tds):
+    weights_df = df_nonnan_nonzerot0t10[["TRT_Rank|0","TRT_Rank_diff|10"]]
+    weights_df["Weight"] = np.exp(weights_df["TRT_Rank|0"]) * np.exp(weights_df["TRT_Rank|0"]+weights_df["TRT_Rank_diff|10"])
+    weights_df.plot.scatter(x="TRT_Rank|0",y="TRT_Rank_diff|10",c="Weight",marker="D", s=1, cmap="plasma")
+
+    fig, axes = plt.subplots(1,2)
+    fig.set_size_inches(8,4)
+    weights_df.plot.scatter(ax=axes[0],x="TRT_Rank|0",y="TRT_Rank_diff|10",c="Weight",marker="D", s=1, cmap="plasma")
+    axes[0].set_title("Model Weights\n ")
+    weights_df.plot.scatter(ax=axes[1],x="TRT_Rank|0",y="TRT_Rank_diff|10",c="Weight",marker="D", s=1, cmap="plasma",norm=mcolors.LogNorm())
+    axes[1].set_title("Model Weights\n (logarithmic)")
+
+    for ax in axes:
+        ax.set_ylabel(r"TRT Rank change t$\mathregular{_{+10min}}$") #; axes.set_title('TRT Ranks (16km diameter)')
+        ax.set_xlabel(r"TRT Rank  $\mathregular{t_0}$")
+        ax.set_aspect('equal')
+        ax.patch.set_facecolor('0.7')
+        ax.grid()
+    plt.tight_layout()
+    plt.savefig(os.path.join(cfg_tds["fig_output_path"],"Model_weights.pdf"), orientation="portrait")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
