@@ -6,6 +6,8 @@ from __future__ import print_function
 import numpy as np
 import datetime
 from netCDF4 import Dataset, num2date, date2num
+from os.path import dirname, exists
+from os import makedirs
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -148,6 +150,10 @@ def load_file(input_file_path_str, var_name=None):
         (List of) strings stating the names of the datasets.
         
     """
+
+    if not exists(dirname(input_file_path_str)):
+        print('*** ERROR, input file path does not exist: ' + dirname(input_file_path_str))
+        exit()
     
     ## Adjust for disparr files (which should be understood as .npz files):
     if ("disparr" in input_file_path_str or "UV_vec" in input_file_path_str) and input_file_path_str[-4:]==".npy":
@@ -267,7 +273,10 @@ def save_nc(output_file_path_str,data_arr,var_name,var_type,var_unit,longname,
                           (len(longname),len(data_arr)))
     if len(datetime_object)==1 and len(datetime_object)!=len(data_arr) and dt is None:
         raise ValueError('length of time step has to be provided')
-    
+
+    if not exists(dirname(output_file_path_str)):
+        print('... create output directory: ' + dirname(output_file_path_str))
+        makedirs(dirname(output_file_path_str))
     
     ## Create NetCDF file:
     dataset = Dataset(output_file_path_str,
@@ -343,6 +352,11 @@ def read_nc(input_file_path_str,var_name=None):
         (List of) numpy arrays containing the data to be read.
 
     """
+
+    if not exists(dirname(input_file_path_str)):
+        print('*** ERROR, input file path does not exist: ' + dirname(input_file_path_str))
+        exit()
+
     if var_name is None:
         nc_file = Dataset(input_file_path_str,'r')
         return nc_file
