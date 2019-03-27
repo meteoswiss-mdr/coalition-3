@@ -77,53 +77,50 @@ else:
     ls_model_bound.append(None)
     ls_model_names.append("")
 
+## Plot XGB model weights (to push importance of strong TRT cells which are not decreasing):
+print("\nPlotting XGB model weights")
+df_nonnan_nonzerot0t10 = ipt.get_model_input(df_nonnan_nonzerot0,
+                                             del_TRTeqZero_tpred=True,
+                                             pred_dt=10,
+                                             check_for_nans=False)
+feat.plot_XGB_model_weights(df_nonnan_nonzerot0t10, cfg_tds)
+del(df_nonnan_nonzerot0t10)
+use_XGB_model_weights = ""
+while (use_XGB_model_weights not in ["y","n"]):
+    use_XGB_model_weights = raw_input("Should XGB model weights be applied, see plot on disk [y/n]: ")
+if use_XGB_model_weights == "y":
+    print("  Apply model weights")
+    XGB_mod_weight = True
+else:
+    print("  Apply no model weights")
+    XGB_mod_weight = False
+    
+## Ask user whether Radar variables should be used at t0:
+use_RADAR_variables_at_t0 = ""
+while (use_RADAR_variables_at_t0 not in ["y","n"]):
+    use_RADAR_variables_at_t0 = raw_input("Should Radar variables at t0 be provided to the model [y/n]: ")
+if use_RADAR_variables_at_t0 == "y":
+    print("  Also provided Radar variables at t0")
+    delete_RADAR_t0 = False
+else:
+    print("  Radar variables at t0 not provided to model")
+    delete_RADAR_t0 = True
+    
+## Ask user whether Radar variables should be used at t0:
 print("\nLoop over different lead times to get feature importance")
 for pred_dt in ls_pred_dt:
     for bounds, name in zip(ls_model_bound, ls_model_names):
         feat.get_feature_importance(df_nonnan_nonzerot0, pred_dt, cfg_tds,model_path,
                                     mod_bound=bounds, mod_name=name,
-                                    delete_RADAR_t0=True, set_log_weight=True)
+                                    delete_RADAR_t0=delete_RADAR_t0, set_log_weight=XGB_mod_weight)
         feat.get_mse_from_n_feat(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,
                                  mod_bound=bounds,mod_name=name,
-                                 delete_RADAR_t0=True,
-                                 set_log_weight=True)
+                                 delete_RADAR_t0=delete_RADAR_t0,
+                                 set_log_weight=XGB_mod_weight)
 
 ## Plot MSE as function of number of features:
 feat.plot_mse_from_n_feat(ls_pred_dt,cfg_tds,model_path,thresholds=None,
                           ls_model_names=ls_model_names)
-
-
-mod_name = ""
-mlp_model_path = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/ANN_models/models/diam_23km/without_radar_t0" #pth.file_path_reader("model saving location")
-for pred_dt in ls_pred_dt:
-    ## Get normalised training and testing data:
-    X_train, X_test, y_train, y_test, scaler = ipt.get_model_input(df_nonnan_nonzerot0,
-        del_TRTeqZero_tpred=True, split_Xy_traintest=True, X_normalise=True,
-        pred_dt=pred_dt, check_for_nans=False)
-
-    ## Fit ANN models with 10 - 1000 selected features with grid-search over hyperparameters:
-    print("Fit ANN models to 10 - 1000 features with grid-search over hyper-parameters")
-    xgb_model_path_all = "/data/COALITION2/PicturesSatellite/results_JMZ/0_training_NOSTRADAMUS_ANN/statistical_learning/feature_selection/models/diam_23km/without_radar_t0/all_samples/model_%i_t0diff_maxdepth6.pkl" % pred_dt #pth.file_path_reader("all-feature XGB model location (for feature selection)")
-
-    with open(xgb_model_path_all,"rb") as file:
-        xgb_model = pickle.load(file)
-    top_features_gain = pd.DataFrame.from_dict(xgb_model.get_booster().get_score(importance_type='gain'),
-                                               orient="index",columns=["F_score"]).sort_values(by=['F_score'],
-                                               ascending=False)
-    print("There are the top features:\n  %s" % top_features_gain[:10])
-    n_feat_arr = feat.get_n_feat_arr("mlp")
-    print("  *** Watch out, this takes veeeeeeeeeeeeery long!! ***")
-    ls_models = []
-    time_start = dt.datetime.now()
-    for n_feat in n_feat_arr:
-        fitted_model = feat.fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr, model="mlp", verbose_bool=False)
-        print("     Current time: %s / elapsed time %s" % (dt.datetime.now(), dt.datetime.now()-time_start))
-        ls_models.append(fitted_model)
-        if n_feat%1==0:
-            print("     Save list of models to disk")
-            with open(os.path.join(mlp_model_path,"model_%i%s_t0diff_mlp_nfeat_%i.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
-                pickle.dump(ls_models,file,protocol=-1)
-
 
 
 ## Fit model with optimal number of features:
@@ -156,6 +153,3 @@ for i_dt, pred_dt in enumerate(ls_pred_dt):
 
 ## Plot relative feature source and past time step importance:
 feat.plot_feat_source_dt_gainsum(model_path, cfg_op, cfg_tds, ls_pred_dt)
-
-## Plot XGB model weights (to push importance of strong TRT cells which are not decreasing):
-feat.plot_XGB_model_weights(df_nonnan_nonzerot0t10, cfg_tds)
