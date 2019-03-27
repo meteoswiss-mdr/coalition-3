@@ -23,6 +23,8 @@ import coalition3.inout.readconfig as cfg
 import coalition3.training.preparation as prep
 import coalition3.visualisation.TRTcells as visTRT
 
+## Uncomment when running on Mac OS:
+#os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def plot_hist_TRT_Ranks(df_plot,cfg_tds):
     fig_hist, axes = plt.subplots(1, 1)
