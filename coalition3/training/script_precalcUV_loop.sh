@@ -1,3 +1,11 @@
+#!/bin/bash
+# 
+# script to precalculate the rain motion vectors 
+# for a period of time.
+#
+# example call: 
+# ./script_precalcUV_loop.sh training 20190301 20190302
+
 type=$1
 input_start=$2
 input_end=$3
@@ -28,6 +36,7 @@ enddate=$(date -I -d "$input_end")     || exit -1
 d="$startdate"
 while [ "$d" != "$enddate" ]; do 
   echo Working on $d
+  echo python script_precalcUV.py $d $type
   python script_precalcUV.py $d $type
   d=$(date -I -d "$d + 1 day")
 done
