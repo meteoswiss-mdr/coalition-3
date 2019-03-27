@@ -157,3 +157,5 @@ for i_dt, pred_dt in enumerate(ls_pred_dt):
 ## Plot relative feature source and past time step importance:
 feat.plot_feat_source_dt_gainsum(model_path, cfg_op, cfg_tds, ls_pred_dt)
 
+## Plot XGB model weights (to push importance of strong TRT cells which are not decreasing):
+feat.plot_XGB_model_weights(df_nonnan_nonzerot0t10, cfg_tds)
