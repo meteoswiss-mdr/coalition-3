@@ -133,7 +133,7 @@ def calc_sample_weight(TRT_Rank0, TRT_Rank_diff):
 
 ## Get feature ranking for the complete dataset:
 def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bound=None,
-                           mod_name="",delete_RADAR_t0=False,set_log_weight=False):
+                           mod_name="",delete_RADAR_t0=False,set_log_weight=False,max_n_feat=80000):
     print("Get features for lead time t0 + %imin" % pred_dt, end="")
     if mod_bound is not None:
         if mod_name=="":
@@ -172,10 +172,10 @@ def get_feature_importance(df_nonnan_nonzerot0,pred_dt,cfg_tds,model_path,mod_bo
     X, y = ipt.get_model_input(df_nonnan_nonzerot0, del_TRTeqZero_tpred=True,
             split_Xy=True, pred_dt=pred_dt, TRTRankt0_bound=mod_bound, X_feature_sel=X_feature_sel)
     del(df_nonnan_nonzerot0)
-    if len(X)>150000:
-        print("   *** Warning: Dataframe X probably to big to be converted, reduced to 80'000 rows! ***")
-        X = X.sample(n=150000,random_state=42)
-        y = y.sample(n=150000,random_state=42)
+    if len(X)>max_n_feat:
+        print("   *** Warning: Dataframe X probably to big to be converted, reduced to %i rows! ***" % max_n_feat)
+        X = X.sample(n=max_n_feat,random_state=42)
+        y = y.sample(n=max_n_feat,random_state=42)
     #X = X.values
     #X = X.astype(np.float16, order='C', copy=False)
 
