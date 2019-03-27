@@ -88,8 +88,8 @@ def plot_pred_time_series(TRT_ID_sel, df_nonnan, pred_mod_ls, ls_pred_dt, path_a
 
     for i_pred, pred_dt in enumerate(ls_pred_dt):
         cell_sel["TRT_Rank_pred|%i" % pred_dt] = pred_mod_ls[i_pred].loc[DTI_sel].values
-    with open("TRT_Rank_Pred_%s%s.pkl" % (path_addon,TRT_ID_sel["TRT_ID"]),"wb") as file:
-        pickle.dump(cell_sel, file, protocol=2)
+    #with open("TRT_Rank_Pred_%s%s.pkl" % (path_addon,TRT_ID_sel["TRT_ID"]),"wb") as file:
+    #    pickle.dump(cell_sel, file, protocol=2)
     df_TRT_pred_shift = shift_values_to_timestep(cell_sel,"TRT_Rank_pred")
 
     fig = plt.figure(figsize = [10,5])
@@ -219,7 +219,7 @@ def get_R2_param(obs, pred):
     df_param.loc[0] = params
     return(df_param)
 
-def plot_stats(df_R2_param, df_name):
+def plot_stats(df_R2_param, df_name, cfg_tds):
     df_R2_param["BSS"] = df_R2_param["corr"]**2 - \
                               (df_R2_param["s_y/s_o"]**2 * df_R2_param["(beta(x=pred,y=obs)-1)^2"]) - \
                               (df_R2_param["bias"]**2 / df_R2_param["s_o"]**2)
@@ -246,7 +246,7 @@ def plot_stats(df_R2_param, df_name):
     plt.close()
     
 
-def plot_stats_nice(df_R2_param, df_name):
+def plot_stats_nice(df_R2_param, df_name, cfg_tds):
     df_R2_param["corr^2"] = df_R2_param["corr"].values**2
     df_R2_param["corr^2_pen"] = df_R2_param["corr^2"].values - \
                                 (df_R2_param["corr"].values - df_R2_param["s_y/s_o"].values)**2
@@ -554,12 +554,12 @@ def make_model_evaluation(df_nonnan, model_path, ls_pred_dt, cfg_tds, cfg_op):
     df_R2_param_rank_PM   = pd.concat(df_param_ls_rank_PM,axis=0).set_index(np.array(ls_pred_dt))
     df_R2_param_diff      = pd.concat(df_param_ls_diff,axis=0).set_index(np.array(ls_pred_dt))
     df_R2_param_rank_pers = pd.concat(df_param_ls_rank_pers,axis=0).set_index(np.array(ls_pred_dt))
-    plot_stats(df_R2_param_rank, "TRT_Rank")
-    plot_stats(df_R2_param_diff, "TRT_Rank_diff")
-    plot_stats_nice(df_R2_param_rank, "TRT_Rank")
-    plot_stats_nice(df_R2_param_diff, "TRT_Rank_diff")
-    plot_stats_nice(df_R2_param_rank_pers, "TRT_Rank_pers")
-    plot_stats_nice(df_R2_param_rank_PM, "TRT_Rank_PM")
+    plot_stats(df_R2_param_rank, "TRT_Rank", cfg_tds)
+    plot_stats(df_R2_param_diff, "TRT_Rank_diff", cfg_tds)
+    plot_stats_nice(df_R2_param_rank, "TRT_Rank", cfg_tds)
+    plot_stats_nice(df_R2_param_diff, "TRT_Rank_diff", cfg_tds)
+    plot_stats_nice(df_R2_param_rank_pers, "TRT_Rank_pers", cfg_tds)
+    plot_stats_nice(df_R2_param_rank_PM, "TRT_Rank_PM", cfg_tds)
 
     ## Print IDs of long TRT cells in testing dataset:
     print("\nThese are the IDs of long TRT cells (>25 time steps) in the testing dataset:")
