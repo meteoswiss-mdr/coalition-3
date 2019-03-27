@@ -1,5 +1,6 @@
 # coding: utf-8
-""" [COALITION3] This script contains code for the selection of features using XGBoost"""
+""" [COALITION3] This script contains code for the selection of features 
+   and fitting predictive models using XGBoost"""
 
 ## Import packages and define functions:
 from __future__ import division
@@ -7,20 +8,15 @@ from __future__ import print_function
 
 import os
 import sys
+import pickle
 import numpy as np
 import pandas as pd
+import datetime as dt
 
 import coalition3.inout.paths as pth
 import coalition3.inout.readconfig as cfg
 import coalition3.statlearn.feature as feat
-
-import pickle
-import datetime as dt
 import coalition3.statlearn.inputprep as ipt
-
-import sklearn.metrics as met
-from sklearn.neural_network import MLPRegressor
-from sklearn.model_selection import GridSearchCV
 
 ## Uncomment when running on Mac OS:
 #os.environ['KMP_DUPLICATE_LIB_OK']='True'
