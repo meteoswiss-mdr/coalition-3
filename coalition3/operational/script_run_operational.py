@@ -20,9 +20,11 @@ import coalition3.operational.update as upd
 import coalition3.operational.convertds as cds
 import coalition3.operational.processing as prc
 import coalition3.operational.statistics as stat
+import coalition3.operational.prediction as pred
 
 ## ===============================================================================
-## Get config file input:
+## Get initial time for timing the function:
+t1 = datetime.datetime.now()
 
 ## Get time point to start with:
 t0_str = sys.argv[1] if len(sys.argv)==2 else IOError("Need time user argv time point <%Y%m%d%H%M>")
@@ -44,8 +46,12 @@ stat.add_auxiliary_derived_variables(cfg_set)
 ## Convert statistics (xarray) dataset into (pandas) dataframe:
 cds.convert_stat_ds_to_df(cfg_set)
 
+## Convert statistics (xarray) dataset into (pandas) dataframe:
+pred.predict_TRT_Rank(cfg_set)
+
 ## Delete all .nc files (vararr and disparr files)
-#prc.clean_disparr_vararr_tmp(cfg_set_input)
+#prc.clean_disparr_vararr_tmp(cfg_set)
+
 
 ## OR: 
 
@@ -60,9 +66,9 @@ cds.convert_stat_ds_to_df(cfg_set)
 ## Add auxiliary and derived variables
 #stat.add_auxiliary_derived_variables(cfg_set)
 
-
-        
-        
+t2 = datetime.datetime.now()
+line_str = 103*"-"
+print("\n%s\n  Elapsed time for processing: " % line_str +str(t2-t1)+"\n%s" % line_str)
 
 
 

@@ -27,6 +27,8 @@ def get_X_col(colname, del_list=None):
         use_col = use_col and (colname not in del_list)
     return(use_col)
     
+## Function that returns all variable names connected to Radar variables 
+## at time step t0:
 def get_radar_t0_vars(TRT_Rank_vars = None):
     radar_vars  = ["RZC","BZC","LZC","MZC","EZC15","EZC20",
                    "EZC45","EZC50","CZC"]
@@ -44,8 +46,8 @@ def get_radar_t0_vars(TRT_Rank_vars = None):
         radar_t0_vars += TRT_Rank_vars
     return radar_t0_vars
     
-    
-## Helper function determining when to return results:
+## Helper function determining when to return results in
+## function get_model_input:
 def return_step(bool_input_ls):
     if not np.any(bool_input_ls):
         return "return_df"

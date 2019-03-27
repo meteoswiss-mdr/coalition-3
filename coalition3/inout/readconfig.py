@@ -216,14 +216,19 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
         tmp_output_path = os.path.join(coalition3_path,u"tmp/")
     else:
         tmp_output_path = config_sp["tmp_output_path"]
-    UV_precalc_path = config_sp["UV_precalc_path"]
+    if config_sp["pred_output_path"]=="":
+        pred_output_path = os.path.join(coalition3_path,u"predictions/")
+    else:
+        pred_output_path = config_sp["pred_output_path"]
 
     cfg_set.update({
         "root_path":           root_path,
         "output_path":         fig_output_path,
         "tmp_output_path":     tmp_output_path,
         "fig_output_path":     fig_output_path,
-        "UV_precalc_path":     UV_precalc_path
+        "pred_output_path":    pred_output_path,
+        "UV_precalc_path":     config_sp["UV_precalc_path"],
+        "XGB_model_path":      config_sp["XGB_model_path"]
     })
     
     ## Add tmp/ and figure/ paths if not yet existant (not in git repo)
@@ -333,7 +338,7 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
     cfg_set["file_ext_verif"] = file_ext_verif
 
     ## ===== Read settings on the domain statistics to be calculated: ================
-    config.read(os.path.join(CONFIG_PATH,"domain_statistics.cfg"))
+    config.read(os.path.join(CONFIG_PATH,"statistics_prediction.cfg"))
     config_sc = config["statistics_calculation"]
     stat_list           = cfg_var.columns[np.where(cfg_var.columns=="SUM")[0][0] : \
                                           np.where(cfg_var.columns=="MAX")[0][0]+1]
@@ -357,6 +362,15 @@ def get_config_info_op(coalition3_path=None, CONFIG_PATH=None): #**kwargs):
         "opt_stat_past":       config_sc["opt_stat_past"]
     })
 
+    ## ===== Read settings on the prediction of TRT Ranks: =====================
+    config_pr = config["TRT_Rank_prediction"]
+    
+    ## Fill up cfg_set dictionary:
+    cfg_set.update({
+        "probability_matching": config_pr["probability_matching"]=='True',
+        "feature_imp_measure":  config_pr["feature_imp_measure"]
+    })
+    
     ## ===== Add abbreviations, units, source, and min. vals of ================
     ## ===== of different variables to the cfg_set: ============================
     ## Static abbreviations:
@@ -476,6 +490,10 @@ def check_create_tmpdir(cfg_set):
         if not os.path.exists(cfg_set["fig_output_path"]):
             os.makedirs(cfg_set["fig_output_path"])
             print("  Created figures/ directory: %s" % cfg_set["fig_output_path"])
+    if "pred_output_path" in cfg_set:
+        if not os.path.exists(cfg_set["pred_output_path"]):
+            os.makedirs(cfg_set["pred_output_path"])
+            print("  Created predictions/ directory: %s" % cfg_set["pred_output_path"])
 
 ## Get size of the domain form chosen (from where the stats are read):
 def form_size(stat_sel_form_width,stat_sel_form):

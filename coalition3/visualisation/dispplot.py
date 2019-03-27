@@ -9,14 +9,16 @@ import datetime
 import numpy as np
 import pysteps as st
 import matplotlib.pylab as plt
-from coalition3.inout.paths import path_creator_vararr, path_creator_UV_disparr
+
 from coalition3.inout.iotmp import load_file
+from coalition3.inout.paths import path_creator_vararr, path_creator_UV_disparr
+from coalition3.visualisation.TRTcells import ccs4_map
 
 ## =============================================================================
 ## FUNCTIONS:
                
 ## Plot displaced fields next to original ones:
-def plot_displaced_fields(var,cfg_set,future=False,animation=False,TRT_form=False):
+def plot_displaced_fields(var,cfg_set,future=False,animation=False,TRT_form=False,plot_108=True):
     """Plot displaced fields next to original ones.
 
     Parameters
@@ -61,6 +63,18 @@ def plot_displaced_fields(var,cfg_set,future=False,animation=False,TRT_form=Fals
         vararr = np.concatenate([vararr_future[1:,:,:][::-1,:,:],vararr],axis=0)
     vararr = vararr[::-1,:,:]
     
+    if plot_108 and var in ["RZC", "BZC", "LZC", "CZC", "MCZ", "EZC15", "EZC45", "EZC50", "THX_dens"]:
+        filename_orig_108 = path_creator_vararr("orig","IR_108",cfg_set,disp_reverse="")
+        print("   File of IR 10.8 original variable: %s" % filename_orig_108)
+        vararr_108 = load_file(filename_orig_108,var_name="IR_108")
+        if future:
+            filename_orig_future_108 = path_creator_vararr("orig","IR_108",cfg_set,disp_reverse="_rev")
+            print("   File of IR 10.8 future original variable:  %s" % filename_orig_future_108)
+            vararr_future_108 = load_file(filename_orig_future_108,var_name="IR_108")
+            vararr_108 = np.concatenate([vararr_future_108[1:,:,:][::-1,:,:],vararr_108],axis=0)
+        vararr_108 = vararr_108[::-1,:,:]
+        
+    
     filename_UV = path_creator_UV_disparr("standard",cfg_set,disp_reverse="")
     print("   File of UV field:                  %s" % filename_UV)
     UVdisparr = load_file(filename_UV)
@@ -76,6 +90,16 @@ def plot_displaced_fields(var,cfg_set,future=False,animation=False,TRT_form=Fals
     Vx = Vx[::-1,:,:]; Vy = Vy[::-1,:,:]
     
     cmap, norm, clevs, clevsStr = st.plt.get_colormap("mm/h", "MeteoSwiss")
+    if var == "IR_108":
+        cmap = "bone_r"
+    elif var == "CAPE_ML":
+        cmap = "viridis"
+    elif var == "THX_dens":
+        cmap = "autumn"
+    elif var == "EZC45":
+        cmap = "winter"
+    elif var == "BZC":
+        cmap = "YlOrRd"
 
     ## Set values to nan
     #plt.hist(vararr[~np.isnan(vararr)].flatten()); plt.show(); return
@@ -89,8 +113,9 @@ def plot_displaced_fields(var,cfg_set,future=False,animation=False,TRT_form=Fals
         vararr[vararr <= 2] = np.nan
     elif var in ["EZC","EZC45","EZC15"]:
         vararr[vararr < 1] = np.nan
-    #elif "THX" in var:
-    #    vararr[vararr < 0.001] = np.nan
+    elif "THX" in var:
+        vararr = np.array(vararr, dtype=np.float32)
+        vararr[vararr < 0.001] = np.nan
     
     
     ## Get forms of TRT cells:
@@ -117,47 +142,54 @@ def plot_displaced_fields(var,cfg_set,future=False,animation=False,TRT_form=Fals
     #                              datetime.timedelta(minutes=cfg_set["timestep"]),t_delta])
 
     ## Setup the plot:
-    fig, axes = plt.subplots(nrows=1, ncols=1)
-    fig.set_size_inches(10,10)
-    plt.setp(axes, xticks=np.arange(50, 1000, 50), yticks=np.arange(50, 1000, 50))
-    plt.setp(axes, xticks=np.arange(50, 1000, 50), yticks=np.arange(50, 1000, 50))
+    #fig, axes, fig_extent = ccs4_map(cfg_set,figsize_x=12,figsize_y=12,hillshade=True,radar_loc=True,radar_vis=True)
+    #fig, axes = plt.subplots(nrows=1, ncols=1)
+    #fig.set_size_inches(10,10)
+    #plt.setp(axes, xticks=np.arange(50, 1000, 50), yticks=np.arange(50, 1000, 50))
+    #plt.setp(axes, xticks=np.arange(50, 1000, 50), yticks=np.arange(50, 1000, 50))
     
     ## Make plots
     for i in range(vararr.shape[0]):
         #if animation: plt.cla()
         
+        ## Make plot:
+        if not animation:
+            fig, axes, fig_extent = ccs4_map(cfg_set,figsize_x=9,figsize_y=9,hillshade=True,radar_loc=True,radar_vis=True)
+            #fig, axes = plt.subplots(nrows=1, ncols=1)
+            #fig.set_size_inches(10,10)
+            #plt.setp(axes, xticks=np.arange(50, 1000, 50), yticks=np.arange(50, 1000, 50))
+            #plt.setp(axes, xticks=np.arange(50, 1000, 50), yticks=np.arange(50, 1000, 50))
+        #axes.set_yticklabels([])
+        #axes.set_xticklabels([])
+        #axes.grid(which='major', color='orange', linestyle='-', linewidth=0.5)
+        
         ## Prepare UV field for quiver plot
         UV_field = np.moveaxis(np.dstack((Vx[i,:,:],Vy[i,:,:])),2,0)
         step = 40; X,Y = np.meshgrid(np.arange(UV_field.shape[2]),np.arange(UV_field.shape[1]))
         UV_ = UV_field[:, 0:UV_field.shape[1]:step, 0:UV_field.shape[2]:step]
-        X_ = X[0:UV_field.shape[1]:step, 0:UV_field.shape[2]:step]; Y_ = Y[0:UV_field.shape[1]:step, 0:UV_field.shape[2]:step]
-        
-        
-        ## Make plot:
-        if not animation:
-            fig, axes = plt.subplots(nrows=1, ncols=1)
-            fig.set_size_inches(10,10)
-            plt.setp(axes, xticks=np.arange(50, 1000, 50), yticks=np.arange(50, 1000, 50))
-            plt.setp(axes, xticks=np.arange(50, 1000, 50), yticks=np.arange(50, 1000, 50))
-        axes.set_yticklabels([])
-        axes.set_xticklabels([])
-        axes.grid(which='major', color='orange', linestyle='-', linewidth=0.5)
+        X_ = X[0:UV_field.shape[1]:step, 0:UV_field.shape[2]:step] * 1000+fig_extent[0]
+        Y_ = Y[0:UV_field.shape[1]:step, 0:UV_field.shape[2]:step] * 1000+fig_extent[2]
         
         ## Generate title:
         t_current = cfg_set["t0"] + datetime.timedelta(minutes=t_delta[i])
         title_str_basic = "%s fields at %s" % (var, t_current.strftime("%d.%m.%Y - %H:%M"))
-        if t_current > cfg_set["t0"]: title_str_addon = "(Future t0 + %02dmin)" % t_delta[i]
-        elif t_current < cfg_set["t0"]: title_str_addon = "(Past t0 - %02dmin)" % -t_delta[i]
-        elif t_current == cfg_set["t0"]: title_str_addon = "(Present t0 + 00min)"
+        if t_current > cfg_set["t0"]: title_str_addon = r"(Future t$_0$ + %02dmin)" % t_delta[i]
+        elif t_current < cfg_set["t0"]: title_str_addon = r"(Past t$_0$ - %02dmin)" % -t_delta[i]
+        elif t_current == cfg_set["t0"]: title_str_addon = r"(Present t$_0$ + 00min)"
         title_str = "%s\n%s" % (title_str_basic,title_str_addon)
 
         #axes.cla()
-        axes.set_yticklabels([])
-        axes.set_xticklabels([])
-        axes.grid(which='major', color='orange', linestyle='-', linewidth=0.5)
+        #axes.set_yticklabels([])
+        #axes.set_xticklabels([])
+        #axes.grid(which='major', color='orange', linestyle='-', linewidth=0.5)
         axes.set_title(title_str)
-        axes.imshow(vararr[i,:,:], aspect='equal', cmap=cmap)
-        axes.quiver(X_, Y_, UV_[0,:,:], -UV_[1,:,:], pivot='tip', color='grey')
+        alpha = 0.6
+        if plot_108 and var in ["RZC", "BZC", "LZC", "CZC", "MCZ", "EZC15", "EZC45", "EZC50", "THX_dens"]:
+            axes.imshow(vararr_108[i,:,:], aspect='equal', cmap="bone_r", extent=fig_extent, alpha=0.7)
+            alpha = 0.9
+        axes.imshow(vararr[i,:,:], aspect='equal', cmap=cmap, extent=fig_extent, alpha=alpha)
+        axes.quiver(X_, Y_, UV_[0,:,:], -UV_[1,:,:], pivot='tip', color='orange', width = 0.002)
+        #axes.quiver(UV_field[0,:,:], -UV_field[1,:,:], pivot='tip', color='red')
         #if cfg_set["UV_inter"] and type(UV_vec[i]) is not float and len(UV_vec[i].shape)>1:
         #    axes.quiver(UV_vec[i][1,:,0], UV_vec[i][0,:,0], UV_vec[i][2,:,0], -UV_vec[i][3,:,0], pivot='tip', color='red')
         #    axes.quiver(UV_vec_sp[i][1,:], UV_vec_sp[i][0,:], UV_vec_sp[i][2,:], -UV_vec_sp[i][3,:], pivot='tip', color='blue')
@@ -168,7 +200,7 @@ def plot_displaced_fields(var,cfg_set,future=False,animation=False,TRT_form=Fals
             #for circ in range(len(iCH_ls)):
             #    col = col_ls[circ%len(col_ls)]
             #    axes[1].contour(circle_array[:,:,circ],linewidths=0.3,alpha=0.7) #,levels=diameters)
-            axes.contour(vararr_TRT[i,:,:],linewidths=1,alpha=1,color="red") #,levels=diameters)
+            axes.contour(vararr_TRT[i,::-1,:],linewidths=1,alpha=1,color="red", extent=fig_extent) #,levels=diameters)
         #axes[1].grid(which='major', color='red', linestyle='-', linewidth=1)
 
         #fig.tight_layout()    
@@ -184,9 +216,11 @@ def plot_displaced_fields(var,cfg_set,future=False,animation=False,TRT_form=Fals
                 os.makedirs(path)
                 new_dir = "(new) "
             figname = "%s%s_%s_TRT_domains.png" % (path, t_current.strftime("%Y%m%d%H%M"), var)
+            plt.tight_layout()
             fig.savefig(figname, dpi=100)
             if i == vararr.shape[0]-1:
                 print("   Plots saved in %sdirectory: %s" % (new_dir, path))
+            plt.close()
     plt.close()  
 
     

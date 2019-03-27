@@ -5,9 +5,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import datetime
-import pickle
 import ephem
+import pickle
+import datetime
 import configparser
 
 import numpy as np
@@ -155,6 +155,7 @@ def append_statistics_pixcount(cfg_set_input,cfg_var,cfg_var_combi,reverse=False
         - Variables to read statistics and pixel counts from
         - Read the actual statistics and pixel counts (NaN and "minimum-value").
     """
+    t1 = datetime.datetime.now()
 
     ## Change settings related calculating statistics from future or current observations:
     cfg_set = cfg_set_input.copy()
@@ -219,6 +220,8 @@ def append_statistics_pixcount(cfg_set_input,cfg_var,cfg_var_combi,reverse=False
         plt.savefig(filename_fig,format="pdf")
         plt.close()
 
+    t2 = datetime.datetime.now()
+    print("  Elapsed time for calculating statistics and pixel counts: "+str(t2-t1)+"\n")
     ## Potential parallelised version (DEPRECATED)
     #num_cores = np.max([multiprocessing.cpu_count()-2,1])
     #print("  Parallelising displacement with %s cores" % num_cores)
@@ -472,6 +475,7 @@ def interpolate_COSMO_fields(vararr, method="KDTree"):
 
 ## Add auxiliary and derived variables to operational stats & pixcount dataset:
 def add_auxiliary_derived_variables(cfg_set):
+    t1 = datetime.datetime.now()
     """This wrapper calls those functions adding the auxiliary/static and
     derived (TRT Rank) variables to the stats & pixcount dataset"""
     print("Adding auxiliary and derived variables")
@@ -489,6 +493,8 @@ def add_auxiliary_derived_variables(cfg_set):
     ## Save Pickle:
     with open(filename, "wb") as output_file: pickle.dump(ds, output_file, protocol=-1)
     print("  Saved pickle file with added auxiliary variables")
+    t2 = datetime.datetime.now()
+    print("  Elapsed time for adding auxiliary and derived variables: "+str(t2-t1)+"\n")
     
 ## Add auxiliary variables (solar time, topography, radar frequency)
 def add_aux_static_variables(ds, cfg_set):

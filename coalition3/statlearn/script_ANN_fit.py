@@ -16,6 +16,7 @@ import matplotlib.pylab as plt
 
 import coalition3.inout.paths as pth
 import coalition3.inout.readconfig as cfg
+import coalition3.statlearn.fitting as fit
 import coalition3.statlearn.feature as feat
 import coalition3.statlearn.inputprep as ipt
     
@@ -56,7 +57,7 @@ for pred_dt in ls_pred_dt:
     pred_mlp_allfeat = mlp_allfeat.predict(X_test)
     mse_mlp_allfeat  = met.mean_squared_error(y_test,pred_mlp_allfeat)
     r2_mlp_allfeat   = met.r2_score(y_test,pred_mlp_allfeat)
-    feat.plot_pred_vs_obs_core(y_test,pred_mlp_allfeat,pred_dt,mse_mlp_allfeat,
+    fit.plot_pred_vs_obs_core(y_test,pred_mlp_allfeat,pred_dt,mse_mlp_allfeat,
                                r2_mlp_allfeat,"_mlp-allfeat",cfg_tds)
     
     ## Fit ANN model with 300 selected features but only two hidden layers (100, 50):
@@ -76,26 +77,29 @@ for pred_dt in ls_pred_dt:
     pred_mlp_selfeat = mlp_selfeat.predict(X_test_selfeat)
     mse_gain_selfeat = met.mean_squared_error(y_test,pred_mlp_selfeat)
     r2_gain_selfeat  = met.r2_score(y_test,pred_mlp_selfeat)
-    feat.plot_pred_vs_obs_core(y_test,pred_mlp_selfeat,pred_dt,mse_gain_selfeat,r2_gain_selfeat,"_mlp-300feat",cfg_tds)
+    fit.plot_pred_vs_obs_core(y_test,pred_mlp_selfeat,pred_dt,mse_gain_selfeat,r2_gain_selfeat,"_mlp-300feat",cfg_tds)
     
     ## Fit ANN models with 10 - 500 selected features with grid-search over hyperparameters:
-    print("Fit ANN models to 10 - 500 features with grid-search over hyper-parameters")
+    print("Fit ANN models to 10 - 1000 features with grid-search over hyper-parameters")
     xgb_model_path_all = pth.file_path_reader("all-feature XGB model location (for feature selection)")
     with open(xgb_model_path_all,"rb") as file:
         xgb_model = pickle.load(file)
     top_features_gain = pd.DataFrame.from_dict(xgb_model.get_booster().get_score(importance_type='gain'),
                                                orient="index",columns=["F_score"]).sort_values(by=['F_score'],
                                                ascending=False)
-    n_feat_arr = np.concatenate([np.arange(10,50,2),
-                                 np.arange(50,100,10),
-                                 np.arange(100,520,20)])
+    print("These are the top features:\n  %s" % top_features_gain[:10])
+    
+    n_feat_arr = fit.get_n_feat_arr("ann")
     print("  *** Watch out, this takes veeeeeeeeeeeeery long!! ***")
     ls_models = []
+    time_start = dt.datetime.now()
     for n_feat in n_feat_arr:
         print("\n   Fitting model for %i features\n" & n_feat)
-        fitted_model = feat.fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr, model="mlp", verbose_bool=True)
+        fitted_model = fit.fit_model_n_feat(X_train, y_train, top_features_gain, n_feat, n_feat_arr, model="mlp", verbose_bool=True)
+        print("     Current time: %s / elapsed time %s" % (dt.datetime.now(), dt.datetime.now()-time_start))
         ls_models.append(fitted_model)
         if n_feat%20==0:
+            print("     Save list of models to disk")
             with open(os.path.join(model_path,"model_%i%s_t0diff_mlp_nfeat_%i.pkl" % (pred_dt,mod_name,n_feat)),"wb") as file:
                 pickle.dump(ls_models,file,protocol=-1)
       

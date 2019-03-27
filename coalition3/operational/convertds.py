@@ -10,17 +10,17 @@ import os
 import sys
 import dask
 import pickle
+import datetime
 import numpy as np
 import xarray as xr
 import pandas as pd
-
-import matplotlib.pylab as plt
 
 import coalition3.inout.readconfig as cfg
 
 ## ============================================================================
 ## Wrapper function for operational handling of statistics dataset:
 def convert_stat_ds_to_df(cfg_set):
+    t1 = datetime.datetime.now()
     print("Converting xarray dataset into 2D pandas dataframe")
     
     ## Get xarray dataset from tmp/ directory:
@@ -32,6 +32,8 @@ def convert_stat_ds_to_df(cfg_set):
 
     ## Convert dataset to dataframe:
     convert_ds2df(ds, outpath=filename_df, diff_option=cfg_set["opt_stat_past"])
+    t2 = datetime.datetime.now()
+    print("  Elapsed time for converting the dataset to a dataframe: "+str(t2-t1)+"\n")
     
 ## Function to convert one 3D dataarray (not dataset) into dataframe:
 def da2df(da,data_vars=None):
@@ -87,7 +89,6 @@ def convert_ds2df(ds, outpath, diff_option=None):
     del(ds_drop)
 
     ## Decide between deltas between time steps to delta to t0:
-    if diff_option is None:
     print_text = """
         \nHow should variables be treated over time:
           Option 1 -> Keep the absolute values of the statistics [path addon 'nodiff']
@@ -96,7 +97,8 @@ def convert_ds2df(ds, outpath, diff_option=None):
                       (e.g. MaxRZC(t0)-MaxRZC(t-45min), MaxRZC(t0)-MaxRZC(t-40min), .. , MaxRZC(t0))
           Option 3 -> Between each time step (and keep absolute value at t0) [path addon 'dtdiff']
                       (e.g. MaxRZC(t0-40min)-MaxRZC(t0-45min), MaxRZC(t0-35min)-MaxRZC(t0-40min), .. , MaxRZC(t0))
-        """
+    """
+    if diff_option is None:
         print(print_text)
     while (diff_option!="1" and diff_option != "2" and diff_option != "3"):
         diff_option = str(raw_input("Which option do you choose? [1/2/3] "))
