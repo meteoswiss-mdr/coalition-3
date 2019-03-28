@@ -73,6 +73,7 @@ def predict_TRT_Rank(cfg_set):
 
     ## Save results in coalition-3/predictions directory:
     TRT_Rank_df.to_hdf(filename_pred,"pred",mode="w")
+    print("  Find prediction for time step %s in the directory:\n   %s" % (cfg_set["t0"], filename_pred)
     t2 = datetime.datetime.now()
     print("  Elapsed time for predicting TRT Ranks: "+str(t2-t1)+"\n")
 
