@@ -145,6 +145,9 @@ def clean_disparr_vararr_tmp(cfg_set,fix_t0_str=None):
         ## Delete .pkl files (with TRT information)
         if file.startswith(t0_str+"_TRT_df") and file.endswith(".pkl"):
             os.remove(os.path.join(path, file))
+        ## Delete .pkl files (with statistics)
+        if file.startswith(t0_str+"_stat_pixcount"):
+            os.remove(os.path.join(path, file))
         ## Delete .npz files
         if check_for_npz:
             if file.startswith(t0_str) and file.endswith("npz"):
