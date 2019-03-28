@@ -566,7 +566,7 @@ def print_config_info_op(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
     '\n      Min TRT Rank cons.: '+str(cfg_set["min_TRT_rank_op"])+ \
     '\n      Stat domain form:   '+str(cfg_set["stat_sel_form"])+ \
     '\n      Stat domain size:   '+str(cfg_set["stat_sel_form_width"])+"km"+ \
-    '\n      Prob. matching:     '+str(cfg_set["probability_matching"])+ \
+    '\n      Prob. matching:     '+str(cfg_set["probability_matching"])
     #'\n  Square domain:    '+str(cfg_set["square_domain"])+ \
     #'\n      Save file type:   '+'.'+str(cfg_set["save_type"])+' file'+ \
     #'\n      Oflow method:     '+cfg_set["oflow_method_name"]+ \
