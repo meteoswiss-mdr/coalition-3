@@ -45,23 +45,21 @@ def predict_TRT_Rank(cfg_set):
     #    feat_ls = pickle.load(feat_ls_file)
     ## Get list of models used for prediction:
     with open(os.path.join(cfg_set["XGB_model_path"],"pred_model_ls"), "rb") as pred_ls_file:
-        pred_ls = pickle.load(pred_ls_file)
+        pred_dict = pickle.load(pred_ls_file)
         
     ## Load pickle with dataframe of observed and predicted TRT Ranks (to infer distribution)
     if cfg_set["probability_matching"]:
-        with open(os.path.join(cfg_set["XGB_model_path"],"TRT_Rank_obs_pred.pkl"), "rb") as TRT_Rank_obs_pred_file:
+        with open(os.path.join(cfg_set["XGB_model_path"],"test_data_predictions"), "rb") as TRT_Rank_obs_pred_file:
             TRT_Rank_obs_pred = pickle.load(TRT_Rank_obs_pred_file)
 
     ## Loop over lead-time to make prediction:
-    for dt_i, pred_dt in enumerate(np.arange(cfg_set["timestep"],
-                                             cfg_set["timestep"]*cfg_set["n_integ"],
-                                             cfg_set["timestep"])):
+    for pred_dt in np.arange(cfg_set["timestep"],cfg_set["timestep"]*cfg_set["n_integ"],cfg_set["timestep"]):
         ## Read top features from models fitted with all features (deprecated)
         #top_features = pd.DataFrame.from_dict(feat_ls[dt_i].get_booster().get_score(importance_type=cfg_set["feature_imp_measure"]),
         #                                      orient="index",columns=["F_score"]).sort_values(by=['F_score'],
         #                                      ascending=False)
-        #TRT_Rank_pred2 = stat_df["TRT_Rank|0"] + pred_ls[dt_i].predict(stat_df[top_features.index[:750]])
-        TRT_Rank_pred = stat_df["TRT_Rank|0"] + pred_ls[dt_i].predict(stat_df[pred_ls[dt_i].get_booster().feature_names])
+        #TRT_Rank_pred2 = stat_df["TRT_Rank|0"] + pred_dict["pred_mod_%i" % pred_dt.predict(stat_df[top_features.index[:750]])
+        TRT_Rank_pred = stat_df["TRT_Rank|0"] + pred_dict["pred_mod_%i" % pred_dt].predict(stat_df[pred_dict["pred_mod_%i" % pred_dt].get_booster().feature_names])
         TRT_Rank_df["TRT_Rank_pred|%i" % pred_dt] = TRT_Rank_pred
 
         ## Loop over single prediction values and perform probability matching:
