@@ -454,7 +454,7 @@ def make_model_evaluation(df_nonnan, model_path, ls_pred_dt, cfg_tds, cfg_op):
         n_features = len(features_pred_model)
         if set(features_pred_model)!=set(top_features.index[:n_features]):
             raise ValueError("Features of predictive model and top features of model fitted with all features do not agree")
-    
+        
         ## Make prediction of TRT Rank differences:
         TRT_diff_pred = pred_model.predict(X_test[features_pred_model]) 
         
