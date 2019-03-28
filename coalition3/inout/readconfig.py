@@ -554,20 +554,24 @@ def print_config_info_op(cfg_set): #,CONFIG_FILE_set,CONFIG_FILE_var
     
     list_of_variables1 = ', '.join([variable for variable in cfg_set["var_list"][ :3]])
     list_of_variables2 = ', '.join([variable for variable in cfg_set["var_list"][-3:]])
-    print_str = '    Configuration of COALITION3 input date preparation procedure:'+ \
-    '\n      Date:             '+cfg_set["t0"].strftime("%Y-%m-%d %H:%M")+ \
-    '\n      Reverse mode:     '+str(cfg_set["future_disp_reverse"])+ \
-    '\n      Variables displ.: '+str(list_of_variables1)+" ... "+str(list_of_variables2)+ \
-    '\n      Save file type:   '+'.'+str(cfg_set["save_type"])+' file'+ \
-    '\n      Oflow data:       '+cfg_set["oflow_source"]+ \
-    '\n      Oflow method:     '+cfg_set["oflow_method_name"]+ \
-    '\n      Adv method:       '+cfg_set["adv_method"]+ \
-    '\n      Timestep:         '+str(cfg_set["timestep"])+"min"+ \
-    '\n      Integr. steps:    '+str(cfg_set["n_integ"])+ \
-    '\n      Use precalc. UV:  '+str(cfg_set["precalc_UV_disparr"])+ \
-    '\n      Instant. corr:    '+str(cfg_set["instant_resid_corr"])+ \
-    '\n      Verification:     '+str(cfg_set["verify_disp"])
+    print_str = '    Configuration of COALITION3 operational TRT Rank prediction:'+ \
+    '\n      Date:               '+cfg_set["t0"].strftime("%Y-%m-%d %H:%M")+ \
+    '\n      Reverse mode:       '+str(cfg_set["future_disp_reverse"])+ \
+    '\n      Variables displ.:   '+str(list_of_variables1)+" ... "+str(list_of_variables2)+ \
+    '\n      Timestep:           '+str(cfg_set["timestep"])+"min"+ \
+    '\n      Integr. steps:      '+str(cfg_set["n_integ"])+ \
+    '\n      Oflow data:         '+cfg_set["oflow_source"]+ \
+    '\n      Use precalc. UV:    '+str(cfg_set["precalc_UV_disparr"])+ \
+    '\n      Instant. corr:      '+str(cfg_set["instant_resid_corr"])+ \
+    '\n      Min TRT Rank cons.: '+str(cfg_set["min_TRT_rank_op"])+ \
+    '\n      Stat domain form:   '+str(cfg_set["stat_sel_form"])+ \
+    '\n      Stat domain size:   '+str(cfg_set["stat_sel_form_width"])+"km"+ \
+    '\n      Prob. matching:     '+str(cfg_set["probability_matching"])+ \
     #'\n  Square domain:    '+str(cfg_set["square_domain"])+ \
+    #'\n      Save file type:   '+'.'+str(cfg_set["save_type"])+' file'+ \
+    #'\n      Oflow method:     '+cfg_set["oflow_method_name"]+ \
+    #'\n      Adv method:       '+cfg_set["adv_method"]+ \
+    #'\n      Verification:     '+str(cfg_set["verify_disp"])
     #'\n      Config files:     '+CONFIG_FILE_set+' (Settings) & '+CONFIG_FILE_var+' (Variables)'+ \
     if cfg_set["verify_disp"]:
         print_str = print_str+'\n      Verif. param:     '+str(cfg_set["verif_param"])+'='+ \
