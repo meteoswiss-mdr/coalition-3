@@ -69,7 +69,7 @@ def plot_var_time_series(TRT_ID_sel, df_nonnan, var, stat, past_dt, dt_highlight
         plt.savefig(os.path.join(cfg_tds["fig_output_path"],"%s_%s_Series_%s.pdf" % (var, stat, TRT_ID_sel["TRT_ID"])))
         plt.close()
                            
-def plot_pred_time_series(TRT_ID_sel, df_nonnan, pred_mod_ls, ls_pred_dt, path_addon="", title_addon=""):
+def plot_pred_time_series(TRT_ID_sel, df_nonnan, pred_mod_ls, ls_pred_dt, cfg_tds, path_addon="", title_addon=""):
     if len(pred_mod_ls)!=len(ls_pred_dt):
         raise ValueError("Variables 'pred_mod_ls' and 'ls_pred_dt' must have the same length")
     if path_addon is not "":
@@ -582,8 +582,8 @@ def make_model_evaluation(df_nonnan, model_path, ls_pred_dt, cfg_tds, cfg_op):
                                                  "Lightning": ["THX_densIC_stat|-30|SUM","THX_curr_pos_stat|-40|SUM","THX_curr_pos_stat|-30|SUM"]})
     for i_sel in range(len(TRT_ID_long_sel)):
         print("    Working on cell %s" % TRT_ID_long_sel.iloc[i_sel]["TRT_ID"])
-        plot_pred_time_series(TRT_ID_long_sel.iloc[i_sel], df_nonnan, Rank_pred_XGB_ls, ls_pred_dt)
-        plot_pred_time_series(TRT_ID_long_sel.iloc[i_sel], df_nonnan, Rank_pred_XGB_PM_ls, ls_pred_dt, path_addon="PM", title_addon=" (PM)")
+        plot_pred_time_series(TRT_ID_long_sel.iloc[i_sel], df_nonnan, Rank_pred_XGB_ls, ls_pred_dt, cfg_tds)
+        plot_pred_time_series(TRT_ID_long_sel.iloc[i_sel], df_nonnan, Rank_pred_XGB_PM_ls, ls_pred_dt, cfg_tds, path_addon="PM", title_addon=" (PM)")
         
         plot_var_time_series_dt0_multiquant(TRT_ID_long_sel.iloc[i_sel], df_nonnan, cfg_tds)
             
