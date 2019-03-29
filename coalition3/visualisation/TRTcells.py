@@ -8,6 +8,7 @@ import os
 import datetime
 import shapefile
 import numpy as np
+import pandas as pd
 import matplotlib.pylab as plt
 import matplotlib.ticker as ticker
 import matplotlib.colors as colors
@@ -371,12 +372,12 @@ def plot_var_time_series_dt0_multiquant(TRT_ID_sel, df_nonnan, cfg_tds):
         2D pandas Dataframe with training data.
     """
     
-    date_of_cell = dt.datetime.strptime(TRT_ID_sel["TRT_ID"][:12], "%Y%m%d%H%M")
+    date_of_cell = datetime.datetime.strptime(TRT_ID_sel["TRT_ID"][:12], "%Y%m%d%H%M")
     
     ## Find cells where the there are loads of similar TRT Ranks:
     DTI_sel  = [dti for dti in df_nonnan.index.values if dti[13:] in TRT_ID_sel["TRT_ID"]]
     cell_sel = df_nonnan.loc[DTI_sel]
-    cell_sel.set_index(pd.to_datetime([dt.datetime.strptime(date[:12],"%Y%m%d%H%M") for date in cell_sel.index]),
+    cell_sel.set_index(pd.to_datetime([datetime.datetime.strptime(date[:12],"%Y%m%d%H%M") for date in cell_sel.index]),
                        drop=True,append=False,inplace=True)
                    
     fig, axes = plt.subplots(2,2)

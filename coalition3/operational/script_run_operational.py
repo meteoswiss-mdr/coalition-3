@@ -50,7 +50,7 @@ cds.convert_stat_ds_to_df(cfg_set)
 pred.predict_TRT_Rank(cfg_set)
 
 ## Delete all .nc files (vararr and disparr files)
-#prc.clean_disparr_vararr_tmp(cfg_set)
+prc.clean_disparr_vararr_tmp(cfg_set)
 
 
 ## OR: 
