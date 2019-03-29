@@ -115,10 +115,12 @@ def convert_ds2df(ds, outpath, diff_option=None):
             if len(ds_past[var].sel(time_delta=0).values.shape)==1:
                 ## Special case for variable 'CZC_lt57dBZ'
                 sub_val = ds_past[var].sel(time_delta=slice(neg_del[0],neg_del[-1])).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis]
-                ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis]],axis=1)
+                #ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis]],axis=1)
+                ds_past[var].values = np.concatenate([ds_past[var].sel(time_delta=0).values[:,np.newaxis],sub_val],axis=1)
             else:
                 sub_val = ds_past[var].sel(time_delta=slice(neg_del[0],neg_del[-1])).values-ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]
-                ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]],axis=1)
+                #ds_past[var].values = np.concatenate([sub_val,ds_past[var].sel(time_delta=0).values[:,np.newaxis,:]],axis=1)
+                ds_past[var].values = np.concatenate([ds_past[var].sel(time_delta=0).values[:,np.newaxis,:],sub_val],axis=1)
             
         elif diff_option == "3":
             sub_val = ds_past[var].sel(time_delta=slice(neg_del[1],0)).values-ds_past[var].sel(time_delta=slice(neg_del[0],neg_del[-1])).values
