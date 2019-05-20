@@ -8,6 +8,7 @@ import configparser
 import datetime
 import numpy as np
 import pysteps as st
+from glob import glob
 
 ## =============================================================================
 ## FUNCTIONS:
@@ -20,9 +21,10 @@ def file_path_reader(path_description,user_argv_path=None):
     return user_argv_path
 
 ## Provide path to variable array:
-def path_creator_vararr(type,var,cfg_set,
+def path_creator_vararr(type,var,cfg_set, 
                         path=None,t0=None,
-                        oflow_source=None,save_type=None,
+                        oflow_source=None,
+                        save_type=None,
                         disp_reverse=None):
     """Provide path to variable array."""
 
@@ -133,9 +135,6 @@ def path_creator(t, var, source, cfg_set):
                                             fn_ext, cfg_set["timestep"],
                                             num_next_files=cfg_set["n_past_frames"])
             file_paths = (filenames[::-1],timestamps[::-1]) #(filenames,timestamps)
-        if None in file_paths[0]:
-            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
-            exit()
         return file_paths
 
     elif source == "THX":
@@ -148,9 +147,6 @@ def path_creator(t, var, source, cfg_set):
         if t.hour==0 and t.minute==0: t = t-datetime.timedelta(minutes=cfg_set["timestep"])
         file_paths = st.io.find_by_date(t, var_path, path_fmt, fn_pattern,
                                         fn_ext, cfg_set["timestep"], 0)
-        if None in file_paths[0]:
-            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
-            exit()
         return file_paths
 
     elif source == "TRT":
@@ -161,9 +157,6 @@ def path_creator(t, var, source, cfg_set):
         fn_ext          = config_ds["fn_ext"]
         file_paths = st.io.find_by_date(t, var_path, path_fmt, fn_pattern,
                                         fn_ext, cfg_set["timestep"], 0)
-        if None in file_paths[0]:
-            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
-            exit()
         return file_paths
 
     elif source == "COSMO_WIND":
@@ -177,15 +170,13 @@ def path_creator(t, var, source, cfg_set):
         t_fcst_model     = '%02d' % (t.hour%3)
         file_path = str(datetime.datetime.strftime(t, var_path+path_fmt+'/'+fn_pattern) + t_last_model_run + '_' +
                         t_fcst_model + '_cosmo-1_UV_swissXXL.' + fn_ext)
-        if None in file_paths[0]:
-            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
-            exit()
+        #file_path = glob(file_path)
         
         timestamp = t.replace(minute=0)
         return (file_path, timestamp)
 
     elif source == "COSMO_CONV":
-        config_ds = config["conv_read"]
+        config_ds       = config["conv_read"]
         var_path        = config_ds["Conv_path"]
         path_fmt        = config_ds["path_fmt"]
         fn_pattern      = config_ds["fn_pattern"]
@@ -200,12 +191,10 @@ def path_creator(t, var, source, cfg_set):
         if t_fcst_model=="00":
             t_last_model_run = '%02d' % (int((t.hour-1)/3)*3)
             t_fcst_model     = "03"
-
+            
         file_path = str(datetime.datetime.strftime(t, var_path+path_fmt+'/'+fn_pattern) + t_last_model_run + '_' +
                         t_fcst_model + '_cosmo-1_convection_swiss.' + fn_ext)
-        if None in file_paths[0]:
-            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
-            exit()
+        #file_path = glob(file_path)
 
         timestamp = t.replace(minute=0)
         return (file_path, timestamp)
@@ -221,10 +210,7 @@ def path_creator(t, var, source, cfg_set):
         if t < datetime.datetime(2018,3,20): fn_pattern = fn_pattern[:3]+"2"+fn_pattern[4:]
 
         file_paths = st.io.find_by_date(t, var_path, path_fmt, fn_pattern,
-                                       fn_ext, cfg_set["timestep"], 0)
-        if None in file_paths[0]:
-            print("Error, at least one "+source+" input file is missing: ", file_paths[0],"\n")
-            exit()
+                                       fn_ext, cfg_set["timestep"], 0)  # , exit_when_no_input=False
         return file_paths
 
     else:
